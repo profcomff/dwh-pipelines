@@ -1,166 +1,136 @@
-import requests
-from bs4 import BeautifulSoup
+from typing import Any, List, Dict
+from bs4 import BeautifulSoup as BS
 
 
-USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
-HEADERS = {"User-Agent": USER_AGENT}
+class Group:
+    def __init__(self, html: BS):
+        self.data = html
+        self.tags: List[BS] = []
+        self.result: List[Dict[str, Any]] = []
 
-# Типы пар в расписании.
-# Имена переменных связаны с названием классов в самом html.
-KIND_ITEM1 = 0
-KIND_SMALL1_WITH_TIME = 1
-KIND_SMALL1_WITHOUT_TIME = 2
-KIND_ITEM1_WITH_SMALL0 = 3
-KIND_SMALL1_WITH_SMALL0_WITH_TIME = 4
-KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME = 5
+    def run(self) -> List[Dict[str, Any]]:
+        body = self.data.select("body")[0]
+        rows = body.select("tr")[1]
+        self.tags = list(filter(lambda x: x != "\n", rows.children))
 
+        group = self.get_group()
+        lessons = self.get_lessons()
+        for lesson in lessons:
+            self.result.append(dict(**lesson, group=group))
+        return self.result
 
-class GroupParser:
-    def __init__(self, html):
-        html = html.select("body")[0].select("tr")[1]
-        self.tags = list(filter(lambda x: x != "\n", html.children))
+    def get_group(self) -> str:
+        """Номер группы из заголовка страницы."""
+        return self.tags[1].text
 
-    def parse_name(self):
-        return self.tags[1].select("b")[-1]
-
-    def get_days(self):
-        days = []
-
+    def get_lessons(self) -> List[Dict[str, Any]]:
+        """Список предметов."""
+        lessons: List[Dict[str, Any]] = []
         weekday = 0
-        tags = []
-        for tag in self.tags[3:]:
+        lesson_num = 1
+
+        for tag in self.tags[2:-1]:
             if len(tag.select("td.delimiter")) != 0:
-                days.append({"weekday": weekday, "tags": tags})
+                # Парсим разрывы дней
+                lesson_num = 1
                 weekday += 1
-                tags = []
                 continue
-
-            tags.append(tag)
-
-        return days
-
-
-class DayParser:
-    def __init__(self, day):
-        self.weekday = day["weekday"]
-        self.tags = day["tags"]
-
-    def get_lessons(self):
-        lessons = []
-        for tag in self.tags:
-            lessons.append({"weekday": self.weekday, "html": tag})
+            lesson = Lesson(tag).run()
+            lesson['weekday'] = weekday
+            lesson['num'] = lesson_num
+            lesson['start'] = lesson.get('start') or lessons[-1]['start']
+            lesson['end'] = lesson.get('end') or lessons[-1]['end']
+            if lesson['type'] in ['KIND_ITEM1', 'KIND_SMALL1_WITHOUT_TIME', 'KIND_SMALL1_WITH_SMALL0_WITH_TIME']:
+                lesson_num += 1
+            lessons.append(lesson)
         return lessons
 
 
-class LessonParser:
-    def __init__(self, html):
+class Lesson:
+    def __init__(self, html: BS):
         self.html = html
+        self.type = self.define_type()
+        self.result: Dict[str, Any] = {}
 
-    def define_kind(self):
+    def run(self) -> Dict[str, Any]:
+        if self.type == 'KIND_ITEM1':
+            self.result = self._get_item1()
+        elif self.type == 'KIND_SMALL1_WITH_TIME':
+            self.result = self._get_small1_with_time()
+        elif self.type == 'KIND_SMALL1_WITHOUT_TIME':
+            self.result = self._get_small1_without_time()
+        elif self.type == 'KIND_ITEM1_WITH_SMALL0':
+            self.result = self._get_item1_with_small0()
+        elif self.type == 'KIND_SMALL1_WITH_SMALL0_WITH_TIME':
+            self.result = self._get_small1_with_small0_with_time()
+        elif self.type == 'KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME':
+            self.result = self._get_small1_with_small0_without_time()
+        else:
+            raise RuntimeError('Unexpected type of lesson')
+        self.result.update({'type': self.type})
+        return self.result
+
+    def define_type(self):
         if len(self.html.select("td.tditem1")) != 0:
             if len(self.html.select("td.tdsmall0")) != 0:
-                return KIND_ITEM1_WITH_SMALL0
-            return KIND_ITEM1
+                return 'KIND_ITEM1_WITH_SMALL0'
+            return 'KIND_ITEM1'
 
         if len(self.html.select("td.tdsmall1")) != 0:
             if len(self.html.select("td.tdsmall0")) != 0:
                 if len(self.html.select("td.tdtime")) != 0:
-                    return KIND_SMALL1_WITH_SMALL0_WITH_TIME
+                    return 'KIND_SMALL1_WITH_SMALL0_WITH_TIME'
                 else:
-                    return KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME
+                    return 'KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME'
             else:
                 if len(self.html.select("td.tdtime")) != 0:
-                    return KIND_SMALL1_WITH_TIME
+                    return 'KIND_SMALL1_WITH_TIME'
                 else:
-                    return KIND_SMALL1_WITHOUT_TIME
+                    return 'KIND_SMALL1_WITHOUT_TIME'
 
-
-    # ------------ Имена методов связано с названием классов в самом html. ------------
-    def parse_as_item1(self):
+    def _get_item1(self):
         html = self.html.select("td.tditem1")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"html": html, "start": time[0], "end": time[-1], "up": True, "bottom": True}
+        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": True}
 
-
-    def parse_as_small1_with_time(self):
+    def _get_small1_with_time(self):
         html = self.html.select("td.tdsmall1")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"html": html, "start": time[0], "end": time[-1], "up": True, "bottom": False}
+        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": False}
 
-
-    def parse_as_small1_without_time(self):
+    def _get_small1_without_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return {"html": html, "up": False, "bottom": True}
+        return {"name": html.prettify(), "up": False, "bottom": True}
 
-
-    def parse_as_item1_with_small0(self):
+    def _get_item1_with_small0(self):
         html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"html": html, "start": time[0], "end": time[-1], "up": True, "bottom": True}
+        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": True}
 
-
-    def parse_as_small1_with_small0_with_time(self):
+    def _get_small1_with_small0_with_time(self):
         html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"html": html, "start": time[0], "end": time[-1], "up": True, "bottom": False}
+        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": False}
 
-
-    def parse_as_small1_with_small0_without_time(self):
+    def _get_small1_with_small0_without_time(self):
         html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"html": html, "start": time[0], "end": time[-1], "up": False, "bottom": True}
+        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": False, "even": True}
 
 
-def run(url):
-    page = requests.get(url, headers=HEADERS)
-    html = BeautifulSoup(page.content, "html.parser")
-
-    groupParser = GroupParser(html)
-    name = groupParser.parse_name()
-    days = groupParser.get_days()
-
-    lessons = []
-    for day in days:
-        number = -1
-        for lesson in DayParser(day).get_lessons():
-            lessonParser = LessonParser(lesson["html"])
-            kind = lessonParser.define_kind()
-
-            # ------------ Имена переменных связаны с названием классов в самом html. ------------
-            if kind == KIND_ITEM1:
-                lesson.update(lessonParser.parse_as_item1())
-
-            if kind == KIND_SMALL1_WITH_TIME:
-                lesson.update(lessonParser.parse_as_small1_with_time())
-
-            if kind == KIND_SMALL1_WITHOUT_TIME:
-                lesson.update(lessonParser.parse_as_small1_without_time())
-                number -= 1
-                lesson.update({"start": lessons[-1]["start"], "end": lessons[-1]["end"]})
-
-            if kind == KIND_ITEM1_WITH_SMALL0:
-                lesson.update(lessonParser.parse_as_item1_with_small0())
-
-            if kind == KIND_SMALL1_WITH_SMALL0_WITH_TIME:
-                lesson.update(lessonParser.parse_as_small1_with_small0_with_time())
-
-            if kind == KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME:
-                lesson.update(lessonParser.parse_as_small1_with_small0_without_time())
-                number -= 1
-                lesson.update({"start": lessons[-1]["start"], "end": lessons[-1]["end"]})
+def run(html: str) -> List[Dict[str, Any]]:
+    html = BS(html, "html.parser")
+    tt = Group(html).run()
+    return tt
 
 
-            number += 1
-            lesson.update({"number": number})
-            lesson.update({"group": name})
-
-            lessons.append(lesson)
-
-    return lessons
-
-
+# Эти штуки будут вне скрипта, мы их будем вызывать в Airflow
 if __name__ == '__main__':
-    data = run("http://ras.phys.msu.ru/table/1/1/1.htm")
-    print(data)
+    import requests
+    import pandas as pd
 
+    USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
+    HEADERS = {"User-Agent": USER_AGENT}
+    html = requests.get('http://ras.phys.msu.ru/table/1/1/1.htm', headers=HEADERS).content
+    pd.DataFrame(run(html))
 
