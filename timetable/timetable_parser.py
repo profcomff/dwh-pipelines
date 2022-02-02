@@ -100,7 +100,7 @@ class Lesson:
 
     def _get_small1_without_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return {"name": html.prettify(), "up": False, "bottom": True}
+        return {"name": html.prettify(), "odd": False, "even": True}
 
     def _get_item1_with_small0(self):
         html = self.html.select("td.tdsmall0")[0]
@@ -132,5 +132,6 @@ if __name__ == '__main__':
     USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
     HEADERS = {"User-Agent": USER_AGENT}
     html = requests.get('http://ras.phys.msu.ru/table/1/1/1.htm', headers=HEADERS).content
-    pd.DataFrame(run(html))
+    df = pd.DataFrame(run(html))
+
 
