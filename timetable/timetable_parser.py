@@ -114,8 +114,7 @@ class Lesson:
 
     def _get_small1_with_small0_without_time(self):
         html = self.html.select("td.tdsmall0")[0]
-        time = self.html.select("td.tdtime")[0].contents
-        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": False, "even": True}
+        return {"name": html.prettify(), "odd": False, "even": True}
 
 
 def run(html: str) -> List[Dict[str, Any]]:
@@ -131,7 +130,6 @@ if __name__ == '__main__':
 
     USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
     HEADERS = {"User-Agent": USER_AGENT}
-    html = requests.get('http://ras.phys.msu.ru/table/1/1/1.htm', headers=HEADERS).content
-    df = pd.DataFrame(run(html))
-
+    html = requests.get('http://ras.phys.msu.ru/table/{one}/{two}/{i}.htm', headers=HEADERS).content
+    pd.DataFrame(run(html))
 
