@@ -100,7 +100,7 @@ class Lesson:
 
     def _get_small1_without_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return {"name": html.prettify(), "up": False, "bottom": True}
+        return {"name": html.prettify(), "odd": False, "even": True}
 
     def _get_item1_with_small0(self):
         html = self.html.select("td.tdsmall0")[0]
@@ -114,8 +114,7 @@ class Lesson:
 
     def _get_small1_with_small0_without_time(self):
         html = self.html.select("td.tdsmall0")[0]
-        time = self.html.select("td.tdtime")[0].contents
-        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": False, "even": True}
+        return {"name": html.prettify(), "odd": False, "even": True}
 
 
 def run(html: str) -> List[Dict[str, Any]]:
