@@ -127,9 +127,21 @@ def run(html: str) -> List[Dict[str, Any]]:
 if __name__ == '__main__':
     import requests
     import pandas as pd
+    from sqlalchemy import create_engine
 
     USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
     HEADERS = {"User-Agent": USER_AGENT}
-    html = requests.get('http://ras.phys.msu.ru/table/1/1/1.htm', headers=HEADERS).content
-    pd.DataFrame(run(html))
+
+    results = pd.DataFrame()
+    sources = [[1, 1, 6], [1, 2, 6], [1, 3, 6], [2, 1, 6], [2, 2, 6], [2, 3, 6], [3, 1, 10], [3, 2, 8],
+               [4, 1, 10], [4, 2, 8], [5, 1, 13], [5, 2, 10], [6, 1, 10], [6, 2, 9]]
+    for source in sources:
+        for i in range(1, source[2]+1):
+            html = requests.get('http://ras.phys.msu.ru/table/{one}/{two}/{i}.htm'
+                                .format(one=source[0], two=source[1], i=i), headers=HEADERS).content
+            results = pd.concat([results, pd.DataFrame(run(html))])
+
+    engine = create_engine("")
+    with engine.begin() as connection:
+        results.to_sql('users', con=connection, if_exists='append')
 
