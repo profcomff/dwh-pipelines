@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 from sqlalchemy import create_engine
 import timetable.timetable_parser as parser
+import hashlib
 
 
 def parse_timetable(url):
@@ -16,7 +17,7 @@ def parse_timetable(url):
             html = requests.get('http://ras.phys.msu.ru/table/{year}/{stream}/{group}.htm'
                                 .format(year=source[0], stream=source[1], group=group), headers=HEADERS).content
             results = pd.concat([results, pd.DataFrame(parser.run(html))])
-    results["id"] = results.apply(lambda x: hash(tuple(x)), axis=1)
+    results["id"] = results.apply(lambda x: hashlib.md5(x["name"].encode() or x["type"].encode() or x["start"].endcode()).hexdigest(), axis=1)
 
     engine = create_engine(url)
     with engine.begin() as connection:
