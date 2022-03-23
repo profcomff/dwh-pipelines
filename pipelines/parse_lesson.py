@@ -8,7 +8,7 @@ def parse_lesson(url):
 
     lessons = pd.read_sql_table("lessons", engine)
     decode_patterns = pd.read_sql_table("decode_patterns", engine)
-    decode_patterns.sort_values("priority")
+    decode_patterns = decode_patterns.sort_values(by="priority")
 
     parsed_names = []
     for index, row in lessons.iterrows():

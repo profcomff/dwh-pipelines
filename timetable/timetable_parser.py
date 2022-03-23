@@ -38,11 +38,20 @@ class Group:
             lesson = Lesson(tag).run()
             lesson['weekday'] = weekday
             lesson['num'] = lesson_num
-            lesson['start'] = lesson.get('start') or lessons[-1]['start']
-            lesson['end'] = lesson.get('end') or lessons[-1]['end']
+
+            if len(lessons) != 0:
+                lesson['start'] = lesson.get('start') or lessons[-1]['start']
+                lesson['end'] = lesson.get('end') or lessons[-1]['end']
+            else:
+                lesson['start'] = lesson.get('start') or "9:00"
+                lesson['end'] = lesson.get('end') or "10:35"
+
             if lesson['type'] in ['KIND_ITEM1', 'KIND_SMALL1_WITHOUT_TIME', 'KIND_SMALL1_WITH_SMALL0_WITH_TIME']:
                 lesson_num += 1
-            lessons.append(lesson)
+
+            lesson['name'] = lesson['name'].replace("\xa0", " ")
+            if lesson["name"] != " ":
+                lessons.append(lesson)
         return lessons
 
 
@@ -91,30 +100,30 @@ class Lesson:
     def _get_item1(self):
         html = self.html.select("td.tditem1")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": True}
+        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": True}
 
     def _get_small1_with_time(self):
         html = self.html.select("td.tdsmall1")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": False}
+        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": False}
 
     def _get_small1_without_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return {"name": html.prettify(), "odd": False, "even": True}
+        return {"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True}
 
     def _get_item1_with_small0(self):
         html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": True}
+        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": True}
 
     def _get_small1_with_small0_with_time(self):
         html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": html.prettify(), "start": time[0], "end": time[-1], "odd": True, "even": False}
+        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": False}
 
     def _get_small1_with_small0_without_time(self):
         html = self.html.select("td.tdsmall0")[0]
-        return {"name": html.prettify(), "odd": False, "even": True}
+        return {"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True}
 
 
 def run(html: str) -> List[Dict[str, Any]]:
