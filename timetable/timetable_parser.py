@@ -35,33 +35,39 @@ class Group:
                 lesson_num = 1
                 weekday += 1
                 continue
-            lesson = Lesson(tag).run()
-            lesson['weekday'] = weekday
-            lesson['num'] = lesson_num
 
-            if len(lessons) != 0:
-                lesson['start'] = lesson.get('start') or lessons[-1]['start']
-                lesson['end'] = lesson.get('end') or lessons[-1]['end']
-            else:
-                lesson['start'] = lesson.get('start') or "9:00"
-                lesson['end'] = lesson.get('end') or "10:35"
+            # Иногда возвращается несколько пар.
+            results = Lesson(tag).run()
+            for lesson in results:
+                lesson['weekday'] = weekday
+                lesson['num'] = lesson_num
 
-            if lesson['type'] in ['KIND_ITEM1', 'KIND_SMALL1_WITHOUT_TIME', 'KIND_SMALL1_WITH_SMALL0_WITH_TIME']:
-                lesson_num += 1
+                if len(lessons) != 0:
+                    lesson['start'] = lesson.get('start') or lessons[-1]['start']
+                    lesson['end'] = lesson.get('end') or lessons[-1]['end']
+                else:
+                    lesson['start'] = lesson.get('start') or "9:00"
+                    lesson['end'] = lesson.get('end') or "10:35"
 
-            lesson['name'] = lesson['name'].replace("\xa0", " ")
-            if lesson["name"] != " ":
-                lessons.append(lesson)
+                if lesson["addition"]:
+                    lesson_num += 1
+                lesson.pop("addition")
+
+                lesson['name'] = lesson['name'].replace("\xa0", " ")
+                if lesson["name"] != " ":
+                    lessons.append(lesson)
+
         return lessons
 
 
 class Lesson:
     def __init__(self, html: BS):
         self.html = html
-        self.type = self.define_type()
         self.result: Dict[str, Any] = {}
+        self.type = self.define_type()
 
-    def run(self) -> Dict[str, Any]:
+    # Возвращает List, поскольку возможны ситуации, когда в одном tag две пары.
+    def run(self) -> List[Dict[str, Any]]:
         if self.type == 'KIND_ITEM1':
             self.result = self._get_item1()
         elif self.type == 'KIND_SMALL1_WITH_TIME':
@@ -76,7 +82,6 @@ class Lesson:
             self.result = self._get_small1_with_small0_without_time()
         else:
             raise RuntimeError('Unexpected type of lesson')
-        self.result.update({'type': self.type})
         return self.result
 
     def define_type(self):
@@ -100,30 +105,47 @@ class Lesson:
     def _get_item1(self):
         html = self.html.select("td.tditem1")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": True}
+        return [{"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1],
+                 "odd": True, "even": True, "addition": True}]
 
     def _get_small1_with_time(self):
         html = self.html.select("td.tdsmall1")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": False}
+        return [{"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1],
+                "odd": True, "even": False, "addition": False}]
 
     def _get_small1_without_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return {"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True}
+        return [{"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True, "addition": True}]
 
     def _get_item1_with_small0(self):
-        html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": True}
+        tags = self.html.select("td.tdsmall0")
+
+        results = []
+        for index, html in enumerate(tags):
+            results.append({"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1],
+                            "odd": True, "even": True, "addition": index+1 == len(tags)})
+        return results
 
     def _get_small1_with_small0_with_time(self):
-        html = self.html.select("td.tdsmall0")[0]
         time = self.html.select("td.tdtime")[0].contents
-        return {"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1], "odd": True, "even": False}
+        tags = self.html.select("td.tdsmall0")
+
+        results = []
+        for index, html in enumerate(tags):
+            results.append({"name": "".join(str(tag) for tag in html.contents), "start": time[0], "end": time[-1],
+                            "odd": True, "even": False, "addition": index+1 == len(tags)})
+        return results
 
     def _get_small1_with_small0_without_time(self):
-        html = self.html.select("td.tdsmall0")[0]
-        return {"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True}
+        tags = self.html.select("td.tdsmall0")
+
+        results = []
+        for index, html in enumerate(tags):
+            results.append({"name": "".join(str(tag) for tag in html.contents),
+                            "odd": False, "even": True, "addition": index+1 == len(tags)})
+        return results
 
 
 def run(html: str) -> List[Dict[str, Any]]:

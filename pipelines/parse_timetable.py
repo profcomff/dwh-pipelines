@@ -12,8 +12,7 @@ def parse_timetable(url):
 
     results = pd.DataFrame()
     sources = pd.read_sql_table("sources", engine)
-    # sources = [[1, 1, 6], [1, 2, 6], [1, 3, 6], [2, 1, 6], [2, 2, 6], [2, 3, 6], [3, 1, 10], [3, 2, 8],
-    # [4, 1, 10], [4, 2, 8], [5, 1, 13], [5, 2, 10], [6, 1, 10], [6, 2, 9]]
+    # sources = pd.DataFrame([[2, 1, 2]])
     for index, source in sources.iterrows():
         for group in range(1, source[2]+1):
             html = requests.get('http://ras.phys.msu.ru/table/{year}/{stream}/{group}.htm'
