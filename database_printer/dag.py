@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import password
 
 # ---------- Get tokens ----------
-response = requests.get("https://lk.msuprof.com/adminlogin/")
+response = requests.get("https://lk.msuprof.com/adminlogin/?next=/admin")
 
 string = response.headers['Set-Cookie']
 pattern = r'csrftoken=\S*;'
@@ -19,13 +19,7 @@ middle_token = html.find_all("input", {"name": "csrfmiddlewaretoken"})[0].attrs[
 # ---------- Login ----------
 json = {"username": password.login, "password": password.password,
         "next": "/admin", "csrfmiddlewaretoken": middle_token}
-cookies = {"csrftoken": csrftoken}
-headers = {"referer": "https://lk.msuprof.com/adminlogin/?next=/admin"}
+headers = {"cookie": f"csrftoken={csrftoken}", "referer": "https://lk.msuprof.com/adminlogin/?next=/admin"}
 
-response = requests.post("https://lk.msuprof.com/adminlogin/", json=json, cookies=cookies, headers=headers)
-response.encoding = "utf-8"
-
-file = open("test.html", "w", encoding="utf-8")
-file.write(response.text)
-
-print(response.headers)
+response = requests.post("https://lk.msuprof.com/adminlogin/?next=/admin", data=json, headers=headers).request
+print(response.headers["Cookie"])
