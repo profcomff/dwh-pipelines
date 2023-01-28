@@ -10,9 +10,9 @@ with DAG(
     start_date=datetime(2022,1,1),
     schedule_interval=timedelta(minutes=5),
     catchup=False,
-    tags= ["dwh"],
+    tags= ["infra"],
     default_args={
-        "owner": "dwh",
+        "owner": "infra",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
     }
