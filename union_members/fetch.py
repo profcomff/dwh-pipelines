@@ -1,10 +1,11 @@
 import logging
-import requests as r
-import pandas as pd
-from airflow.decorators import dag, task
-from airflow.models import Variable, Connection
-
 from datetime import datetime, timedelta
+
+import pandas as pd
+import requests as r
+from airflow.datasets import Dataset
+from airflow.decorators import dag, task
+from airflow.models import Connection, Variable
 
 
 @task(task_id='send_telegram_message', retries=3)
@@ -21,7 +22,7 @@ def send_telegram_message(chat_id, data_length):
     )
 
 
-@task(task_id='fetch_users', retries=3)
+@task(task_id='fetch_users', outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def fetch_union_members():
     """Скачать данные из ЛК ОПК"""
 
@@ -79,7 +80,7 @@ def fetch_union_members():
 
 
 @dag(
-    schedule='@daily',
+    schedule='0 0 */1 * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
     tags= ["dwh"],
@@ -89,9 +90,9 @@ def fetch_union_members():
         "retry_delay": timedelta(minutes=5)
     }
 )
-def generate_union_member_sync():
+def union_member_download():
     union_members_result = fetch_union_members()
     send_telegram_message(-633287506, union_members_result)
 
 
-union_member_sync = generate_union_member_sync()
+union_member_sync = union_member_download()

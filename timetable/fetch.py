@@ -1,12 +1,12 @@
 import logging
-import sqlalchemy as sa
-import requests as r
-import pandas as pd
-from airflow.decorators import dag, task
-from airflow.models import Variable, Connection
-
 from datetime import datetime, timedelta
 
+import pandas as pd
+import requests as r
+import sqlalchemy as sa
+from airflow.datasets import Dataset
+from airflow.decorators import dag, task
+from airflow.models import Connection, Variable
 
 TIMETABLE_PAGES = [
     'http://ras.phys.msu.ru/table/1/1/1.htm',
@@ -138,7 +138,7 @@ HEADERS = {"User-Agent": USER_AGENT}
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 
 
-@task(task_id='download_pages_to_db', retries=3)
+@task(task_id='download_pages_to_db', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def download_pages_to_db():
     data = []
     for url in TIMETABLE_PAGES:
@@ -150,18 +150,23 @@ def download_pages_to_db():
         })
     data = pd.DataFrame(data)
     sql_engine = sa.create_engine(DB_URI)
+
     sql_engine.execute('DROP TABLE IF EXISTS "STG_TIMETABLE".raw_html_old;')
     logging.info("Table raw_html_old dropped")
-    sql_engine.execute('ALTER TABLE "STG_TIMETABLE".raw_html RENAME TO raw_html_old;')
+
+    sql_engine.execute('ALTER TABLE IF EXISTS "STG_TIMETABLE".raw_html RENAME TO raw_html_old;')
     logging.info("Table raw_html renamed to raw_html_old")
+
     sql_engine.execute('CREATE TABLE "STG_TIMETABLE".raw_html (url VARCHAR(256), raw_html TEXT);')
     logging.info("New raw_html table created")
+
     data.to_sql('raw_html', sql_engine, schema='STG_TIMETABLE', if_exists='append', index=False)
     logging.info("raw_html data (%d rows) uploaded", len(data))
-    return len(data)
+
+    return Dataset("STG_TIMETABLE.raw_html")
 
 
-@task(task_id='compare_pages', retries=3)
+@task(task_id='compare_pages')
 def compare_pages():
     sql_engine = sa.create_engine(DB_URI)
     changed_urls = sql_engine.execute('''
@@ -191,21 +196,6 @@ def compare_pages():
     return changed_urls
 
 
-@task(task_id='parse_pages', retries=3)
-def parse_pages():
-    pass
-
-
-@task(task_id='get_timetable_state', retries=3)
-def get_timetable_state():
-    pass
-
-
-@task(task_id='update_timetable', retries=3)
-def update_timetable():
-    pass
-
-
 @dag(
     schedule='0 */6 * * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
@@ -217,10 +207,8 @@ def update_timetable():
         "retry_delay": timedelta(minutes=5)
     }
 )
-def generate_timetable_sync():
-    download = download_pages_to_db()
-    download >> compare_pages()
-    download >> parse_pages() >> get_timetable_state() >> update_timetable()
+def timetable_download():
+    download_pages_to_db() >> compare_pages()
 
 
-timetable_sync = generate_timetable_sync()
+timetable_sync = timetable_download()
