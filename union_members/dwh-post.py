@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 
 
 @task(task_id='post_data', retries=3)
-def post_data(base):
+def post_data(env):
     table = "STG_UNION_MEMBER.union_member"
-    if base == "prod":
+    if env == "prod":
         url = "https://printer.api.profcomff.com/"
         token = str(Variable.get("TOKEN_ROBOT_PRINTER_PROD"))
     else:
@@ -19,9 +19,6 @@ def post_data(base):
         token = str(Variable.get("TOKEN_ROBOT_PRINTER_TEST"))
 
     headers = {"Authorization": token}
-
-    # table = "airflow.union_members"
-    # url = "https://printer.api.test.profcomff.com/"
 
     con = Connection.get_connection_from_secrets('dwh_post').get_uri().replace("postgres://", "postgresql://")
 
@@ -35,9 +32,7 @@ def post_data(base):
         surname = str(row['last_name'])
         number = str(row['profcom_id'])
         url_check = f"{url}is_union_member?surname={surname}&number={number}"
-        # resp = r.get(url_check)
-        # logging.info(str(surname) + ": " + str(resp.json()))
-        if (not r.get(url_check)):
+        if not r.get(url_check):
             user = {
                 "users": [
                     {
@@ -60,7 +55,7 @@ def post_data(base):
     catchup=False,
     tags=["dwh"],
     default_args={
-        "owner": "dwh",
+        "owner": "SergeyZamyatin1",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
     }
