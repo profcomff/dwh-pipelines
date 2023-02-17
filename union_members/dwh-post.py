@@ -42,7 +42,6 @@ def post_data(env):
                 ]
             }
 
-            # logging.info("updating: " + str(row['last_name']))
             resp = r.post(f"{url}is_union_member", json=user, headers=headers)
             logging.info("updating " + str(row['last_name']) + ": " + str(resp.json()))
 
