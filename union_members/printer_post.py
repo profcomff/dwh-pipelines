@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 @task(task_id='post_data', retries=3)
 def post_data(env):
-    table = "STG_UNION_MEMBER.union_member"
+    table = '"STG_UNION_MEMBER".union_member'
     if env == "prod":
         url = "https://printer.api.profcomff.com/"
         token = str(Variable.get("TOKEN_ROBOT_PRINTER_PROD"))
