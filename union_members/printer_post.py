@@ -8,6 +8,7 @@ from airflow.models import Variable, Connection
 from datetime import datetime, timedelta
 
 
+
 @task(task_id='post_data', retries=3)
 def post_data(env):
     table = '"STG_UNION_MEMBER".union_member'
