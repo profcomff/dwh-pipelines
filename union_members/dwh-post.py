@@ -1,6 +1,7 @@
 import logging
 import requests as r
 import pandas as pd
+from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Variable, Connection
 
@@ -8,9 +9,19 @@ from datetime import datetime, timedelta
 
 
 @task(task_id='post_data', retries=3)
-def post_data():
-    table = "airflow.union_members"
-    url = "https://printer.api.test.profcomff.com/"
+def post_data(base):
+    table = "STG_UNION_MEMBER.union_member"
+    if base == "prod":
+        url = "https://printer.api.profcomff.com/"
+        token = str(Variable.get("TOKEN_ROBOT_PRINTER_PROD"))
+    else:
+        url = "https://printer.api.test.profcomff.com/"
+        token = str(Variable.get("TOKEN_ROBOT_PRINTER_TEST"))
+
+    headers = {"Authorization": token}
+
+    # table = "airflow.union_members"
+    # url = "https://printer.api.test.profcomff.com/"
 
     con = Connection.get_connection_from_secrets('dwh_post').get_uri().replace("postgres://", "postgresql://")
 
@@ -18,9 +29,6 @@ def post_data():
     SELECT last_name, profcom_id FROM {table}
     WHERE(faculty='Физический факультет') AND(status='Члены Профсоюза')
     """
-
-    token = str(Variable.get("token"))
-    headers = {"Authorization": token}
 
     data = pd.read_sql_query(query, con)
     for i, row in data.iterrows():
@@ -58,7 +66,7 @@ def post_data():
     }
 )
 def run_code():
-    post_data()
+    post_data("test")
 
 
 run_code()
