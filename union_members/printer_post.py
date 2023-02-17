@@ -20,7 +20,7 @@ def post_data(env):
 
     headers = {"Authorization": token}
 
-    con = Connection.get_connection_from_secrets('dwh_post').get_uri().replace("postgres://", "postgresql://")
+    con = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 
     query = f"""
     SELECT last_name, profcom_id FROM {table}
@@ -59,8 +59,8 @@ def post_data(env):
         "retry_delay": timedelta(minutes=5)
     }
 )
-def run_code():
+def update_printer_user_list():
     post_data("test")
 
 
-run_code()
+update_printer_user_list()
