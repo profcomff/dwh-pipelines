@@ -32,7 +32,7 @@ def post_data(env):
         surname = row['last_name']
         number = row['profcom_id']
 
-        if len(str(number)) > 0 and (not pd.isna(number)):
+        if number:
             user = {
                 "username": surname,
                 "union_number": number
