@@ -28,6 +28,7 @@ def post_data(env):
     """
 
     data = pd.read_sql_query(query, con)
+    data.drop_duplicates(subset=['profcom_id'])
     for i, row in data.iterrows():
         surname = row['last_name']
         number = row['profcom_id']
