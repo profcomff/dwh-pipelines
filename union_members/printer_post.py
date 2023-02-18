@@ -4,7 +4,6 @@ import pandas as pd
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Variable, Connection
-
 from datetime import datetime, timedelta
 
 
