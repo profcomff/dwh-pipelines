@@ -29,15 +29,16 @@ def post_data(env):
 
     data = pd.read_sql_query(query, con)
     for i, row in data.iterrows():
-        surname = str(row['last_name'])
-        number = str(row['profcom_id'])
 
-        user = {
-            "username": surname,
-            "union_number": number
-        }
-        users.append(user)
-        logging.info("updating " + surname)
+        surname = row['last_name']
+        number = row['profcom_id']
+
+        if number:
+            user = {
+                "username": surname,
+                "union_number": number
+            }
+            users.append(user)
 
     users_new = {
         "users": users
