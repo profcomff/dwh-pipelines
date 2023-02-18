@@ -32,12 +32,12 @@ def post_data(env):
         surname = str(row['last_name'])
         number = str(row['profcom_id'])
 
-        user = {
-            "username": surname,
-            "union_number": number
-        }
-        users.append(user)
-        logging.info("updating " + surname)
+        if len(number) > 0:
+            user = {
+                "username": surname,
+                "union_number": number
+            }
+            users.append(user)
 
     users_new = {
         "users": users
