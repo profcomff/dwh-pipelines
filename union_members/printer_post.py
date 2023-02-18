@@ -31,14 +31,13 @@ def post_data(env):
     for i, row in data.iterrows():
         surname = str(row['last_name'])
         number = str(row['profcom_id'])
-        url_check = f"{url}is_union_member?surname={surname}&number={number}"
-        if not r.get(url_check):
-            user = {
-                "username": surname,
-                "union_number": number
-            }
-            users.append(user)
-            logging.info("updating " + surname)
+
+        user = {
+            "username": surname,
+            "union_number": number
+        }
+        users.append(user)
+        logging.info("updating " + surname)
 
     users_new = {
         "users": users
