@@ -29,10 +29,10 @@ def post_data(env):
 
     data = pd.read_sql_query(query, con)
     for i, row in data.iterrows():
-        surname = str(row['last_name'])
-        number = str(row['profcom_id'])
+        surname = row['last_name']
+        number = row['profcom_id']
 
-        if len(number) > 0:
+        if len(str(number)) > 0 and (not pd.isna(number)):
             user = {
                 "username": surname,
                 "union_number": number
