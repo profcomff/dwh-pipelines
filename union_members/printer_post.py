@@ -61,6 +61,7 @@ def post_data(env):
 )
 def update_printer_user_list():
     post_data("test")
+    post_data("prod")
 
 
 update_printer_user_list()
