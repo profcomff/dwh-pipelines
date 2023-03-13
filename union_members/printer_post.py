@@ -11,10 +11,10 @@ from datetime import datetime, timedelta
 def post_data(env):
     table = '"STG_UNION_MEMBER".union_member'
     if env == "prod":
-        url = "https://api.profcomff.com/printer"
+        url = "https://api.profcomff.com/print/"
         token = str(Variable.get("TOKEN_ROBOT_PRINTER_PROD"))
     else:
-        url = "https://api.test.profcomff.com/printer"
+        url = "https://api.test.profcomff.com/print/"
         token = str(Variable.get("TOKEN_ROBOT_PRINTER_TEST"))
 
     headers = {"Authorization": token}
