@@ -29,45 +29,40 @@ def fetch_union_members():
     with r.Session() as s:
         logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
 
-        s.headers = {
-            "referer": "https://lk.msuprof.com/adminlogin/?next=/admin",
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',  # noqa
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'  # noqa
-        }
-
-        resp = s.get(
-            "https://lk.msuprof.com/adminlogin/?next=/admin",
-        )
-        logging.info(resp)
-
         resp=s.post(
-            "https://lk.msuprof.com/adminlogin/?next=/admin",
+            "https://api-lk.msuprof.com/api/auth/token/login/",
             data={
-                "csrfmiddlewaretoken": s.cookies['csrftoken'],
-                "username": str(Variable.get("LK_MSUPROF_ADMIN_USERNAME")),
-                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
-                "next": "/admin",
+                "email": str(Variable.get("LK_MSUPROF_ADMIN_USERNAME")),
+                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD"))
             },
         )
         logging.info(resp)
+        token = resp.json()['auth_token']
 
-        resp = s.post(
-            "https://lk.msuprof.com/get-table/",
-            data={
-                "current-role": "Администратор",
-                "f_role": "",
-                "f_status": "",
-                "page-status": "user",
+        resp = s.get(
+            "https://api-lk.msuprof.com/api/auth/users/",
+            headers={
+                "Authorization": f"token {token}",
             },
         )
         logging.info(resp)
 
     try:
-        users_dict = resp.json()["data"]
+        users_dict = resp.json()
     except Exception as e:
         logging.error("Failed to fetch data from lk.msuprof.com")
         raise e
 
+    for i in users_dict:
+        if 'card' not in i or i['card'] is None:
+            continue
+        i['card_id'] = i['card'].get('id')
+        i['card_status'] = i['card'].get('status')
+        i['card_date'] = i['card'].get('date')
+        i['card_number'] = i['card'].get('number')
+        i['profcom_id'] = i['card'].get('number')  # Для совместимости
+        i['card_user'] = i['card'].get('user')
+        del i['card']
     data = pd.DataFrame(users_dict)
     data.to_sql(
         'union_member',
