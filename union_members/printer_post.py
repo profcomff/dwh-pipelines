@@ -6,6 +6,34 @@ from airflow.decorators import dag, task
 from airflow.models import Variable, Connection
 from datetime import datetime, timedelta
 
+class FailedUpload(Exception):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+@task(task_id='send_print_post_telegram_message', retries=3)
+def send_print_post_telegram_message(chat_id):
+    token = str(Variable.get("TGBOT_TOKEN"))
+    r.post(
+        f'https://api.telegram.org/bot{token}/sendMessage',
+        json={
+            "chat_id": chat_id,
+            "text": f"Данные из БД ОПК загружены в продовую БД принтера",
+        }
+    )
+
+
+@task(task_id='send_print_post_error_telegram_message', retries=3)
+def send_print_post_error_telegram_message(chat_id):
+    token = str(Variable.get("TGBOT_TOKEN"))
+    r.post(
+        f'https://api.telegram.org/bot{token}/sendMessage',
+        json={
+            "chat_id": chat_id,
+            "text": f"Ошибка при загрузке данных из БД ОПК загружены в продовую БД принтера",
+        }
+    )
 
 @task(task_id='post_data', retries=3)
 def post_data(env):
@@ -24,7 +52,7 @@ def post_data(env):
 
     query = f"""
     SELECT last_name, profcom_id FROM {table}
-    WHERE(faculty='Физический факультет') AND(status='Члены Профсоюза')
+    WHERE(faculty='Физический факультет') AND(status='Члены Профсоюза') AND(length(last_name)>0) AND(length(profcom_id)>0)
     """
 
     data = pd.read_sql_query(query, con)
@@ -46,6 +74,8 @@ def post_data(env):
     }
     resp = r.post(f"{url}is_union_member", json=users_new, headers=headers)
     logging.info(str(resp.json()))
+    if resp.status_code != 200:
+        raise FailedUpload(f"Failed to upload {resp.status_code}")
     logging.info("data length: " + str(len(data)))
 
 
@@ -61,8 +91,13 @@ def post_data(env):
     }
 )
 def update_printer_user_list():
-    post_data("test")
-    post_data("prod")
+    try:
+        post_data("test")
+        post_data("prod")
+    except FailedUpload:
+        send_print_post_error_telegram_message(-633287506)
+    else:
+        send_print_post_telegram_message(-633287506)
 
 
 update_printer_user_list()
