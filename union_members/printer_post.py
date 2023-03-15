@@ -31,7 +31,7 @@ def send_print_post_error_telegram_message(chat_id):
         f'https://api.telegram.org/bot{token}/sendMessage',
         json={
             "chat_id": chat_id,
-            "text": f"Ошибка при загрузке данных из БД ОПК загружены в продовую БД принтера",
+            "text": f"Ошибка при загрузке данных из БД ОПК в продовую БД принтера",
         }
     )
 
