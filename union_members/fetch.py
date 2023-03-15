@@ -60,7 +60,6 @@ def fetch_union_members():
         i['card_status'] = i['card'].get('status')
         i['card_date'] = i['card'].get('date')
         i['card_number'] = i['card'].get('number')
-        i['profcom_id'] = i['card'].get('number')  # Для совместимости
         i['card_user'] = i['card'].get('user')
         del i['card']
     data = pd.DataFrame(users_dict)
