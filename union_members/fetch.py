@@ -9,7 +9,7 @@ from airflow.models import Connection, Variable
 
 
 @task(task_id='send_telegram_message', retries=3)
-def send_telegram_message(chat_id, data_length):
+def send_telegram_message(chat_id):
     """Скачать данные из ЛК ОПК"""
 
     token = str(Variable.get("TGBOT_TOKEN"))
@@ -17,7 +17,7 @@ def send_telegram_message(chat_id, data_length):
         f'https://api.telegram.org/bot{token}/sendMessage',
         json={
             "chat_id": chat_id,
-            "text": "Получено {} строк из базы ОПК".format(data_length),
+            "text": "Ошибка при загрузке данных из БД ОПК",
         }
     )
 
@@ -77,16 +77,16 @@ def fetch_union_members():
     schedule='0 0 */1 * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags= ["dwh"],
+    tags=["dwh"],
     default_args={
         "owner": "dwh",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
-    }
+    },
+    on_failure_callback=send_telegram_message(-633287506)
 )
 def union_member_download():
-    union_members_result = fetch_union_members()
-    send_telegram_message(-633287506, union_members_result)
+    (fetch_union_members())
 
 
 union_member_sync = union_member_download()
