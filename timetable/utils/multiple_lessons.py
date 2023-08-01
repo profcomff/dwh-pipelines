@@ -11,13 +11,15 @@ def multiple_lessons(lessons):
     """
     _logger.info("Начинаю соединять одинаковые пары...")
 
-    for (_, _, _, _), sub_df in lessons.groupby(['weekday', 'group', 'subject', 'start']):
+    for (_, _, _, _), sub_df in lessons.groupby(
+        ["weekday", "group", "subject", "start"]
+    ):
         if len(sub_df) > 1:
-            teachers = sub_df['teacher'].values
-            places = sub_df['place'].values
+            teachers = sub_df["teacher"].values
+            places = sub_df["place"].values
             new_df = sub_df.iloc[0].copy()
-            new_df['teacher'] = list(teachers)
-            new_df['place'] = list(places)
+            new_df["teacher"] = list(teachers)
+            new_df["place"] = list(places)
 
             indexes = sub_df.index
             lessons.drop(indexes, axis=0, inplace=True)

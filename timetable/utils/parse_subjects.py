@@ -42,10 +42,17 @@ def _parse_subjects(group, subject):
 
     # 307{n} - ...
     for i in range(12):
-        result = re.match(f"({number_group})" + f"{delimiter}({number_group})" * i + f" *-* ({name_subject})", subject)
+        result = re.match(
+            f"({number_group})"
+            + f"{delimiter}({number_group})" * i
+            + f" *-* ({name_subject})",
+            subject,
+        )
         if not (result is None):
             if subject == result[0]:
-                if not any([_compare_groups(group, result[1 + j]) for j in range(i + 1)]):
+                if not any(
+                    [_compare_groups(group, result[1 + j]) for j in range(i + 1)]
+                ):
                     return None
                 else:
                     return result[1 + i + 1]
@@ -53,13 +60,26 @@ def _parse_subjects(group, subject):
     # 307{n} - ..., 302{m} - ...
     for i in range(8):
         for j in range(8):
-            result = re.match(f"({number_group})" + f"{delimiter}({number_group})" * i + f" *-* ({name_subject}), *" +
-                              f"({number_group})" + f"{delimiter}({number_group})" * j + f" *-* ({name_subject})",
-                              subject)
+            result = re.match(
+                f"({number_group})"
+                + f"{delimiter}({number_group})" * i
+                + f" *-* ({name_subject}), *"
+                + f"({number_group})"
+                + f"{delimiter}({number_group})" * j
+                + f" *-* ({name_subject})",
+                subject,
+            )
             if not (result is None):
                 if subject == result[0]:
-                    left = any([_compare_groups(group, result[1 + k]) for k in range(i + 1)])
-                    right = any([_compare_groups(group, result[1 + i + 1 + 1 + k]) for k in range(j + 1)])
+                    left = any(
+                        [_compare_groups(group, result[1 + k]) for k in range(i + 1)]
+                    )
+                    right = any(
+                        [
+                            _compare_groups(group, result[1 + i + 1 + 1 + k])
+                            for k in range(j + 1)
+                        ]
+                    )
 
                     if left:
                         return result[1 + i + 1]
@@ -78,10 +98,17 @@ def _parse_subjects(group, subject):
                 return result[1]
 
     # 1 поток без 307 группы и астр. - S
-    result = re.match(rf"1 поток без [34]07 группы,* *и астр\.* - ({name_subject})", subject)
+    result = re.match(
+        rf"1 поток без [34]07 группы,* *и астр\.* - ({name_subject})", subject
+    )
     if not (result is None):
         if subject == result[0]:
-            if any([_compare_groups(group, _group) for _group in ["307", "407", "301", "401"]]):
+            if any(
+                [
+                    _compare_groups(group, _group)
+                    for _group in ["307", "407", "301", "401"]
+                ]
+            ):
                 return None
             else:
                 return result[1]
@@ -90,7 +117,12 @@ def _parse_subjects(group, subject):
     result = re.match(rf"[34] курс без астр\.*,* *и [34]07 - ({name_subject})", subject)
     if not (result is None):
         if subject == result[0]:
-            if any([_compare_groups(group, _group) for _group in ["307", "407", "301", "401"]]):
+            if any(
+                [
+                    _compare_groups(group, _group)
+                    for _group in ["307", "407", "301", "401"]
+                ]
+            ):
                 return None
             else:
                 return result[1]

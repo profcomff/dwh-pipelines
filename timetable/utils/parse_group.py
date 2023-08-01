@@ -22,18 +22,28 @@ def _parse_group(group):
 
     # '303{n} - ...'
     for i in range(3):
-        result = re.match(f"({number_group})" + f" *, *({number_group})" * i + f" *- *({name_group}+)", group)
+        result = re.match(
+            f"({number_group})"
+            + f" *, *({number_group})" * i
+            + f" *- *({name_group}+)",
+            group,
+        )
         if not (result is None):
             if group == result[0]:
                 return [(result[_i + 1], result[i + 1 + 1]) for _i in range(i + 1)]
 
     # '{303 - ...}{n}'
     for i in range(4):
-        result = re.match(f"[А-Яа-яёЁ ]*({number_group}) *-* *({name_group}+)" +
-                          f"/*({number_group}) *-* *({name_group}+)" * i, group)
+        result = re.match(
+            f"[А-Яа-яёЁ ]*({number_group}) *-* *({name_group}+)"
+            + f"/*({number_group}) *-* *({name_group}+)" * i,
+            group,
+        )
         if not (result is None):
             if group == result[0]:
-                return [(result[2 * _i + 1], result[2 * _i + 1 + 1]) for _i in range(i + 1)]
+                return [
+                    (result[2 * _i + 1], result[2 * _i + 1 + 1]) for _i in range(i + 1)
+                ]
 
     _logger.warning(f"Для '{group}' не найдено подходящее регулярное выражение.")
     return [(group, "")]

@@ -31,8 +31,3 @@ def flatten(lessons):
     lessons["teacher"] = lessons["teacher"].map(_to_list)
 
     return lessons
-
-
-
-
-

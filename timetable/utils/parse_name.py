@@ -15,8 +15,11 @@ def _parse_name(name):
     parsed_name = {"subject": None, "teacher": None, "place": None}
 
     # '... <nobr>5-27</nobr> проф. Чиркин А. С.'
-    result = re.match(r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)<nobr>([А-Яа-яёЁa-zA-Z +,/.\-\d]+)</nobr>" +
-                      r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)", name)
+    result = re.match(
+        r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)<nobr>([А-Яа-яёЁa-zA-Z +,/.\-\d]+)</nobr>"
+        + r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)",
+        name,
+    )
     if not (result is None):
         if name == result[0]:
             parsed_name["subject"] = result[1]
@@ -25,7 +28,10 @@ def _parse_name(name):
             return parsed_name
 
     # '... <nobr>Каф.</nobr>'
-    result = re.match(r'([А-Яа-яёЁa-zA-Z +,/.\-\d]+)<nobr>([А-Яа-яёЁa-zA-Z +,/.\-0\d]+)</nobr> *', name)
+    result = re.match(
+        r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)<nobr>([А-Яа-яёЁa-zA-Z +,/.\-0\d]+)</nobr> *",
+        name,
+    )
     if not (result is None):
         if name == result[0]:
             parsed_name["subject"] = result[1]
@@ -34,12 +40,18 @@ def _parse_name(name):
 
     # 'Специальный физический практикум (Андрианов Т. А.){i}'
     for i in range(2):
-        result = re.match(r"([А-Яа-яёЁa-zA-Z +,/\-\d]+) ([А-Яа-яёЁa-zA-Z]+ [А-Яа-яёЁa-zA-Z]\. [А-Яа-яёЁa-zA-Z]\.)" +
-                          r" ([А-Яа-яёЁa-zA-Z]+ [А-Яа-яёЁa-zA-Z]\. [А-Яа-яёЁa-zA-Z]\.)" * i + " *", name)
+        result = re.match(
+            r"([А-Яа-яёЁa-zA-Z +,/\-\d]+) ([А-Яа-яёЁa-zA-Z]+ [А-Яа-яёЁa-zA-Z]\. [А-Яа-яёЁa-zA-Z]\.)"
+            + r" ([А-Яа-яёЁa-zA-Z]+ [А-Яа-яёЁa-zA-Z]\. [А-Яа-яёЁa-zA-Z]\.)" * i
+            + " *",
+            name,
+        )
         if not (result is None):
             if name == result[0]:
                 parsed_name["subject"] = result[1]
-                parsed_name["teacher"] = "".join([result[j + 2] + " " for j in range(i + 1)])
+                parsed_name["teacher"] = "".join(
+                    [result[j + 2] + " " for j in range(i + 1)]
+                )
                 return parsed_name
 
     # 'Ядерный практикум'
@@ -63,7 +75,10 @@ def _parse_name(name):
     # Поэтому такие кейсы надо писать в _log.warning.
 
     # '... доц. Водовозов В. Ю.'
-    result = re.match(r"([А-Яа-яёЁa-zA-Z +,/\-\d]+) (доц. [А-Яа-яёЁa-zA-Z]+ [А-Яа-яёЁa-zA-Z]\. [А-Яа-яёЁa-zA-Z]\.)", name)
+    result = re.match(
+        r"([А-Яа-яёЁa-zA-Z +,/\-\d]+) (доц. [А-Яа-яёЁa-zA-Z]+ [А-Яа-яёЁa-zA-Z]\. [А-Яа-яёЁa-zA-Z]\.)",
+        name,
+    )
     if not (result is None):
         if name == result[0]:
             parsed_name["subject"] = result[1]
@@ -95,6 +110,7 @@ def parse_name(lessons):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("s")
     args = parser.parse_args()

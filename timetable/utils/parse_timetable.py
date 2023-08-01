@@ -3,7 +3,7 @@
 запускающую функцию.
 """
 import logging
-from typing import Any, List, Dict
+from typing import Any, Dict, List
 
 import pandas as pd
 import requests
@@ -65,8 +65,14 @@ class Group:
             temp_day = []
             temp_num = []
 
-        num2start_end = {0: ("9:00", "10:35"), 1: ("10:50", "12:25"), 2: ("13:30", "15:05"),
-                         3: ("15:20", "16:55"), 4: ("17:05", "18:40"), 5: ("18:55", "20:30")}
+        num2start_end = {
+            0: ("9:00", "10:35"),
+            1: ("10:50", "12:25"),
+            2: ("13:30", "15:05"),
+            3: ("15:20", "16:55"),
+            4: ("17:05", "18:40"),
+            5: ("18:55", "20:30"),
+        }
         for weekday, tags_day in enumerate(tags_num):
             for lesson_num, tags_lessons in enumerate(tags_day):
                 for tag in tags_lessons:
@@ -78,8 +84,8 @@ class Group:
                         lesson["start"] = num2start_end[lesson_num][0]
                         lesson["end"] = num2start_end[lesson_num][1]
 
-                        lesson['name'] = lesson['name'].replace("\xa0", " ")
-                        if lesson['name'] != " ":
+                        lesson["name"] = lesson["name"].replace("\xa0", " ")
+                        if lesson["name"] != " ":
                             lessons.append(lesson)
         return lessons
 
@@ -92,58 +98,82 @@ class Lesson:
 
     # Возвращает List, поскольку возможны ситуации, когда в одном tag две пары.
     def run(self) -> List[Dict[str, Any]]:
-        if self.type == 'KIND_ITEM1':
+        if self.type == "KIND_ITEM1":
             self.result = self._get_item1()
-        elif self.type == 'KIND_SMALL1_WITH_TIME':
+        elif self.type == "KIND_SMALL1_WITH_TIME":
             self.result = self._get_small1_with_time()
-        elif self.type == 'KIND_SMALL1_WITHOUT_TIME':
+        elif self.type == "KIND_SMALL1_WITHOUT_TIME":
             self.result = self._get_small1_without_time()
-        elif self.type == 'KIND_ITEM1_WITH_SMALL0':
+        elif self.type == "KIND_ITEM1_WITH_SMALL0":
             self.result = self._get_item1_with_small0()
-        elif self.type == 'KIND_SMALL1_WITH_SMALL0_WITH_TIME':
+        elif self.type == "KIND_SMALL1_WITH_SMALL0_WITH_TIME":
             self.result = self._get_small1_with_small0_with_time()
-        elif self.type == 'KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME':
+        elif self.type == "KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME":
             self.result = self._get_small1_with_small0_without_time()
         else:
-            raise RuntimeError('Unexpected type of lesson')
+            raise RuntimeError("Unexpected type of lesson")
         return self.result
 
     def define_type(self):
         if len(self.html.select("td.tditem1")) != 0:
             if len(self.html.select("td.tdsmall0")) != 0:
-                return 'KIND_ITEM1_WITH_SMALL0'
-            return 'KIND_ITEM1'
+                return "KIND_ITEM1_WITH_SMALL0"
+            return "KIND_ITEM1"
 
         if len(self.html.select("td.tdsmall1")) != 0:
             if len(self.html.select("td.tdsmall0")) != 0:
                 if len(self.html.select("td.tdtime")) != 0:
-                    return 'KIND_SMALL1_WITH_SMALL0_WITH_TIME'
+                    return "KIND_SMALL1_WITH_SMALL0_WITH_TIME"
                 else:
-                    return 'KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME'
+                    return "KIND_SMALL1_WITH_SMALL0_WITHOUT_TIME"
             else:
                 if len(self.html.select("td.tdtime")) != 0:
-                    return 'KIND_SMALL1_WITH_TIME'
+                    return "KIND_SMALL1_WITH_TIME"
                 else:
-                    return 'KIND_SMALL1_WITHOUT_TIME'
+                    return "KIND_SMALL1_WITHOUT_TIME"
 
     def _get_item1(self):
         html = self.html.select("td.tditem1")[0]
-        return [{"name": "".join(str(tag) for tag in html.contents), "odd": True, "even": True}]
+        return [
+            {
+                "name": "".join(str(tag) for tag in html.contents),
+                "odd": True,
+                "even": True,
+            }
+        ]
 
     def _get_small1_with_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return [{"name": "".join(str(tag) for tag in html.contents), "odd": True, "even": False}]
+        return [
+            {
+                "name": "".join(str(tag) for tag in html.contents),
+                "odd": True,
+                "even": False,
+            }
+        ]
 
     def _get_small1_without_time(self):
         html = self.html.select("td.tdsmall1")[0]
-        return [{"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True}]
+        return [
+            {
+                "name": "".join(str(tag) for tag in html.contents),
+                "odd": False,
+                "even": True,
+            }
+        ]
 
     def _get_item1_with_small0(self):
         tags = self.html.select("td.tdsmall0")
 
         results = []
         for index, html in enumerate(tags):
-            results.append({"name": "".join(str(tag) for tag in html.contents), "odd": True, "even": True})
+            results.append(
+                {
+                    "name": "".join(str(tag) for tag in html.contents),
+                    "odd": True,
+                    "even": True,
+                }
+            )
         return results
 
     def _get_small1_with_small0_with_time(self):
@@ -151,7 +181,13 @@ class Lesson:
 
         results = []
         for index, html in enumerate(tags):
-            results.append({"name": "".join(str(tag) for tag in html.contents), "odd": True, "even": False})
+            results.append(
+                {
+                    "name": "".join(str(tag) for tag in html.contents),
+                    "odd": True,
+                    "even": False,
+                }
+            )
         return results
 
     def _get_small1_with_small0_without_time(self):
@@ -159,7 +195,13 @@ class Lesson:
 
         results = []
         for index, html in enumerate(tags):
-            results.append({"name": "".join(str(tag) for tag in html.contents), "odd": False, "even": True})
+            results.append(
+                {
+                    "name": "".join(str(tag) for tag in html.contents),
+                    "odd": False,
+                    "even": True,
+                }
+            )
         return results
 
 
@@ -174,16 +216,26 @@ def parse_timetable():
     """
     # [[курс, поток, количество групп], ...]
     sources = [
-        [1, 1, 6], [1, 2, 6], [1, 3, 6],
-        [2, 1, 6], [2, 2, 6], [2, 3, 6],
-        [3, 1, 10], [3, 2, 8],
-        [4, 1, 10], [4, 2, 8],
-        [5, 1, 13], [5, 2, 12],
-        [6, 1, 13], [6, 2, 11]
+        [1, 1, 6],
+        [1, 2, 6],
+        [1, 3, 6],
+        [2, 1, 6],
+        [2, 2, 6],
+        [2, 3, 6],
+        [3, 1, 10],
+        [3, 2, 8],
+        [4, 1, 10],
+        [4, 2, 8],
+        [5, 1, 13],
+        [5, 2, 12],
+        [6, 1, 13],
+        [6, 2, 11],
     ]
 
-    USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 " \
-                 "(KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
+    USER_AGENT = (
+        "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
+    )
     HEADERS = {"User-Agent": USER_AGENT}
 
     _logger.info("Начинаю парсинг сайта расписания...")
@@ -191,11 +243,15 @@ def parse_timetable():
     for index, source in enumerate(sources):
         for group in range(1, source[2] + 1):
             try:
-                html = requests.get(f"http://ras.phys.msu.ru/table/{source[0]}/{source[1]}/{group}.htm",
-                                    headers=HEADERS).text
+                html = requests.get(
+                    f"http://ras.phys.msu.ru/table/{source[0]}/{source[1]}/{group}.htm",
+                    headers=HEADERS,
+                ).text
                 results = pd.concat([results, pd.DataFrame(run(html))])
             except Exception:
-                _logger.warning(f"'{source[0]}/{source[1]}/{group}' парсинг завершился ошибкой.")
+                _logger.warning(
+                    f"'{source[0]}/{source[1]}/{group}' парсинг завершился ошибкой."
+                )
                 raise
 
     return results
