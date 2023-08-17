@@ -1,5 +1,4 @@
 import logging
-
 from profcomff_parse_lib import *
 import pandas as pd
 import sqlalchemy as sa
@@ -14,15 +13,14 @@ from airflow.models import Connection, Variable
 DB_URI = Connection.get_connection_from_secrets('data_base').get_uri().replace("postgres://", "postgresql://")
 token = Variable.get("token_db")
 headers = {"Authorization": f"{token}"}
-schema = "STG_TIMETABLE"
-table = "raw_html"
 engine = sa.create_engine(DB_URI)
 conn = engine.connect()
+conn.execute('ALTER USER postgres SET search_path TO "STG_TIMETABLE";')
 
 
 @task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def parsing():
-    timetables = pd.read_sql_query(f'select * from "{schema}".{table}', engine)
+    timetables = pd.read_sql_query('select * from raw_html', engine)
     results = pd.DataFrame()
     for i, row in timetables.iterrows():
         results = pd.concat([results, parse_timetable(row["raw_html"])])
@@ -35,8 +33,8 @@ def parsing():
     lessons = all_to_array(lessons)
     completion(groups, places, teachers, headers, "test")
     lessons = to_id(lessons, headers, "test")
-    conn.execute(sa.text(f"""
-       CREATE TABLE IF NOT EXISTS "{schema}".new(
+    conn.execute("""
+       CREATE TABLE IF NOT EXISTS "new"(
            Id SERIAL PRIMARY key,
            subject varchar NOT NULL,
            odd bool NOT NULL,
@@ -50,11 +48,11 @@ def parsing():
            teacher INTEGER[],
            events_id INTEGER[]
        );
-       """))
-    conn.execute(sa.text(f'DROP TABLE IF EXISTS "{schema}".old;'))
-    conn.execute(sa.text(f'DROP TABLE IF EXISTS "{schema}".diff;'))
-    conn.execute(sa.text(f'ALTER TABLE IF EXISTS "{schema}".new RENAME TO old;'))
-    lessons.to_sql(name="new", con=engine, schema=schema, if_exists="replace", index=False,
+       DROP TABLE IF EXISTS "old";
+       DROP TABLE IF EXISTS "diff";
+       ALTER TABLE IF EXISTS "new" RENAME TO "old";
+       """)
+    lessons.to_sql(name="new", con=engine, if_exists="replace", index=False,
                    dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
                           "place": postgresql.ARRAY(sa.types.Integer)})
 
@@ -62,11 +60,13 @@ def parsing():
 @task(task_id='find_diff')
 def find_diff():
     logging.info("Начало задачи diff")
-    conn.execute(sa.text(f"""ALTER table "{schema}".new ADD id SERIAL PRIMARY key;"""))
-    conn.execute(sa.text(f"""ALTER table "{schema}".new ADD events_id INTEGER[];"""))
-    conn.execute(sa.text(f"""UPDATE "{schema}".new set events_id =  ARRAY[]::integer[];"""))
-    sql_query = f"""
-    create table "{schema}".diff as
+    conn.execute("""
+    ALTER table "new" ADD id SERIAL PRIMARY key;
+    ALTER table "new" ADD events_id INTEGER[];
+    UPDATE "new" set events_id =  ARRAY[]::integer[];
+    """)
+    sql_query = """
+    create table diff as
     select
         coalesce(l.subject, r.subject) as subject,
         coalesce(l.odd, r.odd) as odd,
@@ -85,8 +85,8 @@ def find_diff():
             WHEN l.subject IS NULL THEN 'create'
             WHEN r.subject IS NULL THEN 'delete'
     END AS action
-    from "{schema}".old l
-    full outer join "{schema}".new r
+    from "old" l
+    full outer join "new" r
         on l.subject = r.subject
         and  l.odd = r.odd
         and  l.even = r.even
@@ -99,18 +99,18 @@ def find_diff():
         and  (l.teacher  <@ r.teacher  and l.teacher  @> r.teacher)
     order by l.subject;
     """
-    conn.execute(sa.text(sql_query))
+    conn.execute(sql_query)
 
 
 @task(task_id='update')
 def update():
     logging.info("Начало задачи update")
-    lessons_for_deleting = pd.read_sql_query(f"""select events_id from "{schema}".diff where action='delete'""", engine)
-    lessons_for_creating = pd.read_sql_query(f"""select id, subject, "start", "end", "group", teacher, place, odd, even, 
-    weekday, num from "{schema}".diff where action='create'""", engine)
+    lessons_for_deleting = pd.read_sql_query("""select events_id from diff where action='delete'""", engine)
+    lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", teacher, place, odd, even,
+    weekday, num from diff where action='create'""", engine)
 
     begin = datetime.datetime.now()
-    end = datetime.datetime.now() + datetime.timedelta(days=1)
+    end = datetime.datetime.now() + datetime.timedelta(days=3)
     begin = begin.strftime("%m/%d/%Y")
     end = end.strftime("%m/%d/%Y")
     for i, row in lessons_for_deleting.iterrows():
@@ -121,16 +121,16 @@ def update():
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
         event_id = post_event(headers, row, "test")
-        query = f"""UPDATE "{schema}".new set events_id = events_id || array[{event_id}] WHERE id={new_id}"""
-        conn.execute(sa.text(query))
-    query = f"""
-    UPDATE "{schema}"."new" as ch
+        query = f'UPDATE "new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
+        conn.execute(query)
+    query = """
+    UPDATE "new" as ch
     SET events_id = ch.events_id || selected.events_id
     FROM
-    (SELECT id, events_id, "action" from "{schema}".diff) AS Selected
+    (SELECT id, events_id, "action" from diff) AS Selected
     WHERE ch.id  = Selected.id and selected."action" = 'remember';
     """
-    conn.execute(sa.text(query))
+    conn.execute(query)
 
 
 @dag(
