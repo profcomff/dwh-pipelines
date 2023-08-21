@@ -1,5 +1,8 @@
 import logging
-from profcomff_parse_lib import *
+from profcomff_parse_lib import (parse_timetable, parse_all, parse_name,
+                                 multiple_lessons, flatten, all_to_array,
+                                 completion, to_id, check_date, delete_lesson,
+                                 calc_date, post_event)
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -15,24 +18,32 @@ token = Variable.get("token_db")
 headers = {"Authorization": f"{token}"}
 engine = sa.create_engine(DB_URI)
 conn = engine.connect()
-conn.execute('ALTER USER postgres SET search_path TO "STG_TIMETABLE";')
+user = Connection.get_connection_from_secrets('data_base').login
+conn.execute(f'ALTER USER {user} SET search_path TO "STG_TIMETABLE";')
 
 
 @task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
-def parsing():
+def parsing(base):
     timetables = pd.read_sql_query('select * from raw_html', engine)
     results = pd.DataFrame()
     for i, row in timetables.iterrows():
         results = pd.concat([results, parse_timetable(row["raw_html"])])
 
+    # parse_name, parse_all - Парсинг
     lessons = parse_name(results)
     lessons, places, groups, teachers, subjects = parse_all(lessons)
-    lessons = manual_edit(lessons)
+    # multiple lessons - Пары с одинаковыми временем, преподавателем и названием соединяет в одну
+    # (аудитории могут быть разные, но теперь они лежат в одной строке.). Это в основном для английского.
     lessons = multiple_lessons(lessons)
+    # flatten - Првращает в таблице place, teacher в массивы
     lessons = flatten(lessons)
+    # all_to_array - Если совпадают время, название, преподаватели и команты (но не группы) то соединяет в одну строчку.
+    # После этого действия и группы тоже становятся массивом.
     lessons = all_to_array(lessons)
-    completion(groups, places, teachers, headers, "test")
-    lessons = to_id(lessons, headers, "test")
+    # comletion - Если спарсились новые группы, преподаватели, комнаты, то добавляет их в бд.
+    completion(groups, places, teachers, headers, base)
+    # to_id - превращает группы, преподов и комнаты в id в таблице
+    lessons = to_id(lessons, headers, base)
     conn.execute("""
        CREATE TABLE IF NOT EXISTS "new"(
            Id SERIAL PRIMARY key,
@@ -103,24 +114,24 @@ def find_diff():
 
 
 @task(task_id='update')
-def update():
+def update(base):
     logging.info("Начало задачи update")
     lessons_for_deleting = pd.read_sql_query("""select events_id from diff where action='delete'""", engine)
     lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", teacher, place, odd, even,
     weekday, num from diff where action='create'""", engine)
 
     begin = datetime.datetime.now()
-    end = datetime.datetime.now() + datetime.timedelta(days=3)
     begin = begin.strftime("%m/%d/%Y")
-    end = end.strftime("%m/%d/%Y")
+    end = Variable.get("semester_end")
+    semester_start = Variable.get("semester_start")
     for i, row in lessons_for_deleting.iterrows():
         for id in row["events_id"]:
-            if check_date(id, "test", begin):
-                delete_lesson(headers, id, "test")
-    lessons_new = calc_date(lessons_for_creating, begin, end, "07/24/2023")
+            if check_date(id, base, begin):
+                delete_lesson(headers, id, base)
+    lessons_new = calc_date(lessons_for_creating, begin, end, semester_start)
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
-        event_id = post_event(headers, row, "test")
+        event_id = post_event(headers, row, base)
         query = f'UPDATE "new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
         conn.execute(query)
     query = """
@@ -144,8 +155,8 @@ def update():
         "retry_delay": datetime.timedelta(minutes=5)
     }
 )
-def update_timetable():
-    parsing() >> find_diff() >> update()
+def update_timetable(base):
+    parsing(base) >> find_diff() >> update(base)
 
 
-timetable_sync = update_timetable()
+timetable_sync = update_timetable("test")
