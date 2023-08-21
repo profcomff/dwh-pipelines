@@ -158,6 +158,3 @@ def update_timetable(base):
 
 
 timetable_sync = update_timetable("test")
-
-# if __name__ == "__main__":
-#     timetable_sync.test()
