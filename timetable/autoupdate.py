@@ -13,18 +13,16 @@ from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
 
-DB_URI = Connection.get_connection_from_secrets('data_base').get_uri().replace("postgres://", "postgresql://")
+DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 token = Variable.get("token_db")
 headers = {"Authorization": f"{token}"}
 engine = sa.create_engine(DB_URI)
 conn = engine.connect()
-user = Connection.get_connection_from_secrets('data_base').login
-conn.execute(f'ALTER USER {user} SET search_path TO "STG_TIMETABLE";')
 
 
 @task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def parsing(base):
-    timetables = pd.read_sql_query('select * from raw_html', engine)
+    timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
     results = pd.DataFrame()
     for i, row in timetables.iterrows():
         results = pd.concat([results, parse_timetable(row["raw_html"])])
@@ -45,7 +43,7 @@ def parsing(base):
     # to_id - превращает группы, преподов и комнаты в id в таблице
     lessons = to_id(lessons, headers, base)
     conn.execute("""
-       CREATE TABLE IF NOT EXISTS "new"(
+       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
            Id SERIAL PRIMARY key,
            subject varchar NOT NULL,
            odd bool NOT NULL,
@@ -59,11 +57,11 @@ def parsing(base):
            teacher INTEGER[],
            events_id INTEGER[]
        );
-       DROP TABLE IF EXISTS "old";
-       DROP TABLE IF EXISTS "diff";
-       ALTER TABLE IF EXISTS "new" RENAME TO "old";
+       DROP TABLE IF EXISTS "STG_TIMETABLE"."old";
+       DROP TABLE IF EXISTS "STG_TIMETABLE"."diff";
+       ALTER TABLE IF EXISTS "STG_TIMETABLE"."new" RENAME TO "old";
        """)
-    lessons.to_sql(name="new", con=engine, if_exists="replace", index=False,
+    lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="replace", index=False,
                    dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
                           "place": postgresql.ARRAY(sa.types.Integer)})
 
@@ -72,12 +70,12 @@ def parsing(base):
 def find_diff():
     logging.info("Начало задачи diff")
     conn.execute("""
-    ALTER table "new" ADD id SERIAL PRIMARY key;
-    ALTER table "new" ADD events_id INTEGER[];
-    UPDATE "new" set events_id =  ARRAY[]::integer[];
+    ALTER table "STG_TIMETABLE"."new" ADD id SERIAL PRIMARY key;
+    ALTER table "STG_TIMETABLE"."new" ADD events_id INTEGER[];
+    UPDATE "STG_TIMETABLE"."new" set events_id =  ARRAY[]::integer[];
     """)
     sql_query = """
-    create table diff as
+    create table "STG_TIMETABLE".diff as
     select
         coalesce(l.subject, r.subject) as subject,
         coalesce(l.odd, r.odd) as odd,
@@ -96,8 +94,8 @@ def find_diff():
             WHEN l.subject IS NULL THEN 'create'
             WHEN r.subject IS NULL THEN 'delete'
     END AS action
-    from "old" l
-    full outer join "new" r
+    from "STG_TIMETABLE"."old" l
+    full outer join "STG_TIMETABLE"."new" r
         on l.subject = r.subject
         and  l.odd = r.odd
         and  l.even = r.even
@@ -116,9 +114,9 @@ def find_diff():
 @task(task_id='update')
 def update(base):
     logging.info("Начало задачи update")
-    lessons_for_deleting = pd.read_sql_query("""select events_id from diff where action='delete'""", engine)
+    lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff where action='delete'""", engine)
     lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", teacher, place, odd, even,
-    weekday, num from diff where action='create'""", engine)
+    weekday, num from "STG_TIMETABLE".diff where action='create'""", engine)
 
     begin = datetime.datetime.now()
     begin = begin.strftime("%m/%d/%Y")
@@ -132,13 +130,13 @@ def update(base):
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
         event_id = post_event(headers, row, base)
-        query = f'UPDATE "new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
+        query = f'UPDATE "STG_TIMETABLE"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
         conn.execute(query)
     query = """
-    UPDATE "new" as ch
+    UPDATE "STG_TIMETABLE"."new" as ch
     SET events_id = ch.events_id || selected.events_id
     FROM
-    (SELECT id, events_id, "action" from diff) AS Selected
+    (SELECT id, events_id, "action" from "STG_TIMETABLE".diff) AS Selected
     WHERE ch.id  = Selected.id and selected."action" = 'remember';
     """
     conn.execute(query)
@@ -160,3 +158,6 @@ def update_timetable(base):
 
 
 timetable_sync = update_timetable("test")
+
+# if __name__ == "__main__":
+#     timetable_sync.test()
