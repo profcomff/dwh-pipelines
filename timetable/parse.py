@@ -7,7 +7,6 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection
 
-from timetable.utils.parse_timetable import run
 
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 

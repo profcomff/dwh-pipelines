@@ -14,7 +14,7 @@ from airflow.models import Connection, Variable
 
 
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-token = Variable.get("token_db")
+token = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
 headers = {"Authorization": f"{token}"}
 engine = sa.create_engine(DB_URI)
 conn = engine.connect()
@@ -120,8 +120,8 @@ def update(base):
 
     begin = datetime.datetime.now()
     begin = begin.strftime("%m/%d/%Y")
-    end = Variable.get("semester_end")
-    semester_start = Variable.get("semester_start")
+    end = Variable.get("SEMESTER_END_TEST")
+    semester_start = Variable.get("SEMESTER_START_TEST")
     for i, row in lessons_for_deleting.iterrows():
         for id in row["events_id"]:
             if check_date(id, base, begin):
