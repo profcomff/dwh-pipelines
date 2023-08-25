@@ -23,15 +23,15 @@ conn = engine.connect()
 @task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def parsing(base):
     timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
-    logging.info("results:", list(timetables), "len: ", timetables.shape[0])
+    logging.info(f"columns: {len(list(timetables))} len: {timetables.shape[0]}")
     results = pd.DataFrame()
     for i, row in timetables.iterrows():
         results = pd.concat([results, parse_timetable(row["raw_html"])])
 
-    logging.info("results:", list(results), "len: ", results.shape[0])
+    logging.info(f"columns: {len(list(results))} len: {results.shape[0]}")
     # parse_name, parse_all - Парсинг
     lessons = parse_name(results)
-    logging.info("lessons:", list(lessons), "len: ", lessons.shape[0])
+    logging.info(f"columns: {len(list(lessons))} len: {lessons.shape[0]}")
     lessons, places, groups, teachers, subjects = parse_all(lessons)
     # multiple lessons - Пары с одинаковыми временем, преподавателем и названием соединяет в одну
     # (аудитории могут быть разные, но теперь они лежат в одной строке.). Это в основном для английского.
