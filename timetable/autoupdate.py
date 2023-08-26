@@ -16,12 +16,11 @@ from airflow.models import Connection, Variable
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 token = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
 headers = {"Authorization": f"{token}"}
-engine = sa.create_engine(DB_URI)
-conn = engine.connect()
 
 
 @task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def parsing(base):
+    engine = sa.create_engine(DB_URI)
     timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
     logging.info(f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}")
     results = pd.DataFrame()
@@ -45,7 +44,7 @@ def parsing(base):
     completion(groups, places, teachers, headers, base)
     # to_id - превращает группы, преподов и комнаты в id в таблице
     lessons = to_id(lessons, headers, base)
-    conn.execute("""
+    engine.execute("""
        CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
            Id SERIAL PRIMARY key,
            subject varchar NOT NULL,
@@ -74,8 +73,9 @@ def parsing(base):
 
 @task(task_id='find_diff')
 def find_diff():
+    engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи diff")
-    conn.execute("""
+    engine.execute("""
     ALTER table "STG_TIMETABLE"."new" ADD id SERIAL PRIMARY key;
     ALTER table "STG_TIMETABLE"."new" ADD events_id INTEGER[];
     UPDATE "STG_TIMETABLE"."new" set events_id =  ARRAY[]::integer[];
@@ -114,11 +114,12 @@ def find_diff():
         and  (l.teacher  <@ r.teacher  and l.teacher  @> r.teacher)
     order by l.subject;
     """
-    conn.execute(sql_query)
+    engine.execute(sql_query)
 
 
 @task(task_id='update')
 def update(base):
+    engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи update")
     lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff where action='delete'""", engine)
     lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", teacher, place, odd, even,
@@ -137,7 +138,7 @@ def update(base):
         new_id = row["id"]
         event_id = post_event(headers, row, base)
         query = f'UPDATE "STG_TIMETABLE"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
-        conn.execute(query)
+        engine.execute(query)
     query = """
     UPDATE "STG_TIMETABLE"."new" as ch
     SET events_id = ch.events_id || selected.events_id
@@ -145,7 +146,7 @@ def update(base):
     (SELECT id, events_id, "action" from "STG_TIMETABLE".diff) AS Selected
     WHERE ch.id  = Selected.id and selected."action" = 'remember';
     """
-    conn.execute(query)
+    engine.execute(query)
 
 
 @dag(
