@@ -66,7 +66,10 @@ def parsing(base):
        """)
     lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="replace", index=False,
                    dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
-                          "place": postgresql.ARRAY(sa.types.Integer)})
+                          "place": postgresql.ARRAY(sa.types.Integer), "subject": postgresql.VARCHAR,
+                          "odd": postgresql.BOOLEAN,
+                          "even": postgresql.BOOLEAN, "weekday": postgresql.INTEGER, "num": postgresql.INTEGER,
+                          "start": postgresql.VARCHAR, "end": postgresql.VARCHAR})
 
 
 @task(task_id='find_diff')
