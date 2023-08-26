@@ -16,12 +16,12 @@ from airflow.models import Connection, Variable
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 token = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
 headers = {"Authorization": f"{token}"}
-engine = sa.create_engine(DB_URI)
-conn = engine.connect()
 
 
 @task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def parsing(base):
+    engine = sa.create_engine(DB_URI)
+    conn = engine.connect()
     timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
     logging.info(f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}")
     results = pd.DataFrame()
@@ -74,6 +74,8 @@ def parsing(base):
 
 @task(task_id='find_diff')
 def find_diff():
+    engine = sa.create_engine(DB_URI)
+    conn = engine.connect()
     logging.info("Начало задачи diff")
     conn.execute("""
     ALTER table "STG_TIMETABLE"."new" ADD id SERIAL PRIMARY key;
@@ -119,6 +121,8 @@ def find_diff():
 
 @task(task_id='update')
 def update(base):
+    engine = sa.create_engine(DB_URI)
+    conn = engine.connect()
     logging.info("Начало задачи update")
     lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff where action='delete'""", engine)
     lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", teacher, place, odd, even,
