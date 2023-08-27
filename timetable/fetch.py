@@ -8,129 +8,16 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
-TIMETABLE_PAGES = [
-    'http://ras.phys.msu.ru/table/1/1/1.htm',
-    'http://ras.phys.msu.ru/table/1/1/2.htm',
-    'http://ras.phys.msu.ru/table/1/1/3.htm',
-    'http://ras.phys.msu.ru/table/1/1/4.htm',
-    'http://ras.phys.msu.ru/table/1/1/5.htm',
-    'http://ras.phys.msu.ru/table/1/1/6.htm',
-    'http://ras.phys.msu.ru/table/1/2/1.htm',
-    'http://ras.phys.msu.ru/table/1/2/2.htm',
-    'http://ras.phys.msu.ru/table/1/2/3.htm',
-    'http://ras.phys.msu.ru/table/1/2/4.htm',
-    'http://ras.phys.msu.ru/table/1/2/5.htm',
-    'http://ras.phys.msu.ru/table/1/2/6.htm',
-    'http://ras.phys.msu.ru/table/1/3/1.htm',
-    'http://ras.phys.msu.ru/table/1/3/2.htm',
-    'http://ras.phys.msu.ru/table/1/3/3.htm',
-    'http://ras.phys.msu.ru/table/1/3/4.htm',
-    'http://ras.phys.msu.ru/table/1/3/5.htm',
-    'http://ras.phys.msu.ru/table/1/3/6.htm',
-    'http://ras.phys.msu.ru/table/2/1/1.htm',
-    'http://ras.phys.msu.ru/table/2/1/2.htm',
-    'http://ras.phys.msu.ru/table/2/1/3.htm',
-    'http://ras.phys.msu.ru/table/2/1/4.htm',
-    'http://ras.phys.msu.ru/table/2/1/5.htm',
-    'http://ras.phys.msu.ru/table/2/1/6.htm',
-    'http://ras.phys.msu.ru/table/2/2/1.htm',
-    'http://ras.phys.msu.ru/table/2/2/2.htm',
-    'http://ras.phys.msu.ru/table/2/2/3.htm',
-    'http://ras.phys.msu.ru/table/2/2/4.htm',
-    'http://ras.phys.msu.ru/table/2/2/5.htm',
-    'http://ras.phys.msu.ru/table/2/2/6.htm',
-    'http://ras.phys.msu.ru/table/2/3/1.htm',
-    'http://ras.phys.msu.ru/table/2/3/2.htm',
-    'http://ras.phys.msu.ru/table/2/3/3.htm',
-    'http://ras.phys.msu.ru/table/2/3/4.htm',
-    'http://ras.phys.msu.ru/table/2/3/5.htm',
-    'http://ras.phys.msu.ru/table/2/3/6.htm',
-    'http://ras.phys.msu.ru/table/3/1/1.htm',
-    'http://ras.phys.msu.ru/table/3/1/2.htm',
-    'http://ras.phys.msu.ru/table/3/1/3.htm',
-    'http://ras.phys.msu.ru/table/3/1/4.htm',
-    'http://ras.phys.msu.ru/table/3/1/5.htm',
-    'http://ras.phys.msu.ru/table/3/1/6.htm',
-    'http://ras.phys.msu.ru/table/3/1/7.htm',
-    'http://ras.phys.msu.ru/table/3/1/8.htm',
-    'http://ras.phys.msu.ru/table/3/1/9.htm',
-    'http://ras.phys.msu.ru/table/3/1/10.htm',
-    'http://ras.phys.msu.ru/table/3/2/1.htm',
-    'http://ras.phys.msu.ru/table/3/2/2.htm',
-    'http://ras.phys.msu.ru/table/3/2/3.htm',
-    'http://ras.phys.msu.ru/table/3/2/4.htm',
-    'http://ras.phys.msu.ru/table/3/2/5.htm',
-    'http://ras.phys.msu.ru/table/3/2/6.htm',
-    'http://ras.phys.msu.ru/table/3/2/7.htm',
-    'http://ras.phys.msu.ru/table/3/2/8.htm',
-    'http://ras.phys.msu.ru/table/4/1/1.htm',
-    'http://ras.phys.msu.ru/table/4/1/2.htm',
-    'http://ras.phys.msu.ru/table/4/1/3.htm',
-    'http://ras.phys.msu.ru/table/4/1/4.htm',
-    'http://ras.phys.msu.ru/table/4/1/5.htm',
-    'http://ras.phys.msu.ru/table/4/1/6.htm',
-    'http://ras.phys.msu.ru/table/4/1/7.htm',
-    'http://ras.phys.msu.ru/table/4/1/8.htm',
-    'http://ras.phys.msu.ru/table/4/1/9.htm',
-    'http://ras.phys.msu.ru/table/4/1/10.htm',
-    'http://ras.phys.msu.ru/table/4/2/1.htm',
-    'http://ras.phys.msu.ru/table/4/2/2.htm',
-    'http://ras.phys.msu.ru/table/4/2/3.htm',
-    'http://ras.phys.msu.ru/table/4/2/4.htm',
-    'http://ras.phys.msu.ru/table/4/2/5.htm',
-    'http://ras.phys.msu.ru/table/4/2/6.htm',
-    'http://ras.phys.msu.ru/table/4/2/7.htm',
-    'http://ras.phys.msu.ru/table/4/2/8.htm',
-    'http://ras.phys.msu.ru/table/5/1/1.htm',
-    'http://ras.phys.msu.ru/table/5/1/2.htm',
-    'http://ras.phys.msu.ru/table/5/1/3.htm',
-    'http://ras.phys.msu.ru/table/5/1/4.htm',
-    'http://ras.phys.msu.ru/table/5/1/5.htm',
-    'http://ras.phys.msu.ru/table/5/1/6.htm',
-    'http://ras.phys.msu.ru/table/5/1/7.htm',
-    'http://ras.phys.msu.ru/table/5/1/8.htm',
-    'http://ras.phys.msu.ru/table/5/1/9.htm',
-    'http://ras.phys.msu.ru/table/5/1/10.htm',
-    'http://ras.phys.msu.ru/table/5/1/11.htm',
-    'http://ras.phys.msu.ru/table/5/1/12.htm',
-    'http://ras.phys.msu.ru/table/5/1/13.htm',
-    'http://ras.phys.msu.ru/table/5/2/1.htm',
-    'http://ras.phys.msu.ru/table/5/2/2.htm',
-    'http://ras.phys.msu.ru/table/5/2/3.htm',
-    'http://ras.phys.msu.ru/table/5/2/4.htm',
-    'http://ras.phys.msu.ru/table/5/2/5.htm',
-    'http://ras.phys.msu.ru/table/5/2/6.htm',
-    'http://ras.phys.msu.ru/table/5/2/7.htm',
-    'http://ras.phys.msu.ru/table/5/2/8.htm',
-    'http://ras.phys.msu.ru/table/5/2/9.htm',
-    'http://ras.phys.msu.ru/table/5/2/10.htm',
-    'http://ras.phys.msu.ru/table/5/2/11.htm',
-    'http://ras.phys.msu.ru/table/5/2/12.htm',
-    'http://ras.phys.msu.ru/table/6/1/1.htm',
-    'http://ras.phys.msu.ru/table/6/1/2.htm',
-    'http://ras.phys.msu.ru/table/6/1/3.htm',
-    'http://ras.phys.msu.ru/table/6/1/4.htm',
-    'http://ras.phys.msu.ru/table/6/1/5.htm',
-    'http://ras.phys.msu.ru/table/6/1/6.htm',
-    'http://ras.phys.msu.ru/table/6/1/7.htm',
-    'http://ras.phys.msu.ru/table/6/1/8.htm',
-    'http://ras.phys.msu.ru/table/6/1/9.htm',
-    'http://ras.phys.msu.ru/table/6/1/10.htm',
-    'http://ras.phys.msu.ru/table/6/1/11.htm',
-    'http://ras.phys.msu.ru/table/6/1/12.htm',
-    'http://ras.phys.msu.ru/table/6/1/13.htm',
-    'http://ras.phys.msu.ru/table/6/2/1.htm',
-    'http://ras.phys.msu.ru/table/6/2/2.htm',
-    'http://ras.phys.msu.ru/table/6/2/3.htm',
-    'http://ras.phys.msu.ru/table/6/2/4.htm',
-    'http://ras.phys.msu.ru/table/6/2/5.htm',
-    'http://ras.phys.msu.ru/table/6/2/6.htm',
-    'http://ras.phys.msu.ru/table/6/2/7.htm',
-    'http://ras.phys.msu.ru/table/6/2/8.htm',
-    'http://ras.phys.msu.ru/table/6/2/9.htm',
-    'http://ras.phys.msu.ru/table/6/2/10.htm',
-    'http://ras.phys.msu.ru/table/6/2/11.htm',
+# [[курс, поток, количество групп], ...]
+SOURCES = [
+    [1, 1, 6], [1, 2, 6], [1, 3, 6],
+    [2, 1, 6], [2, 2, 6], [2, 3, 6],
+    [3, 1, 10], [3, 2, 8],
+    [4, 1, 10], [4, 2, 8],
+    [5, 1, 13], [5, 2, 11],
+    [6, 1, 11], [6, 2, 10]
 ]
+
 USER_AGENT = "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 " \
              "(KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
 HEADERS = {"User-Agent": USER_AGENT}
@@ -141,28 +28,36 @@ DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replac
 @task(task_id='download_pages_to_db', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def download_pages_to_db():
     data = []
-    for url in TIMETABLE_PAGES:
-        response = r.get(url, headers=HEADERS)
-        logging.info("Page %s fetched with status %d", url, response.status_code)
-        data.append({
-            'url': url,
-            'raw_html': response.text,
-        })
+    for ind, source in enumerate(SOURCES):
+        for group in range(1, source[2]+1):
+            url = f'http://ras.phys.msu.ru/table/{source[0]}/{source[1]}/{group}.htm'
+            response = r.get(url, headers=HEADERS)
+            logging.info("Page %s fetched with status %d", url, response.status_code)
+            data.append({
+                'url': url,
+                'raw_html': response.text,
+            })
     data = pd.DataFrame(data)
     sql_engine = sa.create_engine(DB_URI)
 
-    sql_engine.execute('DROP TABLE IF EXISTS "STG_TIMETABLE".raw_html_old;')
-    logging.info("Table raw_html_old dropped")
-
-    sql_engine.execute('ALTER TABLE IF EXISTS "STG_TIMETABLE".raw_html RENAME TO raw_html_old;')
-    logging.info("Table raw_html renamed to raw_html_old")
-
-    sql_engine.execute('CREATE TABLE "STG_TIMETABLE".raw_html (url VARCHAR(256), raw_html TEXT);')
-    logging.info("New raw_html table created")
-
+    sql_engine.execute("""
+    CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html (url varchar(256) NULL, raw_html text NULL);
+    CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html_old (url varchar(256) NULL, raw_html text NULL);
+    """)
+    sql_engine.execute("""
+    delete from "STG_TIMETABLE".raw_html_old;
+    """)
+    logging.info("raw_html_old is empty")
+    sql_engine.execute("""
+    insert into "STG_TIMETABLE".raw_html_old ("url", "raw_html") select "url", "raw_html" from "STG_TIMETABLE".raw_html
+    """)
+    logging.info("raw_html_old is full")
+    sql_engine.execute("""
+    delete from "STG_TIMETABLE".raw_html;
+    """)
+    logging.info("raw_html is empty")
     data.to_sql('raw_html', sql_engine, schema='STG_TIMETABLE', if_exists='append', index=False)
-    logging.info("raw_html data (%d rows) uploaded", len(data))
-
+    logging.info("raw_html is full")
     return Dataset("STG_TIMETABLE.raw_html")
 
 
@@ -179,6 +74,9 @@ def compare_pages():
             OR old.raw_html <> new.raw_html;
     ''').fetchall()
     changed_urls = [row[0] for row in changed_urls]
+    number_of_groups = 0
+    for i, source in enumerate(SOURCES):
+        number_of_groups += source[2]
 
     if len(changed_urls) > 0:
         changed_urls_formated = '\n'.join(changed_urls[:10])
@@ -188,7 +86,7 @@ def compare_pages():
             json={
                 "chat_id": -1001758480664,
                 "text": f"Изменились следующие страницы с расписанием "
-                        f"({len(changed_urls)} из {len(TIMETABLE_PAGES)}):\n{changed_urls_formated}",
+                        f"({len(changed_urls)} из {number_of_groups}):\n{changed_urls_formated}",
             }
         )
         logging.info("Bot send message status %d (%s)", response.status_code, response.text)
