@@ -80,7 +80,7 @@ def parsing(base):
         delete from "STG_TIMETABLE"."new";
         delete from "STG_TIMETABLE".diff; 
     """)
-    lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="replace", index=False,
+    lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="append", index=False,
                    dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
                           "place": postgresql.ARRAY(sa.types.Integer), "subject": postgresql.VARCHAR,
                           "odd": postgresql.BOOLEAN,
