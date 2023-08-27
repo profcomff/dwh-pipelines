@@ -46,23 +46,40 @@ def parsing(base):
     lessons = to_id(lessons, headers, base)
     engine.execute("""
        CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
-           Id SERIAL PRIMARY key,
-           subject varchar NOT NULL,
-           odd bool NOT NULL,
-           even bool NOT NULL,
-           weekday INTEGER,
-           num INTEGER,
-           "start" varchar NOT NULL,
-           "end" varchar NOT NULL,
-           place INTEGER[],
-           "group" INTEGER[],
-           teacher INTEGER[],
-           events_id INTEGER[]
+           Id SERIAL PRIMARY key, subject varchar NOT NULL,
+           odd bool NOT NULL, even bool NOT NULL,
+           weekday INTEGER, num INTEGER,
+           "start" varchar NOT NULL, "end" varchar NOT NULL,
+           place INTEGER[], "group" INTEGER[],
+           teacher INTEGER[], events_id INTEGER[] DEFAULT ARRAY[]::integer[]
        );
-       DROP TABLE IF EXISTS "STG_TIMETABLE"."old";
-       DROP TABLE IF EXISTS "STG_TIMETABLE"."diff";
-       ALTER TABLE IF EXISTS "STG_TIMETABLE"."new" RENAME TO "old";
-       """)
+       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."old"(
+           Id SERIAL PRIMARY key, subject varchar NOT NULL,
+           odd bool NOT NULL, even bool NOT NULL,
+           weekday INTEGER, num INTEGER,
+           "start" varchar NOT NULL, "end" varchar NOT NULL,
+           place INTEGER[], "group" INTEGER[],
+           teacher INTEGER[], events_id INTEGER[] DEFAULT ARRAY[]::integer[]
+       );
+       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".diff (
+           subject varchar NULL, odd bool NULL,
+           even bool NULL, weekday int4 NULL,
+           num int4 NULL, "start" varchar NULL,
+           "end" varchar NULL, place _int4 NULL,
+           "group" _int4 NULL, teacher _int4 NULL,
+           events_id _int4 NULL, id int4 NULL,
+           "action" text NULL
+    );
+    """)
+    engine.execute("""
+        delete from "STG_TIMETABLE"."old";
+        insert into "STG_TIMETABLE"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
+        "teacher", "events_id")
+        select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id" 
+        from "STG_TIMETABLE"."new";
+        delete from "STG_TIMETABLE"."new";
+        delete from "STG_TIMETABLE".diff; 
+    """)
     lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="replace", index=False,
                    dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
                           "place": postgresql.ARRAY(sa.types.Integer), "subject": postgresql.VARCHAR,
@@ -75,14 +92,12 @@ def parsing(base):
 def find_diff():
     engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи diff")
-    engine.execute("""
-    ALTER table "STG_TIMETABLE"."new" ADD id SERIAL PRIMARY key;
-    ALTER table "STG_TIMETABLE"."new" ADD events_id INTEGER[];
-    UPDATE "STG_TIMETABLE"."new" set events_id =  ARRAY[]::integer[];
-    """)
     sql_query = """
-    create table "STG_TIMETABLE".diff as
-    select
+    insert into "STG_TIMETABLE".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
+    "teacher", "events_id", "id", "action") 
+    select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
+    "teacher", "events_id", "id", "action" from 
+    (select
         coalesce(l.subject, r.subject) as subject,
         coalesce(l.odd, r.odd) as odd,
         coalesce(l.even, r.even) as even,
@@ -93,8 +108,8 @@ def find_diff():
         coalesce(l.place, r.place) as place,
         coalesce(l.group, r.group) as group,
         coalesce(l.teacher, r.teacher) as teacher,
-        l.events_id,
-        r.id,
+        l.events_id as events_id ,
+        r.id as id,
         CASE
             WHEN l.subject = r.subject THEN 'remember'
             WHEN l.subject IS NULL THEN 'create'
@@ -112,7 +127,7 @@ def find_diff():
         and  (l.place  <@ r.place  and l.place  @> r.place)
         and  (l.group  <@ r.group  and l.group  @> r.group)
         and  (l.teacher  <@ r.teacher  and l.teacher  @> r.teacher)
-    order by l.subject;
+    order by l.subject) as tab;
     """
     engine.execute(sql_query)
 
@@ -121,8 +136,10 @@ def find_diff():
 def update(base):
     engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи update")
-    lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff where action='delete'""", engine)
-    lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", teacher, place, odd, even,
+    lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff 
+    where action='delete'""", engine)
+    lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", 
+    teacher, place, odd, even,
     weekday, num from "STG_TIMETABLE".diff where action='create'""", engine)
 
     begin = datetime.datetime.now()
