@@ -14,7 +14,7 @@ from airflow.models import Connection, Variable
 
 
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-token = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
+token = Variable.get("TOKEN_ROBOT_TIMETABLE")
 headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT")
 
@@ -149,8 +149,8 @@ def update():
 
     begin = datetime.datetime.now()
     begin = begin.strftime("%m/%d/%Y")
-    end = Variable.get("SEMESTER_END_TEST")
-    semester_start = Variable.get("SEMESTER_START_TEST")
+    end = Variable.get("SEMESTER_END")
+    semester_start = Variable.get("SEMESTER_START")
     logging.info(f"Начало семестра: {semester_start}, дата начала загрузки пар: {begin}, дата конца семестра: {end}.")
     for i, row in lessons_for_deleting.iterrows():
         for id in row["events_id"]:
