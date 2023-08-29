@@ -2,11 +2,12 @@ import logging
 from profcomff_parse_lib import (parse_timetable, parse_all, parse_name,
                                  multiple_lessons, flatten, all_to_array,
                                  completion, to_id, check_date, delete_lesson,
-                                 calc_date, post_event)
+                                 calc_date, post_event, dict_substitutions)
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 import datetime
+import json
 
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
@@ -32,7 +33,7 @@ def parsing():
     # parse_name, parse_all - Парсинг
     lessons = parse_name(results)
     logging.info(f"lessons, columns: {len(list(lessons))} len: {lessons.shape[0]}")
-    lessons, places, groups, teachers, subjects = parse_all(lessons)
+    lessons, places, groups, teachers, subjects = parse_all(lessons, dict_substitutions.dict_substitutions)
     # multiple lessons - Пары с одинаковыми временем, преподавателем и названием соединяет в одну
     # (аудитории могут быть разные, но теперь они лежат в одной строке.). Это в основном для английского.
     lessons = multiple_lessons(lessons)
