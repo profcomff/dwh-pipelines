@@ -16,10 +16,11 @@ from airflow.models import Connection, Variable
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
 token = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
 headers = {"Authorization": f"{token}"}
+environment = Variable.get("_ENVIRONMENT")
 
 
-@task(task_id='parsing', outlets=Dataset("STG_TIMETABLE.raw_html"))
-def parsing(base):
+@task(task_id='parsing')
+def parsing():
     engine = sa.create_engine(DB_URI)
     timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
     logging.info(f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}")
@@ -41,9 +42,9 @@ def parsing(base):
     # После этого действия и группы тоже становятся массивом.
     lessons = all_to_array(lessons)
     # comletion - Если спарсились новые группы, преподаватели, комнаты, то добавляет их в бд.
-    completion(groups, places, teachers, headers, base)
+    completion(groups, places, teachers, headers, environment)
     # to_id - превращает группы, преподов и комнаты в id в таблице
-    lessons = to_id(lessons, headers, base)
+    lessons = to_id(lessons, headers, environment)
     engine.execute("""
        CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
            Id SERIAL PRIMARY key, subject varchar NOT NULL,
@@ -86,12 +87,13 @@ def parsing(base):
                           "odd": postgresql.BOOLEAN,
                           "even": postgresql.BOOLEAN, "weekday": postgresql.INTEGER, "num": postgresql.INTEGER,
                           "start": postgresql.VARCHAR, "end": postgresql.VARCHAR})
+    logging.info("Задача 'parsing' выполнена.")
 
 
 @task(task_id='find_diff')
 def find_diff():
     engine = sa.create_engine(DB_URI)
-    logging.info("Начало задачи diff")
+    logging.info("Начало задачи 'find_diff'")
     sql_query = """
     insert into "STG_TIMETABLE".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
     "teacher", "events_id", "id", "action") 
@@ -130,30 +132,35 @@ def find_diff():
     order by l.subject) as tab;
     """
     engine.execute(sql_query)
+    logging.info("Задача 'find_diff' выполнена.")
 
 
 @task(task_id='update')
-def update(base):
+def update():
+    logging.info("Начало задачи 'update'")
     engine = sa.create_engine(DB_URI)
-    logging.info("Начало задачи update")
     lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff 
     where action='delete'""", engine)
     lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", 
     teacher, place, odd, even,
     weekday, num from "STG_TIMETABLE".diff where action='create'""", engine)
+    logging.info(f"Количество пар для удаления: {lessons_for_deleting.shape[0]}")
+    logging.info(f"Количество пар для создания: {lessons_for_creating.shape[0]}")
 
     begin = datetime.datetime.now()
     begin = begin.strftime("%m/%d/%Y")
     end = Variable.get("SEMESTER_END_TEST")
     semester_start = Variable.get("SEMESTER_START_TEST")
+    logging.info(f"Начало семестра: {semester_start}, дата начала загрузки пар: {begin}, дата конца семестра: {end}.")
     for i, row in lessons_for_deleting.iterrows():
         for id in row["events_id"]:
-            if check_date(id, base, begin):
-                delete_lesson(headers, id, base)
+            if check_date(id, environment, begin):
+                delete_lesson(headers, id, environment)
     lessons_new = calc_date(lessons_for_creating, begin, end, semester_start)
+    logging.info(f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий.")
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
-        event_id = post_event(headers, row, base)
+        event_id = post_event(headers, row, environment)
         query = f'UPDATE "STG_TIMETABLE"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
         engine.execute(query)
     query = """
@@ -164,10 +171,11 @@ def update(base):
     WHERE ch.id  = Selected.id and selected."action" = 'remember';
     """
     engine.execute(query)
+    logging.info("Задача 'update' выполнена.")
 
 
 @dag(
-    schedule='0 */6 * * *',
+    schedule=[Dataset("STG_TIMETABLE.raw_html")],
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
     catchup=False,
     tags= ["UPDATE"],
@@ -177,8 +185,8 @@ def update(base):
         "retry_delay": datetime.timedelta(minutes=5)
     }
 )
-def update_timetable(base):
-    parsing(base) >> find_diff() >> update(base)
+def update_timetable():
+    parsing() >> find_diff() >> update()
 
 
-timetable_sync = update_timetable("test")
+timetable_sync = update_timetable()
