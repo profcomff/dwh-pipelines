@@ -95,7 +95,7 @@ def compare_pages():
 
 
 @dag(
-    schedule='0 */6 * * *',
+    schedule='0 */1 * * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
     tags= ["dwh"],
