@@ -182,6 +182,7 @@ def update():
 @dag(
     schedule=[Dataset("STG_TIMETABLE.raw_html")],
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
+    max_active_runs=1,
     catchup=False,
     tags= ["UPDATE"],
     default_args={
