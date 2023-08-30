@@ -20,7 +20,7 @@ headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT")
 
 
-@task(task_id='parsing')
+@task(task_id='parsing', inlets=Dataset("STG_TIMETABLE.raw_html"), outlets=Dataset("STG_TIMETABLE.old"))
 def parsing():
     engine = sa.create_engine(DB_URI)
     timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
@@ -75,12 +75,12 @@ def parsing():
     """)
     engine.execute("""
         delete from "STG_TIMETABLE"."old";
-        insert into "STG_TIMETABLE"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
+        insert into "STG_TIMETABLE"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
-        select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id" 
+        select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id"
         from "STG_TIMETABLE"."new";
         delete from "STG_TIMETABLE"."new";
-        delete from "STG_TIMETABLE".diff; 
+        delete from "STG_TIMETABLE".diff;
     """)
     lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="append", index=False,
                    dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
@@ -91,15 +91,19 @@ def parsing():
     logging.info("Задача 'parsing' выполнена.")
 
 
-@task(task_id='find_diff')
+@task(
+    task_id='find_diff',
+    inlets=[Dataset("STG_TIMETABLE.old"), Dataset("STG_TIMETABLE.new")],
+    outlets=Dataset("STG_TIMETABLE.diff")
+)
 def find_diff():
     engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи 'find_diff'")
     sql_query = """
-    insert into "STG_TIMETABLE".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
-    "teacher", "events_id", "id", "action") 
-    select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", 
-    "teacher", "events_id", "id", "action" from 
+    insert into "STG_TIMETABLE".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+    "teacher", "events_id", "id", "action")
+    select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+    "teacher", "events_id", "id", "action" from
     (select
         coalesce(l.subject, r.subject) as subject,
         coalesce(l.odd, r.odd) as odd,
@@ -136,13 +140,13 @@ def find_diff():
     logging.info("Задача 'find_diff' выполнена.")
 
 
-@task(task_id='update')
+@task(task_id='update', outlets=Dataset("STG_TIMETABLE.new"))
 def update():
     logging.info("Начало задачи 'update'")
     engine = sa.create_engine(DB_URI)
-    lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff 
+    lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff
     where action='delete'""", engine)
-    lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group", 
+    lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group",
     teacher, place, odd, even,
     weekday, num from "STG_TIMETABLE".diff where action='create'""", engine)
     logging.info(f"Количество пар для удаления: {lessons_for_deleting.shape[0]}")
@@ -178,6 +182,7 @@ def update():
 @dag(
     schedule=[Dataset("STG_TIMETABLE.raw_html")],
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
+    max_active_runs=1,
     catchup=False,
     tags= ["UPDATE"],
     default_args={
