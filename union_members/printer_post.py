@@ -16,7 +16,7 @@ def send_print_post_error_telegram_message():
         f'https://api.telegram.org/bot{token}/sendMessage',
         json={
             "chat_id": -633287506,
-            "text": f"Ошибка при загрузке данных из БД ОПК в продовую БД принтера",
+            "text": f"Ошибка при загрузке данных из БД ОПК в БД принтера",
         }
     )
 
@@ -25,10 +25,10 @@ def send_print_post_error_telegram_message():
 def post_data(url, token):
     con = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
     query = dedent("""
-        SELECT last_name, card_number
+        SELECT last_name, card_number,faculty
         FROM "STG_UNION_MEMBER"."union_member"
-        WHERE faculty = 'Физический факультет'
-            AND status = 'Член профсоюза'
+        WHERE strpos(lower(faculty), 'физический факультет'::text) > 0  -- "физический факультет" есть в названии факультета
+            AND lower(status) = 'член профсоюза'
             AND LENGTH(last_name) > 0
             AND LENGTH(card_number) > 0;
     """)
@@ -66,10 +66,7 @@ def post_data(url, token):
     on_failure_callback=send_print_post_error_telegram_message,
 )
 def update_printer_user_list():
-    (
-        post_data("https://api.test.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER_TEST")))
-        >> post_data("https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER_PROD")))
-    )
+    post_data("https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER")))
 
 
 update_printer_user_list()
