@@ -25,7 +25,7 @@ def restart():
         r = requests.delete(url, headers=headers)
         logging.info(r)
     if environment == "prod":
-        url = f'https://apiprofcomff.com/timetable/event/bulk?start={start_deleting}&end={end_deleting}'
+        url = f'https://api.profcomff.com/timetable/event/bulk?start={start_deleting}&end={end_deleting}'
         r = requests.delete(url, headers=headers)
         logging.info(r)
 
