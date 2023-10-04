@@ -1,6 +1,12 @@
-import datetime
-import json
 import logging
+from profcomff_parse_lib import (parse_timetable, parse_all, parse_name,
+                                 multiple_lessons, flatten, all_to_array,
+                                 completion, to_id, check_date, delete_lesson,
+                                 calc_date, post_event)
+import pandas as pd
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+import datetime
 
 import pandas as pd
 import sqlalchemy as sa
@@ -43,18 +49,16 @@ def parsing():
     # parse_name, parse_all - Парсинг
     lessons = parse_name(results)
     logging.info(f"lessons, columns: {len(list(lessons))} len: {lessons.shape[0]}")
-    lessons, places, groups, teachers, subjects = parse_all(
-        lessons, dict_substitutions.dict_substitutions
-    )
+    lessons, places, groups, teachers, subjects = parse_all(lessons)
     # multiple lessons - Пары с одинаковыми временем, преподавателем и названием соединяет в одну
     # (аудитории могут быть разные, но теперь они лежат в одной строке.). Это в основном для английского.
     lessons = multiple_lessons(lessons)
-    # flatten - Првращает в таблице place, teacher в массивы
+    # flatten - Превращает в таблице place, teacher в массивы
     lessons = flatten(lessons)
     # all_to_array - Если совпадают время, название, преподаватели и команты (но не группы) то соединяет в одну строчку.
     # После этого действия и группы тоже становятся массивом.
     lessons = all_to_array(lessons)
-    # comletion - Если спарсились новые группы, преподаватели, комнаты, то добавляет их в бд.
+    # completion - Если спарсились новые группы, преподаватели, комнаты, то добавляет их в бд.
     completion(groups, places, teachers, headers, environment)
     # to_id - превращает группы, преподов и комнаты в id в таблице
     lessons = to_id(lessons, headers, environment)
