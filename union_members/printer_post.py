@@ -1,51 +1,57 @@
 import logging
+from datetime import datetime, timedelta
 from textwrap import dedent
 from urllib.parse import urljoin
 
-import requests as r
 import pandas as pd
+import requests as r
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
-from airflow.models import Variable, Connection
-from datetime import datetime, timedelta
+from airflow.models import Connection, Variable
 
 
 def send_print_post_error_telegram_message():
     token = str(Variable.get("TGBOT_TOKEN"))
     r.post(
-        f'https://api.telegram.org/bot{token}/sendMessage',
+        f"https://api.telegram.org/bot{token}/sendMessage",
         json={
             "chat_id": -633287506,
             "text": f"Ошибка при загрузке данных из БД ОПК в продовую БД принтера",
-        }
+        },
     )
 
 
-@task(task_id='post_data', retries=3)
+@task(task_id="post_data", retries=3)
 def post_data(url, token):
-    con = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-    query = dedent("""
+    con = (
+        Connection.get_connection_from_secrets("postgres_dwh")
+        .get_uri()
+        .replace("postgres://", "postgresql://")
+    )
+    query = dedent(
+        """
         SELECT last_name, card_number
         FROM "STG_UNION_MEMBER"."union_member"
         WHERE faculty = 'Физический факультет'
             AND status = 'Член профсоюза'
             AND LENGTH(last_name) > 0
             AND LENGTH(card_number) > 0;
-    """)
-    data = pd.read_sql_query(query, con).drop_duplicates(subset=['card_number'])
+    """
+    )
+    data = pd.read_sql_query(query, con).drop_duplicates(subset=["card_number"])
 
     users = []
     for i, row in data.iterrows():
         user = {
-            "username": row['last_name'],
-            "union_number": row['card_number'],
+            "username": row["last_name"],
+            "union_number": row["card_number"],
         }
         users.append(user)
 
     resp = r.post(
         urljoin(url, "is_union_member"),
         json={"users": users},
-        headers={"Authorization": token}
+        headers={"Authorization": token},
     )
     logging.info(str(resp.json()))
     if resp.status_code != 200:
@@ -67,8 +73,14 @@ def post_data(url, token):
 )
 def update_printer_user_list():
     (
-        post_data("https://api.test.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER_TEST")))
-        >> post_data("https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER_PROD")))
+        post_data(
+            "https://api.test.profcomff.com/print/",
+            str(Variable.get("TOKEN_ROBOT_PRINTER_TEST")),
+        )
+        >> post_data(
+            "https://api.profcomff.com/print/",
+            str(Variable.get("TOKEN_ROBOT_PRINTER_PROD")),
+        )
     )
 
 

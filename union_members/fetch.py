@@ -8,36 +8,38 @@ from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
 
-@task(task_id='send_telegram_message', retries=3)
+@task(task_id="send_telegram_message", retries=3)
 def send_telegram_message(chat_id, data_length):
     """Скачать данные из ЛК ОПК"""
 
     token = str(Variable.get("TGBOT_TOKEN"))
     r.post(
-        f'https://api.telegram.org/bot{token}/sendMessage',
+        f"https://api.telegram.org/bot{token}/sendMessage",
         json={
             "chat_id": chat_id,
             "text": "Получено {} строк из базы ОПК".format(data_length),
-        }
+        },
     )
 
 
-@task(task_id='fetch_users', outlets=Dataset("STG_UNION_MEMBER.union_member"))
+@task(task_id="fetch_users", outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def fetch_union_members():
     """Скачать данные из ЛК ОПК"""
 
     with r.Session() as s:
-        logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
+        logging.info(
+            "Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME")
+        )
 
-        resp=s.post(
+        resp = s.post(
             "https://api-lk.msuprof.com/api/auth/token/login/",
             data={
                 "email": str(Variable.get("LK_MSUPROF_ADMIN_USERNAME")),
-                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD"))
+                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
             },
         )
         logging.info(resp)
-        token = resp.json()['auth_token']
+        token = resp.json()["auth_token"]
 
         resp = s.get(
             "https://api-lk.msuprof.com/api/auth/users/",
@@ -54,35 +56,33 @@ def fetch_union_members():
         raise e
 
     for i in users_dict:
-        if 'card' not in i or i['card'] is None:
+        if "card" not in i or i["card"] is None:
             continue
-        i['card_id'] = i['card'].get('id')
-        i['card_status'] = i['card'].get('status')
-        i['card_date'] = i['card'].get('date')
-        i['card_number'] = i['card'].get('number')
-        i['card_user'] = i['card'].get('user')
-        del i['card']
+        i["card_id"] = i["card"].get("id")
+        i["card_status"] = i["card"].get("status")
+        i["card_date"] = i["card"].get("date")
+        i["card_number"] = i["card"].get("number")
+        i["card_user"] = i["card"].get("user")
+        del i["card"]
     data = pd.DataFrame(users_dict)
     data.to_sql(
-        'union_member',
-        Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://"),
-        schema='STG_UNION_MEMBER',
-        if_exists='replace',
+        "union_member",
+        Connection.get_connection_from_secrets("postgres_dwh")
+        .get_uri()
+        .replace("postgres://", "postgresql://"),
+        schema="STG_UNION_MEMBER",
+        if_exists="replace",
         index=False,
     )
     return len(data)
 
 
 @dag(
-    schedule='0 0 */1 * *',
+    schedule="0 0 */1 * *",
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags= ["dwh"],
-    default_args={
-        "owner": "dwh",
-        "retries": 3,
-        "retry_delay": timedelta(minutes=5)
-    }
+    tags=["dwh"],
+    default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
 )
 def union_member_download():
     union_members_result = fetch_union_members()
