@@ -39,24 +39,25 @@ def download_pages_to_db():
             })
     data = pd.DataFrame(data)
     sql_engine = sa.create_engine(DB_URI)
+    conn = sql_engine.connect()
 
-    sql_engine.execute("""
+    conn.execute("""
     CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html (url varchar(256) NULL, raw_html text NULL);
     CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html_old (url varchar(256) NULL, raw_html text NULL);
     """)
-    sql_engine.execute("""
+    conn.execute("""
     delete from "STG_TIMETABLE".raw_html_old;
     """)
     logging.info("raw_html_old is empty")
-    sql_engine.execute("""
+    conn.execute("""
     insert into "STG_TIMETABLE".raw_html_old ("url", "raw_html") select "url", "raw_html" from "STG_TIMETABLE".raw_html
     """)
     logging.info("raw_html_old is full")
-    sql_engine.execute("""
+    conn.execute("""
     delete from "STG_TIMETABLE".raw_html;
     """)
     logging.info("raw_html is empty")
-    data.to_sql('raw_html', sql_engine, schema='STG_TIMETABLE', if_exists='append', index=False)
+    data.to_sql('raw_html', conn, schema='STG_TIMETABLE', if_exists='append', index=False)
     logging.info("raw_html is full")
     return Dataset("STG_TIMETABLE.raw_html")
 
