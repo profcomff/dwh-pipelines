@@ -56,7 +56,8 @@ def download_pages_to_db():
     delete from "STG_TIMETABLE".raw_html;
     """)
     logging.info("raw_html is empty")
-    data.to_sql('raw_html', sql_engine.raw_connection(), schema='STG_TIMETABLE', if_exists='append', index=False)
+    with sql_engine.connect() as conn:
+        data.to_sql('raw_html', conn.connection, schema='STG_TIMETABLE', if_exists='append', index=False)
     logging.info("raw_html is full")
 
     return Dataset("STG_TIMETABLE.raw_html")
