@@ -53,7 +53,7 @@ def get_balance():
 )
 def check_vds_balance():
     balance = get_balance()
-    send_telegram_message_or_print(-633287506, balance)
+    send_telegram_message_or_print(-1001786188782, balance)
 
 
 union_member_sync = check_vds_balance()

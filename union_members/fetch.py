@@ -86,7 +86,7 @@ def fetch_union_members():
 )
 def union_member_download():
     union_members_result = fetch_union_members()
-    send_telegram_message(-633287506, union_members_result)
+    send_telegram_message(-1001786188782, union_members_result)
 
 
 union_member_sync = union_member_download()
