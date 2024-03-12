@@ -35,7 +35,7 @@ def fetch_union_members():
             "https://api-lk.msuprof.com/api/auth/token/login/",
             data={
                 "email": str(Variable.get("LK_MSUPROF_ADMIN_USERNAME")),
-                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
+                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD"))
             },
         )
         logging.info(resp)
@@ -56,14 +56,14 @@ def fetch_union_members():
         raise e
 
     for i in users_dict:
-        if "card" not in i or i["card"] is None:
+        if 'card' not in i or i['card'] is None:
             continue
         i['card_id'] = i['card'].get('id')
         i['card_status'] = i['card'].get('status')
         i['card_date'] = i['card'].get('date')
         i['card_number'] = i['card'].get('number')
         i['card_user'] = i['card'].get('user')
-        del i["card"]
+        del i['card']
     data = pd.DataFrame(users_dict)
     data.to_sql(
         "union_member",

@@ -70,7 +70,7 @@ def download_pages_to_db():
 def compare_pages():
     sql_engine = sa.create_engine(DB_URI)
     changed_urls = sql_engine.execute(
-        """
+        '''
         SELECT COALESCE(new.url, old.url) AS url
         FROM "STG_TIMETABLE".raw_html AS new
         FULL OUTER JOIN "STG_TIMETABLE".raw_html_old AS old
@@ -78,8 +78,7 @@ def compare_pages():
         WHERE old.raw_html IS NULL
             OR new.raw_html IS NULL
             OR old.raw_html <> new.raw_html;
-    """
-    ).fetchall()
+    ''').fetchall()
     changed_urls = [row[0] for row in changed_urls]
     number_of_groups = 0
     for i, source in enumerate(SOURCES):
