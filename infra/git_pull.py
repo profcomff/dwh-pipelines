@@ -14,5 +14,5 @@ with DAG(
 ) as dag:
     BashOperator(
         task_id="git_pull",
-        bash_command=f"cd /root/airflow/dags/dwh-pipelines && git fetch && git reset --hard origin/main && git submodule update --init --recursive",
+        bash_command=f"cd /airflow/dags/dwh-pipelines && git fetch && git reset --hard origin/main && git submodule update --init --recursive"
     )
