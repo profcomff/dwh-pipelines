@@ -13,7 +13,7 @@ from airflow.models import Connection, Variable
 def send_print_post_error_telegram_message():
     token = str(Variable.get("TGBOT_TOKEN"))
     r.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
+        f'https://api.telegram.org/bot{token}/sendMessage',
         json={
             "chat_id": -633287506,
             "text": f"Ошибка при загрузке данных из БД ОПК в БД принтера",
@@ -21,7 +21,7 @@ def send_print_post_error_telegram_message():
     )
 
 
-@task(task_id="post_data", retries=3)
+@task(task_id='post_data', retries=3)
 def post_data(url, token):
     con = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
     query = dedent("""
@@ -38,15 +38,15 @@ def post_data(url, token):
     users = []
     for i, row in data.iterrows():
         user = {
-            "username": row["last_name"],
-            "union_number": row["card_number"],
+            "username": row['last_name'],
+            "union_number": row['card_number'],
         }
         users.append(user)
 
     resp = r.post(
         urljoin(url, "is_union_member"),
         json={"users": users},
-        headers={"Authorization": token},
+        headers={"Authorization": token}
     )
     logging.info(str(resp.json()))
     if resp.status_code != 200:

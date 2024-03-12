@@ -29,7 +29,7 @@ DB_URI = (
 )
 
 
-@task(task_id="download_pages_to_db", outlets=Dataset("STG_TIMETABLE.raw_html"))
+@task(task_id='download_pages_to_db', outlets=Dataset("STG_TIMETABLE.raw_html"))
 def download_pages_to_db():
     data = []
     for ind, source in enumerate(SOURCES):
@@ -66,7 +66,7 @@ def download_pages_to_db():
     return Dataset("STG_TIMETABLE.raw_html")
 
 
-@task(task_id="compare_pages")
+@task(task_id='compare_pages')
 def compare_pages():
     sql_engine = sa.create_engine(DB_URI)
     changed_urls = sql_engine.execute(
@@ -86,10 +86,10 @@ def compare_pages():
         number_of_groups += source[2]
 
     if len(changed_urls) > 0:
-        changed_urls_formated = "\n".join(changed_urls[:10])
+        changed_urls_formated = '\n'.join(changed_urls[:10])
         token = str(Variable.get("TGBOT_TOKEN"))
         response = r.post(
-            f"https://api.telegram.org/bot{token}/sendMessage",
+            f'https://api.telegram.org/bot{token}/sendMessage',
             json={
                 "chat_id": -1001758480664,
                 "text": f"Изменились следующие страницы с расписанием "

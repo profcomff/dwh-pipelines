@@ -6,7 +6,7 @@ from airflow.decorators import dag, task
 from airflow.models import Variable
 
 
-@task(task_id="send_telegram_message", retries=3)
+@task(task_id='send_telegram_message', retries=3)
 def send_telegram_message_or_print(chat_id, balance):
     """Скачать данные из ЛК ОПК"""
 
@@ -15,15 +15,15 @@ def send_telegram_message_or_print(chat_id, balance):
     else:
         token = str(Variable.get("TGBOT_TOKEN"))
         r.post(
-            f"https://api.telegram.org/bot{token}/sendMessage",
+            f'https://api.telegram.org/bot{token}/sendMessage',
             json={
                 "chat_id": chat_id,
                 "text": f"Баланс vds.sh составляет {balance} рублей. Время пополнить счет, @MArzangulyan!",
-            },
+            }
         )
 
 
-@task(task_id="fetch_users", retries=3)
+@task(task_id='fetch_users', retries=3)
 def get_balance():
     """Скачать данные из ЛК ОПК"""
 
@@ -45,7 +45,7 @@ def get_balance():
 
 
 @dag(
-    schedule="0 */12 * * *",
+    schedule='0 */12 * * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["infra"],
