@@ -19,6 +19,7 @@ def send_telegram_message(chat_id, diff):
             "text": "DWH база данных устарела!"
         },
     )
+    print(diff)
 
 
 @task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
@@ -58,7 +59,6 @@ def fetch_dwh_db():
 
     schema_diff = list()
     table_diff = list()
-    column_diff = list()
 
     with api_sql_engine.connect() as api_conn:
         with dwh_sql_engine.connect() as dwh_conn:
@@ -66,9 +66,10 @@ def fetch_dwh_db():
                     select nspname from pg_catalog.pg_namespace
                 ''')).fetchall() if schema[0] not in deletion])
             for api_schema in schemas.keys():
+                diff = "====================== СХЕМЫ ======================\n"
                 dwh_schema = schemas[api_schema]
                 if dwh_schema not in dwh_schemas:
-                    diff = f"Схема: {dwh_schema}\n"
+                    diff += f"Схема: {dwh_schema}\n"
                     tables_diff = [table[1] for table in api_conn.execute(sa.text(
                         f'''select * from pg_tables where schemaname='{api_schema}';'''
                     )).fetchall()]
@@ -86,26 +87,28 @@ def fetch_dwh_db():
                     api_tables = list([table[1] for table in api_conn.execute(sa.text(f'''
                     select * from pg_tables where schemaname='{api_schema}';'''))])
                     api_tables.remove('alembic_version')
+                    diff = "====================== ТАБЛИЦЫ И КОЛОНКИ ======================\n"
                     for i in range(len(api_tables)):
-                        if api_tables[i] in dwh_tables:
-                            api_t_struct = [column for column in api_conn.execute(sa.text(f'''
+                        api_t_struct = [column for column in api_conn.execute(sa.text(f'''
                                 SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
-                            dwh_t_struct = [column for column in dwh_conn.execute(sa.text(f'''
+                        dwh_t_struct = [column for column in dwh_conn.execute(sa.text(f'''
                                 SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{dwh_schema}';''')).fetchall()]
+                        if api_tables[i] in dwh_tables:
                             for i in range(len(api_t_struct)):
                                 api_column_name = api_t_struct[i][0]
                                 api_column_type = api_t_struct[i][1]
                                 if api_column_name not in [dwh_col[0] for dwh_col in dwh_t_struct]:
-                                    column_diff.append(f"Column: {api_column_name}")
+                                    diff += f"Колонка: {api_tables[i]}.{api_column_name} Тип: {api_column_type}"                                                                       
                                 else:
                                     dwh_col_type = [dwh_col[1] for dwh_col in dwh_t_struct if dwh_col[0] == api_column_name][0]
                                     if api_column_type != dwh_col_type:
-                                        column_diff.append(f"Type: \n API:{api_column_type} DWH:{dwh_col_type}")
-                                                                                                                                
+                                        diff += f"Разница типов в таблице {api_tables[i]}\n API:{api_column_type} DWH:{dwh_col_type}"                                                                                  
                         else:
-                            diff = f"Схема: {api_schema}\n\tТаблица: {api_tables[i]}\n"
-                            table_diff.append(api_tables[i])
-    return schema_diff, table_diff, column_diff
+                            diff = f"Таблица: {api_schema}.{api_tables[i]}\n"
+                            for col in api_t_struct:
+                                diff += f"\tСтолбец: {col[0]}; Тип: {col[1]} \n"                                                                         
+                        table_diff.append(diff)
+    return schema_diff, table_diff
 
 @dag(
     schedule="0 0 */1 * *",
