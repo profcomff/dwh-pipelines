@@ -19,8 +19,12 @@ def send_telegram_message(chat_id, diff):
             "text": "DWH база данных устарела!"
         },
     )
-    with open(f"{datetime.now()}_integrity_check.log", "a") as f:
-        f.write(diff)
+    print(diff)
+    file = f"{datetime.now()}_integrity_check.txt"
+    with open(file, "w+") as f:
+        for obj in diff[0]:
+            print(obj)
+            f.write(obj)
     
 
 
@@ -96,9 +100,9 @@ def fetch_dwh_db():
                         dwh_t_struct = [column for column in dwh_conn.execute(sa.text(f'''
                                 SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{dwh_schema}';''')).fetchall()]
                         if api_tables[i] in dwh_tables:
-                            for i in range(len(api_t_struct)):
-                                api_column_name = api_t_struct[i][0]
-                                api_column_type = api_t_struct[i][1]
+                            for j in range(len(api_t_struct)):
+                                api_column_name = api_t_struct[j][0]
+                                api_column_type = api_t_struct[j][1]
                                 if api_column_name not in [dwh_col[0] for dwh_col in dwh_t_struct]:
                                     diff += f"Колонка: {api_tables[i]}.{api_column_name} Тип: {api_column_type}"                                                                       
                                 else:
@@ -122,6 +126,6 @@ def fetch_dwh_db():
 def integrity_check():
     result = fetch_dwh_db()
     if result:
-        send_telegram_message(-633287506, result)
+        send_telegram_message(818677727, result)
 
 dwh_integrity_check = integrity_check()
