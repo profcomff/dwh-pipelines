@@ -82,7 +82,7 @@ def fetch_union_members():
         "owner": "dwh",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": send_telegram_message(-1001786188782),
+        "on_failure_callback": lambda: send_telegram_message(-1001786188782),
     }
 )
 def union_member_download():
