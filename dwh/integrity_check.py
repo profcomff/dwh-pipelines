@@ -10,14 +10,15 @@ from airflow.models import Connection, Variable
 
 
 @task(task_id="send_telegram_message", retries=3)
-def send_telegram_message(chat_id, diff):
+def send_telegram_message(chat_id, diff, **context):
+    logging.info("Context: %s", context)
     token = str(Variable.get("TGBOT_TOKEN"))
     file = f"{datetime.now()}_integrity_check.log"
     r.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
         json={
             "chat_id": chat_id,
-            "text": f"DWH база данных устарела!\nЛог отчета: {file}"
+            "text": f"Проверка соответствия БД выполнена\nЛог отчета: {file}"
         },
     )
     with open(file, "w+") as f:
@@ -39,7 +40,6 @@ def fetch_dwh_db():
         "api_social": "STG_SOCIAL",
         "api_timetable": "STG_TIMETABLE",
         "api_userdata": "STG_USERDATA",
-        "app_airflow": "STG_AIRFLOW",
         "bot_tg_print": "STG_PRINT_TG",
         "bot_vk_print": "STG_PRINT_VK",
     }
@@ -64,56 +64,55 @@ def fetch_dwh_db():
     schema_diff = list()
     table_diff = list()
 
-    with api_sql_engine.connect() as api_conn:
-        with dwh_sql_engine.connect() as dwh_conn:
-            dwh_schemas = list([schema[0] for schema in dwh_conn.execute(sa.text(f'''
-                    select nspname from pg_catalog.pg_namespace
-                ''')).fetchall() if schema[0] not in deletion])
-            for api_schema in schemas.keys():
-                diff = "====================== СХЕМА ======================\n"
-                dwh_schema = schemas[api_schema]
-                if dwh_schema not in dwh_schemas:
-                    diff += f"Схема: {dwh_schema}\n"
-                    tables_diff = [table[1] for table in api_conn.execute(sa.text(
-                        f'''select * from pg_tables where schemaname='{api_schema}';'''
-                    )).fetchall()]
-                    tables_diff.remove('alembic_version')
-                    for table in tables_diff:
-                        diff += f"\tТаблица: {table}\n"
-                        api_col_diff = [column for column in api_conn.execute(sa.text(f'''
-                                SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
-                        for col in api_col_diff:
-                            diff += f"\t\tСтолбец: {col[0]}; Тип: {col[1]} \n"
-                    schema_diff.append(diff)
-                else:
-                    dwh_tables = list([table[1] for table in dwh_conn.execute(sa.text(f'''
-                    select * from pg_tables where schemaname='{dwh_schema}';'''))])
-                    api_tables = list([table[1] for table in api_conn.execute(sa.text(f'''
-                    select * from pg_tables where schemaname='{api_schema}';'''))])
-                    api_tables.remove('alembic_version')
-                    for i in range(len(api_tables)):
-                        api_t_struct = [column for column in api_conn.execute(sa.text(f'''
-                                SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
-                        dwh_t_struct = [column for column in dwh_conn.execute(sa.text(f'''
-                                SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{dwh_schema}';''')).fetchall()]
-                        if api_tables[i] in dwh_tables:
-                            diff = "====================== РАЗНИЦЫ В КОЛОНКАХ ======================\n"
-                            for j in range(len(api_t_struct)):
-                                api_column_name = api_t_struct[j][0]
-                                api_column_type = api_t_struct[j][1]
-                                if api_column_name not in [dwh_col[0] for dwh_col in dwh_t_struct]:
-                                    diff += f"Колонка: {dwh_schema}.{api_tables[i]}.{api_column_name} Тип: {api_column_type}\n"
-                                else:
-                                    dwh_col_type = \
-                                    [dwh_col[1] for dwh_col in dwh_t_struct if dwh_col[0] == api_column_name][0]
-                                    if api_column_type != dwh_col_type:
-                                        diff += f"Разница типов в таблице {dwh_schema}.{api_tables[i]}\nAPI:{api_column_type} DWH:{dwh_col_type}\n\n"
-                        else:
-                            diff = "====================== ТАБЛИЦА И КОЛОНКИ ======================\n"
-                            diff += f"Таблица: {dwh_schema}.{api_tables[i]}\n"
-                            for col in api_t_struct:
-                                diff += f"\tСтолбец: {col[0]}; Тип: {col[1]} \n"
-                        table_diff.append(diff)
+    with api_sql_engine.connect() as api_conn, dwh_sql_engine.connect() as dwh_conn:
+        dwh_schemas = list([schema[0] for schema in dwh_conn.execute(sa.text(f'''
+                select nspname from pg_catalog.pg_namespace
+            ''')).fetchall() if schema[0] not in deletion])
+        for api_schema in schemas.keys():
+            diff = "====================== СХЕМА ======================\n"
+            dwh_schema = schemas[api_schema]
+            if dwh_schema not in dwh_schemas:
+                diff += f"Схема: {dwh_schema}\n"
+                tables_diff = [table[1] for table in api_conn.execute(sa.text(
+                    f'''select * from pg_tables where schemaname='{api_schema}';'''
+                )).fetchall()]
+                tables_diff.remove('alembic_version')
+                for table in tables_diff:
+                    diff += f"\tТаблица: {table}\n"
+                    api_col_diff = [column for column in api_conn.execute(sa.text(f'''
+                            SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
+                    for col in api_col_diff:
+                        diff += f"\t\tСтолбец: {col[0]}; Тип: {col[1]} \n"
+                schema_diff.append(diff)
+            else:
+                dwh_tables = list([table[1] for table in dwh_conn.execute(sa.text(f'''
+                select * from pg_tables where schemaname='{dwh_schema}';'''))])
+                api_tables = list([table[1] for table in api_conn.execute(sa.text(f'''
+                select * from pg_tables where schemaname='{api_schema}';'''))])
+                api_tables.remove('alembic_version')
+                for i in range(len(api_tables)):
+                    api_t_struct = [column for column in api_conn.execute(sa.text(f'''
+                            SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
+                    dwh_t_struct = [column for column in dwh_conn.execute(sa.text(f'''
+                            SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{dwh_schema}';''')).fetchall()]
+                    if api_tables[i] in dwh_tables:
+                        diff = "====================== РАЗНИЦЫ В КОЛОНКАХ ======================\n"
+                        for j in range(len(api_t_struct)):
+                            api_column_name = api_t_struct[j][0]
+                            api_column_type = api_t_struct[j][1]
+                            if api_column_name not in [dwh_col[0] for dwh_col in dwh_t_struct]:
+                                diff += f"Колонка: {dwh_schema}.{api_tables[i]}.{api_column_name} Тип: {api_column_type}\n"
+                            else:
+                                dwh_col_type = \
+                                [dwh_col[1] for dwh_col in dwh_t_struct if dwh_col[0] == api_column_name][0]
+                                if api_column_type != dwh_col_type:
+                                    diff += f"Разница типов в таблице {dwh_schema}.{api_tables[i]}\nAPI:{api_column_type} DWH:{dwh_col_type}\n\n"
+                    else:
+                        diff = "====================== ТАБЛИЦА И КОЛОНКИ ======================\n"
+                        diff += f"Таблица: {dwh_schema}.{api_tables[i]}\n"
+                        for col in api_t_struct:
+                            diff += f"\tСтолбец: {col[0]}; Тип: {col[1]} \n"
+                    table_diff.append(diff)
     return schema_diff, table_diff
 
 
@@ -126,8 +125,7 @@ def fetch_dwh_db():
 )
 def integrity_check():
     result = fetch_dwh_db()
-    if result:
-        send_telegram_message(818677727, result)
+    send_telegram_message(818677727, result)
 
 
 dwh_integrity_check = integrity_check()
