@@ -19,7 +19,9 @@ def send_telegram_message(chat_id, diff):
             "text": "DWH база данных устарела!"
         },
     )
-    print(diff)
+    with open(f"{datetime.now()}_integrity_check.log", "a") as f:
+        f.write(diff)
+    
 
 
 @task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
