@@ -13,7 +13,7 @@ from airflow.models import Connection, Variable
 def send_telegram_message(chat_id, diff, **context):
     if diff != set():
         dag_run = context.get("dag_run")
-        url = dag_run.get_task_instance(context['task_instance'].task_id).replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
+        url = dag_run.get_task_instance(context['task_instance'].task_id).log_url.replace("localhost:8080", "yandex.ru").replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
         token = str(Variable.get("TGBOT_TOKEN"))
         file = f"{datetime.now()}_integrity_check.log"
         req = r.post(
@@ -57,6 +57,7 @@ def fetch_dwh_db():
 
     api_sql_engine = create_engine(api_uri)
     dwh_sql_engine = create_engine(dwh_uri)
+    text = ""
 
     with api_sql_engine.connect() as api_conn, dwh_sql_engine.connect() as dwh_conn:
         api_cols = api_conn.execute(sa.text(
@@ -68,23 +69,39 @@ def fetch_dwh_db():
         api_cols = set((schemas[i.table_schema], i.table_name, i.column_name) for i in api_cols)
         dwh_cols = set((i.table_schema, i.table_name, i.column_name) for i in dwh_cols)
 
-        diff = api_cols ^ dwh_cols
+        diff_with_api = (dwh_cols ^ api_cols) & api_cols
+        diff_with_dwh = (dwh_cols ^ api_cols) & dwh_cols
 
-    text = ""
-    schemas_diff = set([obj[0] for obj in diff])
-    for schema in schemas_diff:
-        tables_diff = set([obj[1] for obj in diff if obj[0] == schema and obj[1] != "alembic_version"])
-        if tables_diff:
-            text += f"\n{schema}\n"
-        for table in tables_diff:
-            text += f"\t{table}\n"
-            cols_diff = [obj[2] for obj in diff if obj[0] == schema and obj[1] == table]
-            for col in cols_diff:
-                text += f"\t\t{col}\n"
-        text += "\n"
+    schemas_diff_api = set([obj[0] for obj in diff_with_api])
+    if schemas_diff_api:
+        text += "\nДолжны быть в DWH но нет"
+        for schema in schemas_diff_api:
+            tables_diff = set([obj[1] for obj in diff_with_api if obj[0] == schema and obj[1] != "alembic_version"])
+            if tables_diff:
+                text += f"\n{schema}\n"
+            for table in tables_diff:
+                text += f"\t{table}\n"
+                cols_diff = [obj[2] for obj in diff_with_api if obj[0] == schema and obj[1] == table]
+                for col in cols_diff:
+                    text += f"\t\t{col}\n"
+            text += "\n"
+
+    schemas_diff_dwh = set([obj[0] for obj in diff_with_dwh])
+    if schemas_diff_dwh:
+        text += "\nНе должны быть в DWH но есть"
+        for schema in schemas_diff_dwh:
+            tables_diff = set([obj[1] for obj in diff_with_dwh if obj[0] == schema and obj[1] != "alembic_version"])
+            if tables_diff:
+                text += f"\n{schema}\n"
+            for table in tables_diff:
+                text += f"\t{table}\n"
+                cols_diff = [obj[2] for obj in diff_with_dwh if obj[0] == schema and obj[1] == table]
+                for col in cols_diff:
+                    text += f"\t\t{col}\n"
+            text += "\n"
 
     logging.info(text)
-    return diff
+    return schemas_diff_api, schemas_diff_dwh
 
 @dag(
     schedule="0 0 */1 * *",
