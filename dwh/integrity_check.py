@@ -11,9 +11,9 @@ from airflow.models import Connection, Variable
 
 @task(task_id="send_telegram_message", retries=3)
 def send_telegram_message(chat_id, diff, **context):
-    if diff != []:
+    if diff != set():
         dag_run = context.get("dag_run")
-        url = dag_run.get_task_instance(context['task_instance'].task_id).log_url.replace("localhost:8080", "yandex.ru").replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
+        url = dag_run.get_task_instance(context['task_instance'].task_id).replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
         token = str(Variable.get("TGBOT_TOKEN"))
         file = f"{datetime.now()}_integrity_check.log"
         req = r.post(
@@ -24,10 +24,6 @@ def send_telegram_message(chat_id, diff, **context):
                 "parse_mode": "MarkdownV2",
             }
         )
-        with open(file, "w+") as f:
-            for obj in diff:
-                for text in obj:
-                    f.write(text)
 
 
 @task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
@@ -47,8 +43,6 @@ def fetch_dwh_db():
         "bot_vk_print": "STG_PRINT_VK",
     }
 
-    deletion = ('pg_catalog', 'public', 'pg_toast', 'information_schema')
-
     api_uri = (
         Connection.get_connection_from_secrets("postgres_api")
         .get_uri()
@@ -64,55 +58,33 @@ def fetch_dwh_db():
     api_sql_engine = create_engine(api_uri)
     dwh_sql_engine = create_engine(dwh_uri)
 
-    schema_diff = list()
-    table_diff = list()
-
     with api_sql_engine.connect() as api_conn, dwh_sql_engine.connect() as dwh_conn:
-        dwh_schemas = list([schema[0] for schema in dwh_conn.execute(sa.text(f'''
-                select nspname from pg_catalog.pg_namespace
-            ''')).fetchall() if schema[0] not in deletion])
-        for api_schema in schemas.keys():
-            dwh_schema = schemas[api_schema]
-            if dwh_schema not in dwh_schemas:
-                diff = "====================== СХЕМА ======================\n"
-                diff += f"Схема: {dwh_schema}\n"
-                tables_diff = [table[1] for table in api_conn.execute(sa.text(
-                    f'''select * from pg_tables where schemaname='{api_schema}';'''
-                )).fetchall()]
-                tables_diff.remove('alembic_version')
-                for table in tables_diff:
-                    diff += f"\tТаблица: {table}\n"
-                    api_col_diff = [column for column in api_conn.execute(sa.text(f'''
-                            SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
-                    for col in api_col_diff:
-                        diff += f"\t\tСтолбец: {col[0]}; Тип: {col[1]} \n"
-                schema_diff.append(diff)
-            else:
-                dwh_tables = list([table[1] for table in dwh_conn.execute(sa.text(f'''
-                select * from pg_tables where schemaname='{dwh_schema}';'''))])
-                api_tables = list([table[1] for table in api_conn.execute(sa.text(f'''
-                select * from pg_tables where schemaname='{api_schema}';'''))])
-                api_tables.remove('alembic_version')
-                for i in range(len(api_tables)):
-                    api_t_struct = [column for column in api_conn.execute(sa.text(f'''
-                            SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{api_schema}';''')).fetchall()]
-                    dwh_t_struct = [column for column in dwh_conn.execute(sa.text(f'''
-                            SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{api_tables[i]}' AND TABLE_SCHEMA = '{dwh_schema}';''')).fetchall()]
-                    if api_tables[i] in dwh_tables:
-                        for j in range(len(api_t_struct)):
-                            api_column_name = api_t_struct[j][0]
-                            api_column_type = api_t_struct[j][1]
-                            if api_column_name not in [dwh_col[0] for dwh_col in dwh_t_struct]:
-                                diff = "====================== РАЗНИЦЫ В КОЛОНКАХ ======================\n"
-                                diff += f"Колонка: {dwh_schema}.{api_tables[i]}.{api_column_name} Тип: {api_column_type}\n"
-                    else:
-                        diff = "====================== ТАБЛИЦА И КОЛОНКИ ======================\n"
-                        diff += f"Таблица: {dwh_schema}.{api_tables[i]}\n"
-                        for col in api_t_struct:
-                            diff += f"\tСтолбец: {col[0]}; Тип: {col[1]} \n"
-                    table_diff.append(diff)
-    return schema_diff, table_diff
+        api_cols = api_conn.execute(sa.text(
+            f"select table_schema, table_name, column_name from information_schema.columns where table_schema in {tuple([key for key in schemas.keys()])}"))
 
+        dwh_cols = dwh_conn.execute(sa.text(
+            f"select table_schema, table_name, column_name from information_schema.columns where table_schema in {tuple([value for value in schemas.values()])}"))
+
+        api_cols = set((schemas[i.table_schema], i.table_name, i.column_name) for i in api_cols)
+        dwh_cols = set((i.table_schema, i.table_name, i.column_name) for i in dwh_cols)
+
+        diff = api_cols ^ dwh_cols
+
+    text = ""
+    schemas_diff = set([obj[0] for obj in diff])
+    for schema in schemas_diff:
+        tables_diff = set([obj[1] for obj in diff if obj[0] == schema and obj[1] != "alembic_version"])
+        if tables_diff:
+            text += f"\n{schema}\n"
+        for table in tables_diff:
+            text += f"\t{table}\n"
+            cols_diff = [obj[2] for obj in diff if obj[0] == schema and obj[1] == table]
+            for col in cols_diff:
+                text += f"\t\t{col}\n"
+        text += "\n"
+
+    logging.info(text)
+    return diff
 
 @dag(
     schedule="0 0 */1 * *",
