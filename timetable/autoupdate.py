@@ -8,22 +8,39 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 import datetime
 
+import pandas as pd
+import sqlalchemy as sa
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
+from profcomff_parse_lib import (all_to_array, calc_date, check_date,
+                                 completion, delete_lesson, dict_substitutions,
+                                 flatten, multiple_lessons, parse_all,
+                                 parse_name, parse_timetable, post_event,
+                                 to_id)
+from sqlalchemy.dialects import postgresql
 
-
-DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
+DB_URI = (
+    Connection.get_connection_from_secrets("postgres_dwh")
+    .get_uri()
+    .replace("postgres://", "postgresql://")
+)
 token = Variable.get("TOKEN_ROBOT_TIMETABLE")
 headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT")
 
 
-@task(task_id='parsing', inlets=Dataset("STG_TIMETABLE.raw_html"), outlets=Dataset("STG_TIMETABLE.old"))
+@task(
+    task_id="parsing",
+    inlets=Dataset("STG_TIMETABLE.raw_html"),
+    outlets=Dataset("STG_TIMETABLE.old"),
+)
 def parsing():
     engine = sa.create_engine(DB_URI)
     timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
-    logging.info(f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}")
+    logging.info(
+        f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}"
+    )
     results = pd.DataFrame()
     for i, row in timetables.iterrows():
         results = pd.concat([results, parse_timetable(row["raw_html"])])
@@ -45,7 +62,8 @@ def parsing():
     completion(groups, places, teachers, headers, environment)
     # to_id - превращает группы, преподов и комнаты в id в таблице
     lessons = to_id(lessons, headers, environment)
-    engine.execute("""
+    engine.execute(
+        """
        CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
            Id SERIAL PRIMARY key, subject varchar NOT NULL,
            odd bool NOT NULL, even bool NOT NULL,
@@ -71,8 +89,10 @@ def parsing():
            events_id _int4 NULL, id int4 NULL,
            "action" text NULL
     );
-    """)
-    engine.execute("""
+    """
+    )
+    engine.execute(
+        """
         delete from "STG_TIMETABLE"."old";
         insert into "STG_TIMETABLE"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
@@ -80,20 +100,34 @@ def parsing():
         from "STG_TIMETABLE"."new";
         delete from "STG_TIMETABLE"."new";
         delete from "STG_TIMETABLE".diff;
-    """)
-    lessons.to_sql(name="new", con=engine, schema="STG_TIMETABLE", if_exists="append", index=False,
-                   dtype={"group": postgresql.ARRAY(sa.types.Integer), "teacher": postgresql.ARRAY(sa.types.Integer),
-                          "place": postgresql.ARRAY(sa.types.Integer), "subject": postgresql.VARCHAR,
-                          "odd": postgresql.BOOLEAN,
-                          "even": postgresql.BOOLEAN, "weekday": postgresql.INTEGER, "num": postgresql.INTEGER,
-                          "start": postgresql.VARCHAR, "end": postgresql.VARCHAR})
+    """
+    )
+    lessons.to_sql(
+        name="new",
+        con=engine,
+        schema="STG_TIMETABLE",
+        if_exists="append",
+        index=False,
+        dtype={
+            "group": postgresql.ARRAY(sa.types.Integer),
+            "teacher": postgresql.ARRAY(sa.types.Integer),
+            "place": postgresql.ARRAY(sa.types.Integer),
+            "subject": postgresql.VARCHAR,
+            "odd": postgresql.BOOLEAN,
+            "even": postgresql.BOOLEAN,
+            "weekday": postgresql.INTEGER,
+            "num": postgresql.INTEGER,
+            "start": postgresql.VARCHAR,
+            "end": postgresql.VARCHAR,
+        },
+    )
     logging.info("Задача 'parsing' выполнена.")
 
 
 @task(
-    task_id='find_diff',
+    task_id="find_diff",
     inlets=[Dataset("STG_TIMETABLE.old"), Dataset("STG_TIMETABLE.new")],
-    outlets=Dataset("STG_TIMETABLE.diff")
+    outlets=Dataset("STG_TIMETABLE.diff"),
 )
 def find_diff():
     engine = sa.create_engine(DB_URI)
@@ -139,15 +173,21 @@ def find_diff():
     logging.info("Задача 'find_diff' выполнена.")
 
 
-@task(task_id='update', outlets=Dataset("STG_TIMETABLE.new"))
+@task(task_id="update", outlets=Dataset("STG_TIMETABLE.new"))
 def update():
     logging.info("Начало задачи 'update'")
     engine = sa.create_engine(DB_URI)
-    lessons_for_deleting = pd.read_sql_query("""select events_id from "STG_TIMETABLE".diff
-    where action='delete'""", engine)
-    lessons_for_creating = pd.read_sql_query("""select id, subject, "start", "end", "group",
+    lessons_for_deleting = pd.read_sql_query(
+        """select events_id from "STG_TIMETABLE".diff
+    where action='delete'""",
+        engine,
+    )
+    lessons_for_creating = pd.read_sql_query(
+        """select id, subject, "start", "end", "group",
     teacher, place, odd, even,
-    weekday, num from "STG_TIMETABLE".diff where action='create'""", engine)
+    weekday, num from "STG_TIMETABLE".diff where action='create'""",
+        engine,
+    )
     logging.info(f"Количество пар для удаления: {lessons_for_deleting.shape[0]}")
     logging.info(f"Количество пар для создания: {lessons_for_creating.shape[0]}")
 
@@ -155,13 +195,17 @@ def update():
     begin = begin.strftime("%m/%d/%Y")
     end = Variable.get("SEMESTER_END")
     semester_start = Variable.get("SEMESTER_START")
-    logging.info(f"Начало семестра: {semester_start}, дата начала загрузки пар: {begin}, дата конца семестра: {end}.")
+    logging.info(
+        f"Начало семестра: {semester_start}, дата начала загрузки пар: {begin}, дата конца семестра: {end}."
+    )
     for i, row in lessons_for_deleting.iterrows():
         for id in row["events_id"]:
             if check_date(id, environment, begin):
                 delete_lesson(headers, id, environment)
     lessons_new = calc_date(lessons_for_creating, begin, end, semester_start)
-    logging.info(f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий.")
+    logging.info(
+        f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий."
+    )
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
         event_id = post_event(headers, row, environment)
@@ -183,12 +227,12 @@ def update():
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
     max_active_runs=1,
     catchup=False,
-    tags= ["UPDATE"],
+    tags=["UPDATE"],
     default_args={
         "owner": "dwh",
         "retries": 0,
-        "retry_delay": datetime.timedelta(minutes=5)
-    }
+        "retry_delay": datetime.timedelta(minutes=5),
+    },
 )
 def update_timetable():
     parsing() >> find_diff() >> update()
