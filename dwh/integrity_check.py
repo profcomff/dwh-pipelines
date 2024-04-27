@@ -10,7 +10,7 @@ from airflow.models import Connection, Variable
 
 
 def prettify_diff(text: str, diff_obj: set):
-    for schema in diff_obj:
+    for schema in set([obj[0] for obj in diff_obj]):
         tables_diff = set([obj[1] for obj in diff_obj if obj[0] == schema and obj[1] != "alembic_version"])
         if tables_diff:
             text += f"\n{schema}\n"
@@ -47,14 +47,12 @@ def fetch_dwh_db():
         "api_auth": "STG_AUTH",
         "api_marketing": "STG_MARKETING",
         "api_printer": "STG_PRINT",
-        "api_design_school": "STG_DESIGN",
-        "api_redirector": "STG_REDIRECTOR",
         "api_service": "STG_SERVICES",
         "api_social": "STG_SOCIAL",
         "api_timetable": "STG_TIMETABLE",
         "api_userdata": "STG_USERDATA",
-        "bot_tg_print": "STG_PRINT_TG",
-        "bot_vk_print": "STG_PRINT_VK",
+        "bot_tg_print": "STG_PRINT",
+        "bot_vk_print": "STG_PRINT",
     }
 
     api_uri = (
@@ -88,12 +86,12 @@ def fetch_dwh_db():
 
     schemas_diff_api = set([obj[0] for obj in diff_with_api])
     if schemas_diff_api:
-        text += prettify_diff(text="\nДолжны быть в DWH но нет", diff_obj=schemas_diff_api)
+        text += prettify_diff(text="\nДолжны быть в DWH но нет", diff_obj=diff_with_api)
 
     schemas_diff_dwh = set([obj[0] for obj in diff_with_dwh])
     if schemas_diff_dwh:
-        text += prettify_diff(text="\nНе должны быть в DWH но есть", diff_obj=schemas_diff_dwh)
-        
+        text += prettify_diff(text="\nНе должны быть в DWH но есть", diff_obj=diff_with_dwh)
+
     logging.info(text)
     return schemas_diff_api, schemas_diff_dwh
 
@@ -106,7 +104,7 @@ def fetch_dwh_db():
 )
 def integrity_check():
     result = fetch_dwh_db()
-    send_telegram_message(818677727, result)
+    send_telegram_message(-1002132892037, result)
 
 
 dwh_integrity_check = integrity_check()
