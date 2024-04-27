@@ -9,6 +9,20 @@ from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
 
+def prettify_diff(text: str, diff_obj: set):
+    for schema in diff_obj:
+        tables_diff = set([obj[1] for obj in diff_obj if obj[0] == schema and obj[1] != "alembic_version"])
+        if tables_diff:
+            text += f"\n{schema}\n"
+        for table in tables_diff:
+            text += f"\t{table}\n"
+            cols_diff = [obj[2] for obj in diff_obj if obj[0] == schema and obj[1] == table]
+            for col in cols_diff:
+                text += f"\t\t{col}\n"
+        text += "\n"
+    return text
+
+
 @task(task_id="send_telegram_message", retries=3)
 def send_telegram_message(chat_id, diff, **context):
     if diff != set():
@@ -69,37 +83,17 @@ def fetch_dwh_db():
         api_cols = set((schemas[i.table_schema], i.table_name, i.column_name) for i in api_cols)
         dwh_cols = set((i.table_schema, i.table_name, i.column_name) for i in dwh_cols)
 
-        diff_with_api = (dwh_cols ^ api_cols) & api_cols
-        diff_with_dwh = (dwh_cols ^ api_cols) & dwh_cols
+        diff_with_api = api_cols - dwh_cols
+        diff_with_dwh = dwh_cols - api_cols
 
     schemas_diff_api = set([obj[0] for obj in diff_with_api])
     if schemas_diff_api:
-        text += "\nДолжны быть в DWH но нет"
-        for schema in schemas_diff_api:
-            tables_diff = set([obj[1] for obj in diff_with_api if obj[0] == schema and obj[1] != "alembic_version"])
-            if tables_diff:
-                text += f"\n{schema}\n"
-            for table in tables_diff:
-                text += f"\t{table}\n"
-                cols_diff = [obj[2] for obj in diff_with_api if obj[0] == schema and obj[1] == table]
-                for col in cols_diff:
-                    text += f"\t\t{col}\n"
-            text += "\n"
+        text += prettify_diff(text="\nДолжны быть в DWH но нет", diff_obj=schemas_diff_api)
 
     schemas_diff_dwh = set([obj[0] for obj in diff_with_dwh])
     if schemas_diff_dwh:
-        text += "\nНе должны быть в DWH но есть"
-        for schema in schemas_diff_dwh:
-            tables_diff = set([obj[1] for obj in diff_with_dwh if obj[0] == schema and obj[1] != "alembic_version"])
-            if tables_diff:
-                text += f"\n{schema}\n"
-            for table in tables_diff:
-                text += f"\t{table}\n"
-                cols_diff = [obj[2] for obj in diff_with_dwh if obj[0] == schema and obj[1] == table]
-                for col in cols_diff:
-                    text += f"\t\t{col}\n"
-            text += "\n"
-
+        text += prettify_diff(text="\nНе должны быть в DWH но есть", diff_obj=schemas_diff_dwh)
+        
     logging.info(text)
     return schemas_diff_api, schemas_diff_dwh
 
