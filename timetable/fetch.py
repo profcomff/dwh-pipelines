@@ -98,9 +98,9 @@ def compare_pages():
     schedule='0 */1 * * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags= ["dwh"],
+    tags= ["dwh", "timetable", "stg"],
     default_args={
-        "owner": "dwh",
+        "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
     }

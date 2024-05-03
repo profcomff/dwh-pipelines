@@ -227,9 +227,9 @@ def update():
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
     max_active_runs=1,
     catchup=False,
-    tags=["UPDATE"],
+    tags=["dwh", "timetable"],
     default_args={
-        "owner": "dwh",
+        "owner": "zamyatinsv",
         "retries": 0,
         "retry_delay": datetime.timedelta(minutes=5),
     },

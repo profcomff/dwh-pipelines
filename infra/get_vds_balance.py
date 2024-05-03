@@ -1,6 +1,7 @@
 import logging
 import requests as r
-from airflow.decorators import dag, task
+from airflow import DAG
+from airflow.decorators import task
 from airflow.models import Variable
 
 from datetime import datetime, timedelta
@@ -40,20 +41,17 @@ def get_balance():
     return balance
 
 
-@dag(
+with DAG(
+    dag_id="check_vds_balance",
     schedule='0 */12 * * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["infra"],
     default_args={
-        "owner": "infra",
+        "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
     }
-)
-def check_vds_balance():
+) as dag:
     balance = get_balance()
     send_telegram_message_or_print(-1001786188782, balance)
-
-
-union_member_sync = check_vds_balance()

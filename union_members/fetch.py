@@ -77,9 +77,9 @@ def fetch_union_members():
     schedule='0 0 */1 * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags= ["dwh"],
+    tags= ["dwh", "union_member"],
     default_args={
-        "owner": "dwh",
+        "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
         "on_failure_callback": lambda: send_telegram_message(-1001786188782),

@@ -58,9 +58,9 @@ def post_data(url, token):
     schedule=[Dataset("STG_UNION_MEMBER.union_member")],
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags=["dwh"],
+    tags=["dwh", "union_member"],
     default_args={
-        "owner": "SergeyZamyatin1",
+        "owner": "zamyatinsv",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
     },

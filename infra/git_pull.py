@@ -12,7 +12,7 @@ with DAG(
     catchup=False,
     tags= ["infra"],
     default_args={
-        "owner": "infra",
+        "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
     }
