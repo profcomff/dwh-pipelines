@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 from sqlalchemy import create_engine
 import pandas as pd
@@ -28,31 +29,46 @@ DWH_DB_DSN = (
 
 
 def get_graph_link(context):
-    base_url = 'https://airflow.profcomff.com' if ENVIRONMENT == 'prod' else 'http://airflow.test.profcomff.com'
+    base_url = (
+        "https://airflow.profcomff.com"
+        if ENVIRONMENT == "prod"
+        else "https://airflow.test.profcomff.com"
+    )
     dag_id = context["dag"].dag_id
-    execution_date = context["execution_date"].isoformat()
-    return f"{base_url}/base/graph?dag_id={dag_id}&root=&execution_date={execution_date}"
+    dag_run_id = context['dag_run'].run_id
+    dag_run_id = quote(dag_run_id)
+    return (
+        f"{base_url}/dags/{dag_id}/grid?dag_run_id={dag_run_id}&tab=graph"
+    )
 
 
 @task(task_id="send_telegram_message", trigger_rule="one_failed")
 def send_telegram_message(chat_id, **context):
     url = get_graph_link(context)
-    url = url.replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
+    url = (
+        url.replace("=", "\\=")
+        .replace("-", "\\-")
+        .replace("+", "\\+")
+        .replace(".", "\\.")
+        .replace("_", "\\_")
+    )
 
     token = str(Variable.get("TGBOT_TOKEN"))
+    msg = {
+        "chat_id": chat_id,
+        "text": f"Не все данные удалось скопировать в DWH из БД API\nГраф исполнения: {url}",
+        "parse_mode": "MarkdownV2",
+    }
+    logging.info(msg)
     req = r.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
-        json={
-            "chat_id": chat_id,
-            "text": f"Не все данные удалось скопировать в DWH из БД API\nГраф исполнения: {url}",
-            "parse_mode": "MarkdownV2",
-        }
+        json=msg,
     )
-    req.raise_for_status()
     logging.info("Bot send message status %d (%s)", req.status_code, req.text)
+    req.raise_for_status()
 
 
-@task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=1)
+@task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0)
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     logging.info(
         f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}"
@@ -82,7 +98,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
         logging.info(f"Колонка для сортировки: {id_column}")
 
         data_length = api_conn.execute(
-            sa.text(f"SELECT COUNT(*) FROM \"{from_schema}\".\"{from_table}\";")
+            sa.text(f'SELECT COUNT(*) FROM "{from_schema}"."{from_table}";')
         ).scalar()
         logging.info(f"Количество строк: {data_length}")
 
@@ -98,7 +114,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
         )
         logging.info(f"Колонки в таргете: {dwh_cols}")
 
-        dwh_conn.execute(sa.text(f"TRUNCATE TABLE \"{to_schema}\".\"{to_table}\";"))
+        dwh_conn.execute(sa.text(f'TRUNCATE TABLE "{to_schema}"."{to_table}";'))
 
     to_copy_cols = api_cols & dwh_cols
     logging.info(f"Колонки для копирования: {to_copy_cols}")
@@ -106,7 +122,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     with api.connect() as api_conn, dwh.connect() as dwh_conn:
         for i in range(0, data_length, MAX_ROWS_PER_REQUEST):
             data = pd.read_sql_query(
-                f"SELECT * FROM \"{from_schema}\".\"{from_table}\" ORDER BY {id_column} LIMIT {MAX_ROWS_PER_REQUEST} OFFSET {i}",
+                f'SELECT * FROM "{from_schema}"."{from_table}" ORDER BY {id_column} LIMIT {MAX_ROWS_PER_REQUEST} OFFSET {i}',
                 api_conn,
                 id_column,
             )
@@ -119,10 +135,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "achievement"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = "achievement", "achievement_reciever"
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
@@ -150,10 +163,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "auth"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = (
         "auth_method",
@@ -192,10 +202,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "marketing"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = "actions_info", "user"
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
@@ -223,10 +230,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "print"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = "file", "print_fact", "union_member"
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
@@ -254,10 +258,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "service"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = "button", "category", "scope"
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
@@ -285,10 +286,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "social"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = (
         "create_group_request",
@@ -324,10 +322,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "timetable"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = (
         "comment_event",
@@ -367,10 +362,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "userdata"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = (
         "category",
@@ -403,10 +395,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "print"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = ("tg_user",)
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
@@ -434,10 +423,7 @@ with DAG(
     schedule_interval=timedelta(days=1),
     catchup=False,
     tags=["dwh", "stg", "print"],
-    default_args={
-        "owner": "dyakovri",
-        "retry_delay": timedelta(minutes=5),
-    },
+    default_args={"owner": "dyakovri"},
 ):
     tables = ("vk_user",)
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))

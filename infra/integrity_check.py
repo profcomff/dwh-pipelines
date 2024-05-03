@@ -38,7 +38,7 @@ DWH_DB_DSN = (
 
 
 def get_base_url():
-    return 'https://airflow.profcomff.com' if ENVIRONMENT == 'prod' else 'http://airflow.test.profcomff.com'
+    return 'https://airflow.profcomff.com' if ENVIRONMENT == 'prod' else 'https://airflow.test.profcomff.com'
 
 
 def prettify_diff(text: str, diff_obj: set):
@@ -70,8 +70,8 @@ def send_telegram_message(chat_id, diff):
             "parse_mode": "MarkdownV2",
         }
     )
-    req.raise_for_status()
     logging.info("Bot send message status %d (%s)", req.status_code, req.text)
+    req.raise_for_status()
 
 
 @task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
