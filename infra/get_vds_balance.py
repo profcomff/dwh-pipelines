@@ -54,4 +54,4 @@ with DAG(
     }
 ) as dag:
     balance = get_balance()
-    send_telegram_message_or_print(-1001786188782, balance)
+    send_telegram_message_or_print(int(Variable.get("TG_CHAT_MANAGERS")), balance)

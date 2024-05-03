@@ -128,4 +128,4 @@ with DAG(
     }
 ) as dag:
     result = fetch_dwh_db()
-    send_telegram_message(-1002132892037, result)
+    send_telegram_message(int(Variable.get("TG_CHAT_DWH")), result)

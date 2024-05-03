@@ -125,7 +125,7 @@ with DAG(
     },
 ):
     tables = "achievement", "achievement_reciever"
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -167,7 +167,7 @@ with DAG(
         "user_session",
         "user_session_scope",
     )
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -198,7 +198,7 @@ with DAG(
     },
 ):
     tables = "actions_info", "user"
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -229,7 +229,7 @@ with DAG(
     },
 ):
     tables = "file", "print_fact", "union_member"
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -260,7 +260,7 @@ with DAG(
     },
 ):
     tables = "button", "category", "scope"
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -299,7 +299,7 @@ with DAG(
         "vk_group",
         "webhook_storage",
     )
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -342,7 +342,7 @@ with DAG(
         "photo",
         "room",
     )
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -378,7 +378,7 @@ with DAG(
         "param",
         "source",
     )
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -409,7 +409,7 @@ with DAG(
     },
 ):
     tables = ("tg_user",)
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
@@ -440,7 +440,7 @@ with DAG(
     },
 ):
     tables = ("vk_user",)
-    tg_task = send_telegram_message(-1002132892037)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
