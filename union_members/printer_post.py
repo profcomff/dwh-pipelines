@@ -10,21 +10,26 @@ from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
 
-def send_print_post_error_telegram_message():
+def send_error_tg_message(chat_id):
     token = str(Variable.get("TGBOT_TOKEN"))
     r.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
         json={
-            "chat_id": -633287506,
+            "chat_id": chat_id,
             "text": f"Ошибка при загрузке данных из БД ОПК в БД принтера",
-        }
+        },
     )
 
 
 @task(task_id="post_data", retries=3)
 def post_data(url, token):
-    con = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-    query = dedent("""
+    con = (
+        Connection.get_connection_from_secrets("postgres_dwh")
+        .get_uri()
+        .replace("postgres://", "postgresql://")
+    )
+    query = dedent(
+        """
         SELECT last_name, card_number,faculty
         FROM "STG_UNION_MEMBER"."union_member"
         WHERE strpos(lower(faculty), 'физический факультет'::text) > 0  -- "физический факультет" есть в названии факультета
@@ -40,6 +45,7 @@ def post_data(url, token):
         user = {
             "username": row["last_name"],
             "union_number": row["card_number"],
+            "student_number": None,
         }
         users.append(user)
 
@@ -58,15 +64,21 @@ def post_data(url, token):
     schedule=[Dataset("STG_UNION_MEMBER.union_member")],
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags=["dwh", "union_member"],
+    tags=["dwh", "union_member", "print"],
     default_args={
         "owner": "zamyatinsv",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
     },
-    on_failure_callback=send_print_post_error_telegram_message,
+    on_failure_callback=[
+        lambda: send_error_tg_message(int(Variable.get("TG_CHAT_DWH"))),
+        lambda: send_error_tg_message(int(Variable.get("TG_CHAT_MANAGERS"))),
+    ],
 )
 def update_printer_user_list():
-    post_data("https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER")))
+    post_data(
+        "https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER"))
+    )
+
 
 update_printer_user_list()
