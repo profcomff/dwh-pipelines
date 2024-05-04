@@ -118,14 +118,11 @@ def fetch_dwh_db(**context):
 with DAG(
     dag_id="dwh_integrity_check",
     start_date=datetime(2022, 1, 1),
-    schedule_interval=timedelta(hours=12),
+    schedule="*/15 * * * *",
     catchup=False,
     tags= ["dwh", "infra"],
-    default_args={
-        "owner": "roslavtsevsv",
-        "retries": 3,
-        "retry_delay": timedelta(minutes=5),
-    }
+    default_args={"owner": "roslavtsevsv"}
 ) as dag:
     result = fetch_dwh_db()
     send_telegram_message(int(Variable.get("TG_CHAT_DWH")), result)
+    send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS")), result)
