@@ -79,7 +79,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     with api.connect() as api_conn:
         api_cols_all = api_conn.execute(
             sa.text(
-                "SELECT column_name, data_type "
+                "SELECT column_name, data_type, ordinal_position "
                 "FROM information_schema.columns "
                 f"WHERE table_schema = '{from_schema}' AND table_name = '{from_table}';"
             )
@@ -87,7 +87,10 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
 
         bad_api_cols = set()
         api_cols = set()
-        for name, dtype in api_cols_all:
+        id_column = None
+        for name, dtype, pos in api_cols_all:
+            if pos == 1:
+                id_column = str(name)
             if dtype == "json":
                 bad_api_cols.add((str(name), dtype))
             api_cols.add(str(name))
@@ -98,7 +101,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
             id_column = "id"
         elif "create_ts" in api_cols:
             id_column = "create_ts"
-        else:
+        elif id_column is None:
             raise AttributeError("Не найдена колонка для сортировки")
         logging.info(f"Колонка для сортировки: {id_column}")
 
@@ -124,10 +127,10 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     logging.info(f"Колонки для копирования: {to_copy_cols}")
 
     with api.connect() as api_conn, dwh.connect() as dwh_conn:
-        to_copy_cols = ", ".join(to_copy_cols)
+        to_copy_cols = '", "'.join(to_copy_cols)
         for i in range(0, data_length, MAX_ROWS_PER_REQUEST):
             data = pd.read_sql_query(
-                f"SELECT {to_copy_cols} "
+                f'SELECT "{to_copy_cols}" '
                 f'FROM "{from_schema}"."{from_table}" '
                 f"ORDER BY {id_column} "
                 f"LIMIT {MAX_ROWS_PER_REQUEST} OFFSET {i}",
