@@ -1,5 +1,6 @@
 from airflow.decorators import task
 from airflow.models import Connection, create_engine
+from sqlalchemy import Base, Mapped
 @task(task_id="update_service")
 class ods_timetable_act(Base):
     key: Mapped[int] = mapped_column(Integer, Nullable = None, primary_key = True)
