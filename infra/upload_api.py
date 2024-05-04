@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 from sqlalchemy import create_engine
@@ -132,7 +132,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
 with DAG(
     dag_id="upload_api_achievement",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="0 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "achievement"],
     default_args={"owner": "dyakovri"},
@@ -160,7 +160,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_auth",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="5 */1 * * *",
     catchup=False,
     tags=["dwh", "stg", "auth"],
     default_args={"owner": "dyakovri"},
@@ -199,7 +199,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_marketing",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="10 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "marketing"],
     default_args={"owner": "dyakovri"},
@@ -227,7 +227,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_printer",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="50 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "print"],
     default_args={"owner": "dyakovri"},
@@ -255,7 +255,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_service",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="30 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "service"],
     default_args={"owner": "dyakovri"},
@@ -283,7 +283,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_social",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="15 */1 * * *",
     catchup=False,
     tags=["dwh", "stg", "social"],
     default_args={"owner": "dyakovri"},
@@ -319,7 +319,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_timetable",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="40 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "timetable"],
     default_args={"owner": "dyakovri"},
@@ -359,7 +359,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_userdata",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="25 */1 * * *",
     catchup=False,
     tags=["dwh", "stg", "userdata"],
     default_args={"owner": "dyakovri"},
@@ -392,7 +392,7 @@ with DAG(
 with DAG(
     dag_id="upload_bot_tg_print",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="50 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "print"],
     default_args={"owner": "dyakovri"},
@@ -420,7 +420,7 @@ with DAG(
 with DAG(
     dag_id="upload_bot_vk_print",
     start_date=datetime(2024, 1, 1),
-    schedule_interval=timedelta(days=1),
+    schedule="50 2 */1 * *",
     catchup=False,
     tags=["dwh", "stg", "print"],
     default_args={"owner": "dyakovri"},

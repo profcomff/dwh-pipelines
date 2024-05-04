@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 with DAG(
     dag_id="git_pull_pipelines",
-    start_date=datetime(2022,1,1),
+    start_date=datetime(2022, 1, 1),
     schedule_interval=timedelta(minutes=5),
     catchup=False,
     tags= ["infra"],
