@@ -43,7 +43,7 @@ def get_base_url():
 
 def prettify_diff(text: str, diff_obj: set):
     for schema in set([obj[0] for obj in diff_obj]):
-        tables_diff = set([obj[1] for obj in diff_obj if obj[0] == schema and obj[1] != "alembic_version"])
+        tables_diff = set([obj[1] for obj in diff_obj if obj[0] == schema])
         if tables_diff:
             text += f"\n{schema}\n"
         for table in tables_diff:
@@ -59,7 +59,7 @@ def prettify_diff(text: str, diff_obj: set):
 def send_telegram_message(chat_id, diff):
     diff_l, diff_r, url = diff
     url = url.replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
-    if diff_l == set() and diff_r == set():
+    if len(diff_l) == 0 and len(diff_r) == 0:
         return
     token = str(Variable.get("TGBOT_TOKEN"))
     req = r.post(
@@ -103,12 +103,12 @@ def fetch_dwh_db(**context):
         diff_with_api = api_cols - dwh_cols
         diff_with_dwh = dwh_cols - api_cols
 
-    schemas_diff_api = set([obj[0] for obj in diff_with_api])
-    if schemas_diff_api:
+    schemas_diff_api = set([obj[0] for obj in diff_with_api if obj[1] != 'alembic_version'])
+    if len(schemas_diff_api) > 0:
         text += prettify_diff(text="\nДолжны быть в DWH но нет", diff_obj=diff_with_api)
 
-    schemas_diff_dwh = set([obj[0] for obj in diff_with_dwh])
-    if schemas_diff_dwh:
+    schemas_diff_dwh = set([obj[0] for obj in diff_with_dwh if obj[1] != 'alembic_version'])
+    if len(schemas_diff_dwh) > 0:
         text += prettify_diff(text="\nНе должны быть в DWH но есть", diff_obj=diff_with_dwh)
 
     logging.info(text)
