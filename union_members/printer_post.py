@@ -54,9 +54,11 @@ def post_data(url, token):
         json={"users": users},
         headers={"Authorization": token},
     )
-    logging.info(str(resp.json()))
+    logging.info(resp)
     if resp.status_code != 200:
+        logging.info(resp.text)
         raise Exception(f"Failed to upload {resp.status_code}")
+    logging.info(resp.json())
     logging.info("data length: " + str(len(data)))
 
 
