@@ -27,6 +27,7 @@ def post_data(url, token):
         Connection.get_connection_from_secrets("postgres_dwh")
         .get_uri()
         .replace("postgres://", "postgresql://")
+        .replace("?__extra__=%7B%7D", "")
     )
     query = dedent(
         """

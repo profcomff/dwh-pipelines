@@ -65,7 +65,11 @@ def fetch_union_members():
     data = pd.DataFrame(users_dict)
     data.to_sql(
         'union_member',
-        Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://"),
+        Connection
+            .get_connection_from_secrets('postgres_dwh')
+            .get_uri()
+            .replace("postgres://", "postgresql://")
+            .replace("?__extra__=%7B%7D", ""),
         schema='STG_UNION_MEMBER',
         if_exists='replace',
         index=False,
