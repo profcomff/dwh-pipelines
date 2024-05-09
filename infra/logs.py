@@ -34,19 +34,15 @@ with DAG(
     tags=["dwh", "ods", "infra", "logs"],
     default_args={"owner": "dyakovri"},
 ):
-    truncate = PostgresOperator(
-        postgres_conn_id="postgres_dwh",
-        sql='TRUNCATE TABLE "ODS_INFRA_LOGS".container_log;',
-        task_id="execute_truncate_statement",
-    )
-
-    insert = PostgresOperator(
+    PostgresOperator(
         postgres_conn_id="postgres_dwh",
         sql=dedent(r"""
+            delete from "ODS_INFRA_LOGS".container_log;
+
             with parse_log as (
                 select
                     id,
-                    record::json #>> '{log}' as record,
+                    (regexp_replace(record::text, '(?<!\\)\\u0000', '', 'g'))::json #>> '{"log"}' as record,
                     regexp_replace(logfile, '^(.+\/)([^\\/]+)(\/[^\\/]+)$', '\2') as container_id,
                     create_ts
                 from "STG_INFRA".container_log cl
@@ -56,16 +52,19 @@ with DAG(
             parse_record as (
                 select
                     id,
-                    cast(record as json) as record,
+                    (regexp_replace(record::text, '(?<!\\)\\u0000', '', 'g'))::json as record,
                     container_id,
-                    coalesce((cast(record as json) #>> '{timestamp}')::timestamp, create_ts) as create_ts
+                    coalesce(
+                        ((regexp_replace(record::text, '(?<!\\)\\u0000', '', 'g'))::json #>> '{timestamp}')::timestamp,
+                        create_ts
+                    ) as create_ts
                 from parse_log
                 where record ~ '^\{".+"\}\s*$'  -- not valid json object
             ),
             no_parse_record as (
                 select
                     id,
-                    ('{"message": ' || to_json(record) || '}')::json as message,
+                    ('{"message": ' || to_json(regexp_replace(record::text, '(?<!\\)\\u0000', '', 'g')) || '}')::json as message,
                     container_id,
                     create_ts
                 from parse_log
@@ -119,8 +118,6 @@ with DAG(
         inlets=[Dataset("STG_INFRA.container_log")],
         outlets=[Dataset("ODS_INFRA_LOGS.container_log")],
     )
-
-    truncate >> insert
 
 
 with DAG(
