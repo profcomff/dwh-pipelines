@@ -109,7 +109,8 @@ def fetch_gh_repos():
 
     # Получаем коммиты
     commits_df = pd.DataFrame()
-    for _, (repo_id, url) in repos_df[['id', 'commit_url']].iterrows():
+    for _, (repo_id, url) in repos_df[['id', 'commits_url']].iterrows():
+        url = url.removesuffix('{/sha}')
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
         curr_df['repo_id'] = repo_id
         commits_df = pd.concat([commits_df, curr_df])
@@ -117,9 +118,17 @@ def fetch_gh_repos():
     # Получаем ишьюсы
     issues_df = pd.DataFrame()
     for _, (repo_id, url) in repos_df[['id', 'issues_url']].iterrows():
+        url = url.removesuffix('{/number}')
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
         curr_df['repo_id'] = repo_id
         issues_df = pd.concat([issues_df, curr_df])
+    issues_df.rename(
+        columns={
+            'reactions_+1': 'reactions_like',
+            'reactions_-1': 'reactions_dislike',
+        },
+        inplace=True
+    )
 
     # Загружаем все в бд
     upload_df(repos_df, 'profcomff_repo')
@@ -136,6 +145,7 @@ def fetch_gh_teams():
     # Получаем участников
     members_df = pd.DataFrame()
     for _, (team_id, url) in teams_df[['id', 'members_url']].iterrows():
+        url = url.removesuffix('{/member}')
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
         curr_df['team_id'] = team_id
         members_df = pd.concat([members_df, curr_df])
