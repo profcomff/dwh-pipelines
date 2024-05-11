@@ -1,6 +1,6 @@
 from functools import lru_cache
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections.abc import MutableMapping
 
 import pandas as pd
@@ -24,6 +24,32 @@ def flatten(dictionary, parent_key='', separator='_'):
     return dict(items)
 
 
+def get_gh_data(url, token, page, per_page):
+    params = {"per_page": per_page, "page": page}
+    logging.info(f'Request to {url}, params {params}')
+    resp = r.get(
+        url,
+        params,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    )
+    df = pd.DataFrame(flatten(i) for i in resp.json())
+    return df
+
+
+def get_all_gh_data(url, token):
+    page = 1
+    per_page = 50
+    df = get_gh_data(url, token, page, per_page)
+    if len(df) == per_page:
+        page += 1
+        df = pd.concat([df, get_gh_data(url, token, page, per_page)])
+    return df
+
+
 def get_organization(org, token):
     resp = r.get(
         f'https://api.github.com/orgs/{org}',
@@ -36,89 +62,6 @@ def get_organization(org, token):
     data = flatten(resp.json())
     df = pd.Series(data).to_frame().T
     return df
-
-
-def get_members(org, token):
-    """Получить список участников организации"""
-    resp = r.get(
-        f'https://api.github.com/orgs/{org}/members',
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
-    df = pd.DataFrame(resp.json())
-    return df
-
-
-def get_invations(org, token):
-    """Получить список приглашений в организацию"""
-    resp = r.get(
-        f'https://api.github.com/orgs/{org}/invitations',
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
-    df = pd.DataFrame(flatten(i) for i in resp.json())
-    return df
-
-
-def get_repos(org, token):
-    resp = r.get(
-        f'https://api.github.com/users/{org}/repos',
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
-    df = pd.DataFrame(flatten(i) for i in resp.json())
-    return df
-
-
-def get_teams(org, token):
-    resp = r.get(
-        f'https://api.github.com/orgs/{org}/teams',
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
-    teams_df = pd.DataFrame(resp.json())
-
-    members_df = pd.DataFrame()
-    for i in resp.json():
-        respmembers = r.get(
-            i["members_url"].removesuffix('{/member}'),
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {token}",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
-        )
-        df = pd.DataFrame(respmembers.json())
-        df['team_id'] = i["id"]
-        members_df = pd.concat([members_df, df])
-
-    repos_df = pd.DataFrame()
-    for i in resp.json():
-        resprepos = r.get(
-            i["repositories_url"],
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {token}",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
-        )
-        df = pd.DataFrame(flatten(i) for i in resprepos.json())
-        df['team_id'] = i["id"]
-        repos_df = pd.concat([repos_df, df])
-
-    return teams_df, members_df, repos_df
 
 
 @lru_cache()
@@ -143,24 +86,67 @@ def fetch_gh_org():
     df = get_organization('profcomff', Variable.get("GITHUB_TOKEN"))
     upload_df(df, 'org_info')
 
+
 @task(task_id="fetch_gh_members", outlets=Dataset("STG_GITHUB.profcomff_member"))
 def fetch_gh_members():
-    df = get_members('profcomff', Variable.get("GITHUB_TOKEN"))
+    """Получить список участников организации"""
+    df = get_all_gh_data('https://api.github.com/orgs/profcomff/members', Variable.get("GITHUB_TOKEN"))
     upload_df(df, 'profcomff_member')
+
 
 @task(task_id="fetch_gh_invations", outlets=Dataset("STG_GITHUB.profcomff_invation"))
 def fetch_gh_invations():
-    df = get_invations('profcomff', Variable.get("GITHUB_TOKEN"))
+    """Получить список приглашений в организацию"""
+    df = get_all_gh_data('https://api.github.com/orgs/profcomff/invitations', Variable.get("GITHUB_TOKEN"))
     upload_df(df, 'profcomff_invation')
+
 
 @task(task_id="fetch_gh_repos", outlets=Dataset("STG_GITHUB.profcomff_repo"))
 def fetch_gh_repos():
-    df = get_repos('profcomff', Variable.get("GITHUB_TOKEN"))
-    upload_df(df, 'profcomff_repo')
+    """Получить данные из репозиториев в организации"""
+    # Получаем репозитории
+    repos_df = get_all_gh_data('https://api.github.com/orgs/profcomff/repos', Variable.get("GITHUB_TOKEN"))
+
+    # Получаем коммиты
+    commits_df = pd.DataFrame()
+    for _, (repo_id, url) in repos_df[['id', 'commit_url']].iterrows():
+        curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
+        curr_df['repo_id'] = repo_id
+        commits_df = pd.concat([commits_df, curr_df])
+
+    # Получаем ишьюсы
+    issues_df = pd.DataFrame()
+    for _, (repo_id, url) in repos_df[['id', 'issues_url']].iterrows():
+        curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
+        curr_df['repo_id'] = repo_id
+        issues_df = pd.concat([issues_df, curr_df])
+
+    # Загружаем все в бд
+    upload_df(repos_df, 'profcomff_repo')
+    upload_df(commits_df, 'profcomff_commits')
+    upload_df(issues_df, 'profcomff_issues')
+
 
 @task(task_id="fetch_gh_teams", outlets=[Dataset("STG_GITHUB.profcomff_team"), Dataset("STG_GITHUB.profcomff_team_member"), Dataset("STG_GITHUB.profcomff_team_repo")])
 def fetch_gh_teams():
-    teams_df, members_df, repos_df = get_teams('profcomff', Variable.get("GITHUB_TOKEN"))
+    """Получаем информацию об участниках внутри команд"""
+    # Получаем команды
+    teams_df = get_all_gh_data('https://api.github.com/orgs/profcomff/teams', Variable.get("GITHUB_TOKEN"))
+
+    # Получаем участников
+    members_df = pd.DataFrame()
+    for _, (team_id, url) in teams_df[['id', 'members_url']].iterrows():
+        curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
+        curr_df['team_id'] = team_id
+        members_df = pd.concat([members_df, curr_df])
+
+    # Получаем репозитории
+    repos_df = pd.DataFrame()
+    for i in teams_df['repositories_url']:
+        curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
+        curr_df['team_id'] = team_id
+        repos_df = pd.concat([repos_df, curr_df])
+
     upload_df(teams_df, 'profcomff_team')
     upload_df(members_df, 'profcomff_team_member')
     upload_df(repos_df, 'profcomff_team_repo')
