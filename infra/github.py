@@ -1,19 +1,19 @@
-from functools import lru_cache
 import logging
-from datetime import datetime
 from collections.abc import MutableMapping
+from datetime import datetime
+from functools import lru_cache
 
 import pandas as pd
-from sqlalchemy import create_engine
 import requests as r
 import sqlalchemy as sa
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Connection, Variable
+from sqlalchemy import create_engine
 
 
-def flatten(dictionary, parent_key='', separator='_'):
+def flatten(dictionary, parent_key="", separator="_"):
     items = []
     for key, value in dictionary.items():
         new_key = parent_key + separator + key if parent_key else key
@@ -26,7 +26,7 @@ def flatten(dictionary, parent_key='', separator='_'):
 
 def get_gh_data(url, token, page, per_page):
     params = {"per_page": per_page, "page": page}
-    logging.info(f'Request to {url}, params {params}')
+    logging.info(f"Request to {url}, params {params}")
     resp = r.get(
         url,
         params,
@@ -52,7 +52,7 @@ def get_all_gh_data(url, token):
 
 def get_organization(org, token):
     resp = r.get(
-        f'https://api.github.com/orgs/{org}',
+        f"https://api.github.com/orgs/{org}",
         headers={
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {token}",
@@ -78,88 +78,106 @@ def get_conn():
 
 def upload_df(df: pd.DataFrame, table_name):
     get_conn().execute(f'TRUNCATE TABLE "STG_GITHUB".{table_name};')
-    df.to_sql(table_name, get_conn(), schema="STG_GITHUB", if_exists="append", index=False)
+    df.to_sql(
+        table_name, get_conn(), schema="STG_GITHUB", if_exists="append", index=False
+    )
 
 
 @task(task_id="fetch_gh_org", outlets=Dataset("STG_GITHUB.org_info"))
 def fetch_gh_org():
-    df = get_organization('profcomff', Variable.get("GITHUB_TOKEN"))
-    upload_df(df, 'org_info')
+    df = get_organization("profcomff", Variable.get("GITHUB_TOKEN"))
+    upload_df(df, "org_info")
 
 
 @task(task_id="fetch_gh_members", outlets=Dataset("STG_GITHUB.profcomff_member"))
 def fetch_gh_members():
     """Получить список участников организации"""
-    df = get_all_gh_data('https://api.github.com/orgs/profcomff/members', Variable.get("GITHUB_TOKEN"))
-    upload_df(df, 'profcomff_member')
+    df = get_all_gh_data(
+        "https://api.github.com/orgs/profcomff/members", Variable.get("GITHUB_TOKEN")
+    )
+    upload_df(df, "profcomff_member")
 
 
 @task(task_id="fetch_gh_invations", outlets=Dataset("STG_GITHUB.profcomff_invation"))
 def fetch_gh_invations():
     """Получить список приглашений в организацию"""
-    df = get_all_gh_data('https://api.github.com/orgs/profcomff/invitations', Variable.get("GITHUB_TOKEN"))
-    upload_df(df, 'profcomff_invation')
+    df = get_all_gh_data(
+        "https://api.github.com/orgs/profcomff/invitations",
+        Variable.get("GITHUB_TOKEN"),
+    )
+    upload_df(df, "profcomff_invation")
 
 
 @task(task_id="fetch_gh_repos", outlets=Dataset("STG_GITHUB.profcomff_repo"))
 def fetch_gh_repos():
     """Получить данные из репозиториев в организации"""
     # Получаем репозитории
-    repos_df = get_all_gh_data('https://api.github.com/orgs/profcomff/repos', Variable.get("GITHUB_TOKEN"))
+    repos_df = get_all_gh_data(
+        "https://api.github.com/orgs/profcomff/repos", Variable.get("GITHUB_TOKEN")
+    )
 
     # Получаем коммиты
     commits_df = pd.DataFrame()
-    for _, (repo_id, url) in repos_df[['id', 'commits_url']].iterrows():
-        url = url.removesuffix('{/sha}')
+    for _, (repo_id, url) in repos_df[["id", "commits_url"]].iterrows():
+        url = url.removesuffix("{/sha}")
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
-        curr_df['repo_id'] = repo_id
+        curr_df["repo_id"] = repo_id
         commits_df = pd.concat([commits_df, curr_df])
 
     # Получаем ишьюсы
     issues_df = pd.DataFrame()
-    for _, (repo_id, url) in repos_df[['id', 'issues_url']].iterrows():
-        url = url.removesuffix('{/number}')
+    for _, (repo_id, url) in repos_df[["id", "issues_url"]].iterrows():
+        url = url.removesuffix("{/number}")
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
-        curr_df['repo_id'] = repo_id
+        curr_df["repo_id"] = repo_id
         issues_df = pd.concat([issues_df, curr_df])
     issues_df.rename(
         columns={
-            'reactions_+1': 'reactions_like',
-            'reactions_-1': 'reactions_dislike',
+            "reactions_+1": "reactions_like",
+            "reactions_-1": "reactions_dislike",
         },
-        inplace=True
+        inplace=True,
     )
 
     # Загружаем все в бд
-    upload_df(repos_df, 'profcomff_repo')
-    upload_df(commits_df, 'profcomff_commits')
-    upload_df(issues_df, 'profcomff_issues')
+    upload_df(repos_df, "profcomff_repo")
+    upload_df(commits_df, "profcomff_commits")
+    upload_df(issues_df, "profcomff_issues")
 
 
-@task(task_id="fetch_gh_teams", outlets=[Dataset("STG_GITHUB.profcomff_team"), Dataset("STG_GITHUB.profcomff_team_member"), Dataset("STG_GITHUB.profcomff_team_repo")])
+@task(
+    task_id="fetch_gh_teams",
+    outlets=[
+        Dataset("STG_GITHUB.profcomff_team"),
+        Dataset("STG_GITHUB.profcomff_team_member"),
+        Dataset("STG_GITHUB.profcomff_team_repo"),
+    ],
+)
 def fetch_gh_teams():
     """Получаем информацию об участниках внутри команд"""
     # Получаем команды
-    teams_df = get_all_gh_data('https://api.github.com/orgs/profcomff/teams', Variable.get("GITHUB_TOKEN"))
+    teams_df = get_all_gh_data(
+        "https://api.github.com/orgs/profcomff/teams", Variable.get("GITHUB_TOKEN")
+    )
 
     # Получаем участников
     members_df = pd.DataFrame()
-    for _, (team_id, url) in teams_df[['id', 'members_url']].iterrows():
-        url = url.removesuffix('{/member}')
+    for _, (team_id, url) in teams_df[["id", "members_url"]].iterrows():
+        url = url.removesuffix("{/member}")
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
-        curr_df['team_id'] = team_id
+        curr_df["team_id"] = team_id
         members_df = pd.concat([members_df, curr_df])
 
     # Получаем репозитории
     repos_df = pd.DataFrame()
-    for i in teams_df['repositories_url']:
+    for i in teams_df["repositories_url"]:
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
-        curr_df['team_id'] = team_id
+        curr_df["team_id"] = team_id
         repos_df = pd.concat([repos_df, curr_df])
 
-    upload_df(teams_df, 'profcomff_team')
-    upload_df(members_df, 'profcomff_team_member')
-    upload_df(repos_df, 'profcomff_team_repo')
+    upload_df(teams_df, "profcomff_team")
+    upload_df(members_df, "profcomff_team_member")
+    upload_df(repos_df, "profcomff_team_repo")
 
 
 with DAG(
@@ -167,7 +185,13 @@ with DAG(
     start_date=datetime(2022, 1, 1),
     schedule="0 0 */1 * *",
     catchup=False,
-    tags= ["dwh", "infra", "github"],
-    default_args={"owner": "dyakovri"}
+    tags=["dwh", "infra", "github"],
+    default_args={"owner": "dyakovri"},
 ) as dag:
-    fetch_gh_org() >> fetch_gh_members() >> fetch_gh_invations() >> fetch_gh_repos() >> fetch_gh_teams()
+    (
+        fetch_gh_org()
+        >> fetch_gh_members()
+        >> fetch_gh_invations()
+        >> fetch_gh_repos()
+        >> fetch_gh_teams()
+    )
