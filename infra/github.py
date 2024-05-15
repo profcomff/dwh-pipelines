@@ -160,6 +160,7 @@ def fetch_gh_teams():
     teams_df = get_all_gh_data(
         "https://api.github.com/orgs/profcomff/teams", Variable.get("GITHUB_TOKEN")
     )
+    upload_df(teams_df, "profcomff_team")
 
     # Получаем участников
     members_df = pd.DataFrame()
@@ -168,16 +169,14 @@ def fetch_gh_teams():
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
         curr_df["team_id"] = team_id
         members_df = pd.concat([members_df, curr_df])
+    upload_df(members_df, "profcomff_team_member")
 
     # Получаем репозитории
     repos_df = pd.DataFrame()
-    for i in teams_df["repositories_url"]:
+    for _, (team_id, url) in teams_df[["id", "repositories_url"]].iterrows():
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
         curr_df["team_id"] = team_id
         repos_df = pd.concat([repos_df, curr_df])
-
-    upload_df(teams_df, "profcomff_team")
-    upload_df(members_df, "profcomff_team_member")
     upload_df(repos_df, "profcomff_team_repo")
 
 
