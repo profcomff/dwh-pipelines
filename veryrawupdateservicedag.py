@@ -13,11 +13,11 @@ import BeautifulSoup from bs4
 @task(task_id='download_pages_to_db', outlets=Dataset("STG_RASPHYSMSU".raw_html)
 def get_from_database_data():
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-with Connection as conn:
+sql_engine = sa.create_engine(DB_URI)
+with dwh_sql_engine.connect() as conn:
     event_text = []
     group_text = []
     time_interval_text = []
-    sql_engine = sa.create_engine(DB_URI)
     data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
     logging.info("starting parsing")
     def _parse_data(data):
