@@ -7,78 +7,39 @@ import sqlalchemy as sa
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
+import BeautifulSoup from bs4
 
 
-USER_AGENT = (
-    "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
-)
-HEADERS = {"User-Agent": USER_AGENT}
-
+@task(task_id='download_pages_to_db', outlets=Dataset("STG_RASPHYSMSU".raw_html)
+def get_from_database_data():
 DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-
-
-@task(task_id='download_pages_to_db', outlets=Dataset("STG_".raw_html))
-def create_data():
-    data = []
-    i = 0
-    while (response = r.get(url, headers=HEADERS)): #типо пока делается делай, пока данные читаются, читай
-        url = f'http://ras.phys.msu.ru/table/{data[0]}/{data[1]}/{i}.htm'
-        i +=1
-        logging.info("Page %s fetched with status %d", url, response.status_code)
-        data.append(
-            {
-                'url': url,
-                'raw_html': response,
-            }
-        )
-        logging.info("starting parsing url and raw_html")
-        def _parse_data(data):
-            parsed_raw = {"event_text": None, "time_interval_text": None, "group_text": None}
-            data = _preprocessing(data)
-
-            # '... <nobr>12:00</nobr> 110
-            res = re.match(r"/\d+/g")
-            result = re.match(r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)+<nobr>([А-Яа-яёЁa-zA-Z +,/.\-\d]+)</nobr>"+r"/\d+/g")
-            if not (result is None):
-                if data == result[0]:
-                    parsed_raw["event_text"] = result[1]
-                    parsed_raw["time_interval_text"] = result[2]
-                    parsed_raw["group_text"] = result[3]
-                    return parsed_raw
-
+with Connection as conn:
+    event_text = []
+    group_text = []
+    time_interval_text = []
     sql_engine = sa.create_engine(DB_URI)
-
-    conn.commit()
-    sql_engine.execute(
-        """
-    CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);
-    CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html_old (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);
-    """
-    )
-    sql_engine.execute(
-        """
-    delete from "STG_TIMETABLE".raw_html_old;
-    """
-    )
-    logging.info("raw_html_old is empty")
-    sql_engine.execute(
-        """
-    insert into "STG_TIMETABLE".raw_html_old ("url", "event_text", "time_interval_text","group_text") select "url", "event_text","time_interval_text","group_text" from "STG_TIMETABLE".raw_html
-    """
-    )
-    logging.info("raw_html_old is full")
-    sql_engine.execute(
-        """
-    delete from "STG_TIMETABLE".raw_html;
-    """
-    )
-    logging.info("raw_html is empty")
-    data.to_sql('event_text'+'time_interval_text'+'group_text', sql_engine, schema='STG_TIMETABLE', if_exists='append', index=False)
-    logging.info("raw_html is full")
-    return Dataset("STG_TIMETABLE.raw_html")
-
-
+    data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
+    logging.info("starting parsing")
+    def _parse_data(data):
+        k1 = 0
+        k2 = 0
+        k3 = 0
+        soup = BeautifulSoup(data)
+        for i in soup.find_all('tr',class_=['tditem1','tdsmall']):
+        event_text[k1] = i.get_text()
+        k1+=1
+        for j in soup.find_all('tr', class_='tdtime'):
+            time_interval_text[k2] = j.get_text()
+            k2+=1
+        for u in soup.find_all('b'):
+            sample = re.compile(r"\d{3}")
+            res_middle = u.get_text()
+            group_text[k3] = sample.search(res_middle)
+            k3+=1
+conn.execute(sa.text(f'''delete from ods_timetable_act'''))
+conn.execute(sa.text(f''' CREATE TABLE IF NOT EXISTS ods_timetable_act (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);'''))
+for i in range(len(data)):
+    conn.execute(sa.text(f'''alter table ods_timetable_act insert into (group_text,time_interval_act,time_interval_text) values ({group_text[i],time_interval_text[i],event_text[i]} '''))
 
 @dag(
     schedule='0 */1 * * *',
