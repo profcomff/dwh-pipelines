@@ -42,9 +42,9 @@ conn.execute(
         using DM.infra_logs_Incident as ne,
         on e.id = ne.id
         when matched then 
-          update set (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name)
+          update set (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name) and (e.id = ne.id)
         when not matches then 
-          insert into infra_logs_Incident values (e.message, e.container_name, e.create_ts)''')
+          insert into infra_logs_Incident values (e.id, e.message, e.container_name, e.create_ts)''')
 @dag(
     def start():
       trans()
