@@ -15,7 +15,7 @@ def trans():
     dwh_sql_engine = create_engine(dwhuri) #создаем движок
     with dwh_sql_engine.connect() as conn:
       conn.execute( '''
-                   CREATE TABLE IF NOT EXISTS DM.infra_logs_Incident (url varchar(256) NULL, message text NULL, container_name text NULL, create_ts text NULL);'''))
+                   CREATE TABLE IF NOT EXISTS DM.infra_logs (id text NULL, message text NULL, container_name text NULL, create_ts text NULL);'''))
       res = conn.execute(sa.text(
       f'''select
 	      record->>'message',
@@ -29,14 +29,18 @@ def trans():
       container_name = []
       create_ts = []
       for i in len(res):
-        message[i] = res[i][0]
-        container_name[i] =res[i][1]
-        create_ts[i] = res[i][2]
-        conn.execute(
-        '''
+	id[i] = res[i][0]
+        message[i] = res[i][1]
+        container_name[i] =res[i][2]
+        create_ts[i] = res[i][3]
+	conn.execute(
+	'''
+	insert into DM.infra_logs(id,message,container_name,create_ts) VALUES ({id[i]},{message[i]},{container_name[i]},{create_ts[i]})'''
+conn.execute(
+'''
         merge into  ODS_INFRA_LOGS.container_log as e,
         using DM.infra_logs_Incident as ne,
-        on (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name)
+        on e.id = ne.id
         when matched then 
           update set (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name)
         when not matches then 
