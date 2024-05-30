@@ -1,0 +1,57 @@
+from sqlalchemy import create_engine
+import sqlalchemy as sa
+from dwh.__init__ import all
+from airflow.decorators import dag, task
+from airflow.models import Connection, Variable
+from sqlalchemy import text
+
+@task(task_id="trans_from_ods_to_dm_infralogs")
+def trans():
+    dwhuri = (
+        Connection.get_connection_from_secrets("postgres_dwh")
+        .get_uri()
+        .replace("postgres://", "postgresql://")
+    )
+    dwh_sql_engine = create_engine(dwhuri) #создаем движок
+    with dwh_sql_engine.connect() as conn:
+      conn.execute( '''
+                   CREATE TABLE IF NOT EXISTS DM.infra_logs_Incident (url varchar(256) NULL, message text NULL, container_name text NULL, create_ts text NULL);'''))
+      res = conn.execute(sa.text(
+      f'''select
+	      record->>'message',
+	      container_name,
+	      create_ts
+        from
+	      ODS_INFRA_LOGS.container_log
+        where
+	     record->>'level_name' = 'ERROR' or record->>'level_name' = 'CRITICAL';''')).fetchall()
+      message = []
+      container_name = []
+      create_ts = []
+      for i in len(res):
+        message[i] = res[i][0]
+        container_name[i] =res[i][1]
+        create_ts[i] = res[i][2]
+        conn.execute(
+        '''
+        merge into  ODS_INFRA_LOGS.container_log as e,
+        using DM.infra_logs_Incident as ne,
+        on (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name)
+        when matched then 
+          update set (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name)
+        when not matches then 
+          insert into infra_logs_Incident values (e.message, e.container_name, e.create_ts)''')
+@dag(
+    def start():
+      trans()
+    schedule='0 */1 * * *',
+    start_date=datetime(2024, 1, 1, 2, 0, 0),
+    catchup=False,
+    tags=["dwh"],
+    default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)}
+    
+)
+        
+        
+        
+            
