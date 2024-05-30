@@ -42,13 +42,13 @@ def get_from_database_data():
         conn.execute(sa.text(f'''alter table ods_timetable_act insert into (group_text,time_interval_act,time_interval_text) values ({group_text[i],time_interval_text[i],event_text[i]} '''))
 
 @dag(
+    def start():
+        get_from_database_data()
     schedule='0 */1 * * *',
     start_date=datetime(2024, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["dwh"],
     default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
-    def start():
-        get_from_database_data()
     
 )
 
