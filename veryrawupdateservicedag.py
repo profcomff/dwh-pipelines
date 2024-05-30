@@ -49,6 +49,7 @@ def get_from_database_data():
     catchup=False,
     tags=["dwh"],
     default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
+    start()
     
 )
 
