@@ -3,7 +3,7 @@ import sqlalchemy as sa
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 from sqlalchemy import text
-from datetime import datetime, timedelta 
+from datetime import datetime, timedelta
 
 @task(task_id="trans_from_ods_to_dm_infralogs")
 def trans():
@@ -14,8 +14,6 @@ def trans():
     )
     dwh_sql_engine = create_engine(dwhuri) #создаем движок
     with dwh_sql_engine.connect() as conn:
-        conn.execute( '''
-               CREATE TABLE IF NOT EXISTS DM.infra_logs (id text NULL, message text NULL, container_name text NULL, create_ts text NULL);''')
         res = conn.execute(sa.text(
         f'''select
         id,
