@@ -33,18 +33,14 @@ def trans():
             message[i] = res[i][1]
             container_name[i] =res[i][2]
             create_ts[i] = res[i][3]
-            conn.execute(
-            '''
-            insert into DM_INFRA_LOGS.incident(id,message,container_name,create_ts) VALUES ({id[i]},{message[i]},{container_name[i]},{create_ts[i]})''')
         conn.execute(
         '''
         merge into  ODS_INFRA_LOGS.container_log as e,
         using DM_INFRA_LOGS.incident as ne,
-        on e.id = ne.id
-        when matched then 
-        update set (e.create_ts = ne.create_ts) and (e.message = ne.message) and (e.container_name = ne.container_name) and (e.id = ne.id)
+        on e.message = ne.message
         when not matches then 
         insert into infra_logs_Incident values (e.id, e.message, e.container_name, e.create_ts)''')
+        conn.commit()
 @dag(
     schedule='0 */1 * * *',
     start_date=datetime(2024, 1, 1, 2, 0, 0),
