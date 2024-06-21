@@ -17,10 +17,10 @@ def trans():
         conn.execute(
         '''
         merge into  ODS_INFRA_LOGS.container_log as e,
-        using DM_INFRA_LOGS.incident as ne,
-        on e.message = ne.message
+        using with (select * from log where not is_deleted) as sq select * from sq,
+        on e.message = ne.message 
         when not matches then 
-        insert into infra_logs_Incident values (e.id, e.message, e.container_name, e.create_ts)''')
+        insert into infra_logs_Incident values sq''')
         conn.commit()
 @dag(
     schedule='0 */1 * * *',
