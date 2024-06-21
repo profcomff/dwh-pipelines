@@ -14,25 +14,6 @@ def trans():
     )
     dwh_sql_engine = create_engine(dwhuri) #создаем движок
     with dwh_sql_engine.connect() as conn:
-        res = conn.execute(sa.text(
-        f'''select
-        id,
-        record->>'message',
-        container_name,
-        create_ts
-        from
-        ODS_INFRA_LOGS.container_log
-        where
-        record->>'level_name' = 'ERROR' or record->>'level_name' = 'CRITICAL';''')).fetchall()
-        id = []
-        message = []
-        container_name = []
-        create_ts = []
-        for i in range(len(res)):
-            id[i] = res[i][0]
-            message[i] = res[i][1]
-            container_name[i] =res[i][2]
-            create_ts[i] = res[i][3]
         conn.execute(
         '''
         merge into  ODS_INFRA_LOGS.container_log as e,
