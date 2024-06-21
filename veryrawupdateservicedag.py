@@ -38,9 +38,10 @@ def get_from_database_data():
                 conter_3+=1
     conn.execute(sa.text(f'''delete from ods_timetable_act
     CREATE TABLE IF NOT EXISTS ods_timetable_act (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);'''))
+    conn.commit()
     for i in range(len(data)):
         conn.execute(sa.text(f'''alter table ods_timetable_act insert into (group_text,time_interval_act,time_interval_text) values ({group_text[i],time_interval_text[i],event_text[i]} '''))
-
+        conn.commit()
 @dag(
     schedule='0 */1 * * *',
     start_date=datetime(2024, 1, 1, 2, 0, 0),
