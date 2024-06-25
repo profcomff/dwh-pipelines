@@ -10,7 +10,7 @@ from airflow.models import Connection, Variable
 from bs4 import BeautifulSoup
 
 
-@task(task_id='download_pages_to_db', outlets=Dataset("STG_RASPHYSMSU".raw_html))
+@task(task_id='download_pages_to_db', outlets=Dataset("STG_RASPHYSMSU.raw_html"))
 def get_from_database_data():
     DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
     sql_engine = sa.create_engine(DB_URI)
@@ -18,7 +18,7 @@ def get_from_database_data():
         event_text = []
         group_text = []
         time_interval_text = []
-        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
+        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU.raw_html"''')).fetchall()
         logging.info("starting parsing")
         def _parse_data(data):
             counter_1 = 0
@@ -36,11 +36,11 @@ def get_from_database_data():
                 res_middle = u.get_text()
                 group_text[counter_3] = sample.search(res_middle)
                 counter_3+=1
-    conn.execute(sa.text(f'''delete from "ODS_TIMETABLE".ods_timetable_act
-    CREATE TABLE IF NOT EXISTS "ODS_TIMETABLE".ods_timetable_act (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);'''))
+    conn.execute(sa.text(f'''delete from "ODS_TIMETABLE.ods_timetable_act"
+    CREATE TABLE IF NOT EXISTS "ODS_TIMETABLE.ods_timetable_act" (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);'''))
     conn.commit()
     for i in range(len(data)):
-        conn.execute(sa.text(f'''alter table "ODS_TIMETABLE".ods_timetable_act insert into (group_text,time_interval_act,time_interval_text) values ({group_text[i],time_interval_text[i],event_text[i]} '''))
+        conn.execute(sa.text(f'''alter table "ODS_TIMETABLE.ods_timetable_act" insert into (group_text,time_interval_act,time_interval_text) values ({group_text[i],time_interval_text[i],event_text[i]} '''))
         conn.commit()
 @dag(
     schedule='0 */1 * * *',
