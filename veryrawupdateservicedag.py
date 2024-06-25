@@ -35,7 +35,7 @@ def get_from_database_data():
                 sample = re.compile(r"\d{3}")
                 res_middle = u.get_text()
                 group_text[counter_3] = sample.search(res_middle)
-                conter_3+=1
+                counter_3+=1
     conn.execute(sa.text(f'''delete from "ODS_TIMETABLE".ods_timetable_act
     CREATE TABLE IF NOT EXISTS "ODS_TIMETABLE".ods_timetable_act (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);'''))
     conn.commit()
