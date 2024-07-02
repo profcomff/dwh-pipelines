@@ -16,11 +16,21 @@ def trans():
     with dwh_sql_engine.connect() as conn:
         conn.execute(
         '''
-        merge into  ODS_INFRA_LOGS.container_log as e,
-        using with (select * from log where not is_deleted) as sq select * from sq,
-        on e.message = ne.message 
-        when not matches then 
-        insert into infra_logs_Incident values sq''')
+        with sq as (select
+  id,
+  record->>'message' as e_msg,
+  container_name,
+  create_ts
+from
+  "ODS_INFRA_LOGS".container_log
+where
+  record->>'level' = 'ERROR' or record->>'level' = 'CRITICAL') 
+        merge into "DM_INFRA_LOGS".incident_hint as ne 
+        using sq as e on
+        (ne.container_name = e.container_name) and (ne.message = e.e_msg) and (ne.create_ts = e.create_ts)
+        when not matched then 
+        insert (id,msk_record_loaded_dttm,container_name,message,create_ts)
+        values (e.id,now(),e.container_name,e.e_msg,e.create_ts)''')
         conn.commit()
 @dag(
     schedule='0 */1 * * *',
