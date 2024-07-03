@@ -43,8 +43,8 @@ where
     tags=["dwh"],
     default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
 )
-def start():
+def ods_to_dm_logs():
     trans()
 
 
-start()
+ods_to_dm_logs()
