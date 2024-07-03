@@ -1,9 +1,10 @@
-from sqlalchemy import create_engine
+from datetime import datetime, timedelta
+
 import sqlalchemy as sa
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
-from sqlalchemy import text
-from datetime import datetime, timedelta
+from sqlalchemy import create_engine, text
+
 
 @task(task_id="trans_from_ods_to_dm_infralogs")
 def trans():
@@ -12,10 +13,10 @@ def trans():
         .get_uri()
         .replace("postgres://", "postgresql://")
     )
-    dwh_sql_engine = create_engine(dwhuri) #создаем движок
+    dwh_sql_engine = create_engine(dwhuri)  # создаем движок
     with dwh_sql_engine.connect() as conn:
         conn.execute(
-        '''
+            """
         with sq as (select
   id,
   record->>'message' as e_msg,
@@ -30,21 +31,20 @@ where
         (ne.container_name = e.container_name) and (ne.message = e.e_msg) and (ne.create_ts = e.create_ts)
         when not matched then 
         insert (id,msk_record_loaded_dttm,container_name,message,create_ts)
-        values (e.id,now(),e.container_name,e.e_msg,e.create_ts)''')
+        values (DEFAULT,now(),e.container_name,e.e_msg,e.create_ts)"""
+        )
         conn.commit()
+
+
 @dag(
-    schedule='0 */1 * * *',
+    schedule="0 */1 * * *",
     start_date=datetime(2024, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["dwh"],
-    default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)}
-    
+    default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
 )
-
 def start():
-      trans()
+    trans()
+
 
 start()
-        
-        
-            
