@@ -2,9 +2,7 @@ from datetime import datetime
 from textwrap import dedent
 
 from airflow import DAG, Dataset
-from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-
 
 with DAG(
     dag_id="truncate_old_infra_logs",
@@ -36,7 +34,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             delete from "ODS_INFRA_LOGS".container_log;
 
             with parse_log as (
@@ -113,7 +112,8 @@ with DAG(
             from union_records ur
             inner join processes_last pl
                 on ur.container_id like '%' || pl.container_id || '%';
-        """),
+        """
+        ),
         task_id="execute_insert_statement",
         inlets=[Dataset("STG_INFRA.container_log")],
         outlets=[Dataset("ODS_INFRA_LOGS.container_log")],
@@ -130,7 +130,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             with new_log as (
                 select
                     coalesce (container_name, 'all') as container_name,
@@ -161,8 +162,39 @@ with DAG(
             when not matched and not (nl.container_name = 'all' and nl.create_date = 'all') then
                 insert (container_name, create_date, debug_cnt, warn_cnt, info_cnt, error_cnt, critical_cnt, other_cnt)
                 values (nl.container_name, nl.create_date, nl.debug_cnt, nl.warn_cnt, nl.info_cnt, nl.error_cnt, nl.critical_cnt, nl.other_cnt);
-        """),
+        """
+        ),
         task_id="execute_merge_statement",
         inlets=[Dataset("ODS_INFRA_LOGS.container_log")],
         outlets=[Dataset("DM_INFRA_LOGS.container_log_cube")],
     )
+with DAG(
+        dag_id="trans_from_ods_to_dm_infralogs",
+        start_date=datetime(2024, 1, 1),
+        schedule=[Dataset("DM_INFRA_LOGS.incident_hint")],
+        catchup=False,
+        tags=["dwh", "dm", "infra", "logs"],
+        default_args={"owner": "SofyaFin"},
+):
+    PostgresOperator(
+        postgres_conn_id="postgres_dwh",
+        sql=dedent(
+            r"""
+    with sq as (select
+    record->>'message' as e_msg,
+    container_name,
+    create_ts
+    from
+    "ODS_INFRA_LOGS".container_log
+    where
+    record->>'level' = 'ERROR' or record->>'level' = 'CRITICAL') 
+    merge into "DM_INFRA_LOGS".incident_hint as ne 
+    using sq as e on
+    (ne.container_name = e.container_name) and (ne.message = e.e_msg) and (ne.create_ts = e.create_ts)
+    when not matched then 
+    insert (id,msk_record_loaded_dttm,container_name,message,create_ts)
+    values (DEFAULT,now(),e.container_name,e.e_msg,e.create_ts)"""
+        ),
+        task_id="trans_from_ods_to_dm_logs",
+        inlets=[Dataset("ODS_INFRA_LOGS.container_log")],
+        outlets=[Dataset("DM_INFRA_LOGS.incident_hint")],)
