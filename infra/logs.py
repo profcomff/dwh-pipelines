@@ -169,7 +169,7 @@ with DAG(
         outlets=[Dataset("DM_INFRA_LOGS.container_log_cube")],
     )
 with DAG(
-        dag_id="trans_from_ods_to_dm_infralogs",
+        dag_id="trans_from_ODS_INFRA_LOGS.container_log_to_DM_INFRA_LOGS.incident_hint_infra_logs",
         start_date=datetime(2024, 1, 1),
         schedule=[Dataset("DM_INFRA_LOGS.incident_hint")],
         catchup=False,
@@ -195,6 +195,6 @@ with DAG(
     insert (id,msk_record_loaded_dttm,container_name,message,create_ts)
     values (DEFAULT,now(),e.container_name,e.e_msg,e.create_ts)"""
         ),
-        task_id="trans_from_ods_to_dm_logs",
+        task_id="trans_from_ODS_INFRA_LOGS.container_log_to_DM_INFRA_LOGS.incident_hint_infra_logs",
         inlets=[Dataset("ODS_INFRA_LOGS.container_log")],
         outlets=[Dataset("DM_INFRA_LOGS.incident_hint")],)
