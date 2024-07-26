@@ -186,7 +186,7 @@ with DAG(
                     from
                     "ODS_INFRA_LOGS".container_log
                     where
-                    record->>'level' = 'ERROR' or record->>'level' = 'CRITICAL') 
+                    record->>'level_name' = 'ERROR' or record->>'level_name' = 'CRITICAL') 
                     merge into "DM_INFRA_LOGS".incident_hint as ne 
                     using sq as e on
                     (ne.container_name = e.container_name) and (ne.message = e.e_msg) and (ne.create_ts = e.create_ts)
