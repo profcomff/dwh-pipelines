@@ -7,12 +7,12 @@ from datetime import datetime, timedelta
 
 with DAG(
     dag_id="git_pull_pipelines",
-    start_date=datetime(2022,1,1),
-    schedule_interval=timedelta(minutes=5),
+    start_date=datetime(2022, 1, 1),
+    schedule="@once",
     catchup=False,
     tags= ["infra"],
     default_args={
-        "owner": "infra",
+        "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5)
     }

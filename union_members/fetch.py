@@ -65,7 +65,11 @@ def fetch_union_members():
     data = pd.DataFrame(users_dict)
     data.to_sql(
         'union_member',
-        Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://"),
+        Connection
+            .get_connection_from_secrets('postgres_dwh')
+            .get_uri()
+            .replace("postgres://", "postgresql://")
+            .replace("?__extra__=%7B%7D", ""),
         schema='STG_UNION_MEMBER',
         if_exists='replace',
         index=False,
@@ -77,12 +81,12 @@ def fetch_union_members():
     schedule='0 0 */1 * *',
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags= ["dwh"],
+    tags= ["dwh", "union_member"],
     default_args={
-        "owner": "dwh",
+        "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": lambda: send_telegram_message(-1001786188782),
+        "on_failure_callback": lambda: send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS"))),
     }
 )
 def union_member_download():

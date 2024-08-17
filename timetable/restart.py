@@ -7,7 +7,12 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
-DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
+DB_URI = (
+    Connection.get_connection_from_secrets('postgres_dwh')
+    .get_uri()
+    .replace("postgres://", "postgresql://")
+    .replace("?__extra__=%7B%7D", "")
+)
 token = Variable.get("TOKEN_ROBOT_TIMETABLE")
 headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT")
@@ -42,9 +47,9 @@ def restart():
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
     max_active_runs=1,
     catchup=False,
-    tags= ["RESTART"],
+    tags= ["dwh", "timetable"],
     default_args={
-        "owner": "dwh",
+        "owner": "zamyatinsv",
         "retries": 0,
         "retry_delay": datetime.timedelta(minutes=5)
     }
