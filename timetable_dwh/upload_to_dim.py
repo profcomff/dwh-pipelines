@@ -31,7 +31,7 @@ with DAG(
                     id as group_api_id,
                     number || name as group_name_text,
                     cast(number as int) as group_number,
-                    'profcomff_timetable_api' as source_name,
+                    'profcomff_timetable_api' as source_name
                 from "STG_TIMETABLE"."group"
             where not is_deleted
         """),
