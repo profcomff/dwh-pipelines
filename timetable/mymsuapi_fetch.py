@@ -183,6 +183,47 @@ def get_timetable_for_semester_to_db():
     )
     return Dataset("STG_MYMSUAPI.raw_timetable_api")
 
+
+@task(
+    task_id="flatten_timetable",
+    inlets=Dataset("STG_MYMSUAPI.raw_timetable_api"),
+    outlets=Dataset("STG_MYMSUAPI.ods_timetable_api_flattened"),
+)
+def flatten_timetable():
+    sql_engine = sa.create_engine(DB_DSN)
+    raw_data = pd.read_sql_table("raw_timetable_api", con=sql_engine, schema="STG_MYMSUAPI")
+
+    flattened_data = []
+    for index, row in raw_data.iterrows():
+        for teacher_user in row["teacher_users"]:
+            for study_group in row["study_groups"]:
+                flattened_row = {
+                    "id": row["id"],
+                    "group_name": row["group_name"],
+                    "discipline_name": row["dicscipline_name"],
+                    "discipline_id": row["discipline_id"],
+                    "classroom_name": row["classroom_name"],
+                    "classroom_id": row["classroom_id"],
+                    "lesson_type_text": row["lesson_type_text"],
+                    "lesson_from_dttm_ts": row["lesson_from_dttm_ts"],
+                    "lesson_to_dttm_ts": row["lesson_to_dttm_ts"],
+                    "teacher_full_name": f"{teacher_user['first_name']} {teacher_user['sur_name']} {teacher_user['second_name']}",
+                    "study_group_id": study_group["id"],
+                    "study_group_name": study_group["name"],
+                }
+                flattened_data.append(flattened_row)
+
+    flattened_data = pd.DataFrame(flattened_data)
+    flattened_data.to_sql(
+        "ods_timetable_api_flattened",
+        con=sql_engine,
+        schema="STG_MYMSUAPI",
+        if_exists="replace",
+        index=False,
+    )
+    return Dataset("STG_MYMSUAPI.ods_timetable_api_flattened")
+
+
 @dag(
     schedule_interval=None,
     start_date=datetime(2024, 08, 17),
@@ -193,5 +234,4 @@ def get_timetable_for_semester_to_db():
         "retry_delay": timedelta(minutes=5)
     })
 def mymsu_timetable_download():
-    get_timetable_for_semester_to_db() 
-
+    get_timetable_for_semester_to_db() >> flatten_timetable()
