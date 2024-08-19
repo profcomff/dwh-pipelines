@@ -34,74 +34,8 @@ DB_DSN = (
     .replace("?__extra__=%7B%7D", "")
 )
 
-
-def get_group_schedule(
-    group_number: int | str,
-    course_id: int,
-    flow_id: int,
-    date_from: datetime,
-    date_to: datetime,
-):
-    url = "https://api.test.my.msu.ru/gateway/public/api/v1/public_content/lessons"
-    values_to_keep = [
-        "id",
-        "date",
-        "time_from",
-        "time_to",
-        "schedule_id",
-        "discipline",
-        "classroom",
-        "conducting_way",
-        "lesson_type",
-        "teacher_users",
-        "study_groups",
-    ]
-    params = {
-        "schedule_id[]": "1",
-        "course_id": str(course_id),
-        "flow_id": str(flow_id),
-        "date_from": date_from.strftime("%Y-%m-%d"),
-        "date_to": date_to.strftime("%Y-%m-%d"),
-    }
-    try:
-        response = requests.get(url, params=params)
-        logging.info(
-            f"Successfully fetched schedule for group {group_number} from {date_from} to {date_to}. status: {response.status_code}"
-        )
-        if response.status_code == 200:
-            lessons = response.json()["result"]["data"]
-        else:
-            return None
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching schedule for group {group_number}: {e}")
-        return None
-    lessons = filter(
-        lambda lesson: (
-            (
-                lesson["study_groups"][0]["type"] == "simple"
-                and lesson["study_groups"][0]["name"] == str(group_number)
-            )
-        )
-        or (
-            lesson["study_groups"][0]["type"] == "separation"
-            and lesson["study_groups"][0]["base_groups"][0]["name"] == str(group_number)
-        )
-        or (
-            (
-                lesson["study_groups"][0]["type"] == "union"
-                and any(
-                    group["name"] == str(group_number)
-                    for group in lesson["study_groups"][0]["base_groups"]
-                )
-            )
-        ),
-        lessons,
-    )
-    lessons = list(lessons)
-    res = []
-    for lesson in lessons:
-        res.append({key: lesson[key] for key in values_to_keep})
-    return res
+API_URL = "https://api.test.my.msu.ru/gateway/public/api/v1/"
+LESSONS_ROUTE = API_URL + "public_content/lessons"
 
 
 @task(
@@ -110,19 +44,6 @@ def get_group_schedule(
 )
 def get_timetable_for_semester_to_db():
     data = []
-    values_to_keep = [
-        "id",
-        "date",
-        "time_from",
-        "time_to",
-        "discipline",
-        "classroom",
-        "conducting_way",
-        "lesson_type",
-        "teacher_users",
-        "study_groups",
-    ]
-    url = "https://api.test.my.msu.ru/gateway/public/api/v1/public_content/lessons"
     for source in SOURCES:
         params = {
             "schedule_id[]": "1",
@@ -132,7 +53,7 @@ def get_timetable_for_semester_to_db():
             "date_to": (datetime.now() + timedelta.days(130)).strftime("%Y-%m-%d"),
         }
         try:
-            response = r.get(url, params=params)
+            response = r.get(LESSONS_ROUTE, params=params)
             logging.info(
                 "Course %d flow %d timetable fetched with status %d",
                 source[0],
@@ -162,7 +83,13 @@ def get_timetable_for_semester_to_db():
                             "study_groups": lesson["study_groups"],
                         }
                     )
-
+            else:
+                logging.error(
+                    "Error fetching course %d flow %d timetable: %d",
+                    source[0],
+                    source[1],
+                    response.status_code,
+                )
         except r.exceptions.RequestException as e:
             logging.error(
                 "Error fetching course %d flow %d timetable: %s",
@@ -187,51 +114,54 @@ def get_timetable_for_semester_to_db():
 @task(
     task_id="flatten_timetable",
     inlets=Dataset("STG_MYMSUAPI.raw_timetable_api"),
-    outlets=Dataset("STG_MYMSUAPI.ods_timetable_api_flattened"),
+    outlets=Dataset("ODS_MYMSUAPI.ods_timetable_api_flattened"),
 )
 def flatten_timetable():
     sql_engine = sa.create_engine(DB_DSN)
-    raw_data = pd.read_sql_table("raw_timetable_api", con=sql_engine, schema="STG_MYMSUAPI")
-
-    flattened_data = []
-    for index, row in raw_data.iterrows():
-        for teacher_user in row["teacher_users"]:
-            for study_group in row["study_groups"]:
-                flattened_row = {
-                    "id": row["id"],
-                    "group_name": row["group_name"],
-                    "discipline_name": row["dicscipline_name"],
-                    "discipline_id": row["discipline_id"],
-                    "classroom_name": row["classroom_name"],
-                    "classroom_id": row["classroom_id"],
-                    "lesson_type_text": row["lesson_type_text"],
-                    "lesson_from_dttm_ts": row["lesson_from_dttm_ts"],
-                    "lesson_to_dttm_ts": row["lesson_to_dttm_ts"],
-                    "teacher_full_name": f"{teacher_user['first_name']} {teacher_user['sur_name']} {teacher_user['second_name']}",
-                    "study_group_id": study_group["id"],
-                    "study_group_name": study_group["name"],
-                }
-                flattened_data.append(flattened_row)
-
-    flattened_data = pd.DataFrame(flattened_data)
-    flattened_data.to_sql(
-        "ods_timetable_api_flattened",
-        con=sql_engine,
-        schema="STG_MYMSUAPI",
-        if_exists="replace",
-        index=False,
+    sql_engine.execute(
+        """
+        INSERT INTO ODS_MYMSUAPI.ods_timetable_api_flattened (
+            group_name,
+            discipline_name,
+            discipline_id,
+            classroom_name,
+            classroom_id,
+            lesson_type_text,
+            lesson_from_dttm_ts,
+            lesson_to_dttm_ts,
+            teacher_full_name,
+            study_group_id,
+            study_group_name
+        )
+        SELECT
+            r.group_name,
+            r.dicscipline_name,
+            r.discipline_id,
+            r.classroom_name,
+            r.classroom_id,
+            r.lesson_type_text,
+            r.lesson_from_dttm_ts,
+            r.lesson_to_dttm_ts,
+            json_build_string(t.first_name, ' ', t.sur_name, ' ', t.second_name) AS teacher_full_name,
+            s.id AS study_group_id,
+            s.name AS study_group_name
+        FROM STG_MYMSUAPI.raw_timetable_api r
+        CROSS JOIN LATERAL json_array_elements(r.teacher_users) AS t
+        CROSS JOIN LATERAL json_array_elements(r.study_groups) as s;
+        """
     )
-    return Dataset("STG_MYMSUAPI.ods_timetable_api_flattened")
+    return Dataset("ODS_MYMSUAPI.ods_timetable_api_flattened")
 
 
 @dag(
-    schedule_interval=None,
-    start_date=datetime(2024, 08, 17),
+    schedule="@once",
+    start_date=datetime(2024, 8, 17),
     tags=["dwh", "timetable", "stg"],
     default_args={
         "owner": "zimovchik",
         "retries": 3,
-        "retry_delay": timedelta(minutes=5)
-    })
+        "retry_delay": timedelta(minutes=5),
+    },
+)
 def mymsu_timetable_download():
     get_timetable_for_semester_to_db() >> flatten_timetable()
