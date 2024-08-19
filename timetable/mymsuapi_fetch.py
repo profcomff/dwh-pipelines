@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
+from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
@@ -153,16 +154,29 @@ def flatten_timetable():
     return Dataset("ODS_MYMSUAPI.ods_timetable_api_flattened")
 
 
-@dag(
+# @dag(
+#     dag_id="download_mymsuapi_timetable",
+#     schedule="@once",
+#     start_date=datetime(2024, 1, 1),
+#     tags=["dwh", "timetable", "stg"],
+#     default_args={
+#         "owner": "zimovchik",
+#         "retries": 3,
+#         "retry_delay": timedelta(minutes=5),
+#     },
+# )
+# def mymsu_timetable_download():
+#     get_timetable_for_semester_to_db() >> flatten_timetable()
+
+with DAG(
     dag_id="download_mymsuapi_timetable",
     schedule="@once",
-    start_date=datetime(2024, 8, 17),
+    start_date=datetime(2024, 1, 1),
     tags=["dwh", "timetable", "stg"],
     default_args={
         "owner": "zimovchik",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
     },
-)
-def mymsu_timetable_download():
-    get_timetable_for_semester_to_db() >> flatten_timetable()
+) as dag:
+    (get_timetable_for_semester_to_db() >> flatten_timetable())
