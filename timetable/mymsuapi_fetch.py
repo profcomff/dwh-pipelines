@@ -154,6 +154,7 @@ def flatten_timetable():
 
 
 @dag(
+    dag_id="download_mymsuapi_timetable",
     schedule="@once",
     start_date=datetime(2024, 8, 17),
     tags=["dwh", "timetable", "stg"],
