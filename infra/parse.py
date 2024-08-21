@@ -36,13 +36,13 @@ def parse_data(data):
                 final_massive[h][2] = group_text[h] 
             return final_massive
 
-@task(task_id='download_pages_to_db', intlets=Dataset("STG_RASPHYSMSU.raw_html"), outlets =Dataset("ODS_TIMETABLE.ods_timetable_act"))
+@task(task_id='get_from_database_data', inlets=Dataset("STG_RASPHYSMSU.raw_html"), outlets =Dataset("ODS_TIMETABLE.ods_timetable_act"))
 def get_from_database_data():
     data = []
     DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
     sql_engine = sa.create_engine(DB_URI)
     with sql_engine.connect() as conn:
-        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
+        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()[0]
         logging.info("starting parsing")
         data = pd.DataFrame(parse_data(data))
         data.to_sql(
