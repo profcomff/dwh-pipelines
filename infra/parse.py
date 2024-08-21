@@ -18,22 +18,23 @@ def parse_data(data):
             counter_1 = 0
             counter_2 = 0
             counter_3 = 0
-            soup = BeautifulSoup(data)
-            for i in soup.find_all('tr',class_=['tditem1','tdsmall']):
-                event_text[counter_1] = i.get_text()
-                counter_1+=1
-            for j in soup.find_all('tr', class_='tdtime'):
-                time_interval_text[counter_2] = j.get_text()
-                counter_2+=1
-            for u in soup.find_all('b'):
-                sample = re.compile(r"\d{3}")
-                res_middle = u.get_text()
-                group_text[counter_3] = sample.search(res_middle)
-                counter_3+=1
-            for h in range(len(event_text)):
-                final_massive[h][0] = event_text[h]
-                final_massive[h][1] = time_interval_text[h]
-                final_massive[h][2] = group_text[h] 
+            for item in data:
+                soup = BeautifulSoup(item)
+                for i in soup.find_all('tr',class_=['tditem1','tdsmall']):
+                    event_text[counter_1] = i.get_text()
+                    counter_1+=1
+                for j in soup.find_all('tr', class_='tdtime'):
+                    time_interval_text[counter_2] = j.get_text()
+                    counter_2+=1
+                for u in soup.find_all('b'):
+                    sample = re.compile(r"\d{3}")
+                    res_middle = u.get_text()
+                    group_text[counter_3] = sample.search(res_middle)
+                    counter_3+=1
+                for h in range(len(event_text)):
+                    final_massive[h][0] = event_text[h]
+                    final_massive[h][1] = time_interval_text[h]
+                    final_massive[h][2] = group_text[h] 
             return final_massive
 
 @task(task_id='get_from_database_data', inlets=Dataset("STG_RASPHYSMSU.raw_html"), outlets =Dataset("ODS_TIMETABLE.ods_timetable_act"))
@@ -42,7 +43,7 @@ def get_from_database_data():
     DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
     sql_engine = sa.create_engine(DB_URI)
     with sql_engine.connect() as conn:
-        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()[0]
+        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
         logging.info("starting parsing")
         data = pd.DataFrame(parse_data(data))
         data.to_sql(
