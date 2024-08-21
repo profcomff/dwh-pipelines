@@ -30,7 +30,7 @@ def parse_data(data):
                 res_middle = u.get_text()
                 group_text[counter_3] = sample.search(res_middle)
                 counter_3+=1
-            for h in range(length(event_text)):
+            for h in range(len(event_text)):
                 final_massive[h][0] = event_text[h]
                 final_massive[h][1] = time_interval_text[h]
                 final_massive[h][2] = group_text[h] 
@@ -46,21 +46,22 @@ def get_from_database_data():
         logging.info("starting parsing")
         data = pd.DataFrame(parse_data(data))
         data.to_sql(
-        "ods_timetable_act",
-        con=sql_engine,
-        schema="ODS_TIMETABLE",
-        if_exists="replace",
-        index=False,
-    )
-    return Dataset("ODS_TIMETABLE.ods_timetable_act")
+            "ods_timetable_act",
+            con=sql_engine,
+            schema="ODS_TIMETABLE",
+            if_exists="replace",
+            index=False,
+        )
+        return Dataset("ODS_TIMETABLE.ods_timetable_act")
 @dag(
     schedule='0 */1 * * *',
     start_date=datetime(2024, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["dwh"],
-    default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
+    default_args={"owner": "SofyaFin", "retries": 3, "retry_delay": timedelta(minutes=5)},
 )
-def start():
+def parse_Rasphysmsu():
     get_from_database_data()
 
-start()
+
+parse_Rasphysmsu()
