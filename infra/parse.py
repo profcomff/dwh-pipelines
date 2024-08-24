@@ -33,7 +33,7 @@ def parse_data(data):
             elif (24<counter<=30):
                 o = o + " Пятница"
             elif (30<counter<=36):
-                o = o +" Шаббат"
+                o = o +" Суббота"
             event_text.append(o)
         for j in soup.find_all('td', class_='tdtime'):
             time_interval_text.append(j.get_text())
