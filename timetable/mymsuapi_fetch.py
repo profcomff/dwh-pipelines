@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta
-
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
@@ -9,6 +8,7 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 from airflow.exceptions import AirflowException
+from json import dumps
 
 # [[курс, поток, количество групп], ...]
 SOURCES = [
@@ -51,39 +51,43 @@ def get_timetable_for_semester_to_db():
             "course_id": str(source[0]),
             "flow_id": str(source[1]),
             "date_from": datetime.now().strftime("%Y-%m-%d"),
-            "date_to": (datetime.now() + timedelta.days(130)).strftime("%Y-%m-%d"),
+            "date_to": (datetime.now() + timedelta(days=130)).strftime("%Y-%m-%d"),
         }
         try:
             response = r.get(LESSONS_ROUTE, params=params)
-            logging.info(
-                "Course %d flow %d timetable fetched with status %d",
-                source[0],
-                source[1],
-                response.status_code,
-            )
             if response.status_code == 200:
+                logging.info(
+                    "Course %d flow %d timetable fetched succesfully",
+                    source[0],
+                    source[1],
+                )
                 result = response.json()["result"]["data"]
                 for lesson in result:
-                    data.append(
-                        {
-                            "group_name": lesson["study_groups"][0]["name"],
-                            "dicscipline_name": lesson["discipline"]["name"],
-                            "discipline_id": lesson["discipline"]["id"],
-                            "classroom_name": lesson["classroom"]["name"],
-                            "classroom_id": lesson["classroom"]["id"],
-                            "lesson_type_text": lesson["lesson_type"]["name"],
-                            "lesson_from_dttm_ts": datetime.strptime(
-                                f"{lesson['date']} {lesson['time_from']} ",
-                                "%Y-%m-%d %H:%M",
-                            ),
-                            "lesson_to_dttm_ts": datetime.strptime(
-                                f"{lesson['date']} {lesson['time_to']} ",
-                                "%Y-%m-%d %H:%M",
-                            ),
-                            "teacher_users": lesson["teacher_users"],
-                            "study_groups": lesson["study_groups"],
-                        }
-                    )
+                    try:
+                        data.append(
+                            {
+                                "group_name": lesson["study_groups"][0]["name"],
+                                "dicscipline_name": lesson["discipline"]["name"],
+                                "discipline_id": lesson["discipline"]["id"],
+                                "classroom_name": lesson["classroom"]["name"],
+                                "classroom_id": lesson["classroom"]["id"],
+                                "lesson_type_text": lesson["lesson_type"]["name"],
+                                "lesson_from_dttm_ts": datetime.strptime(
+                                    f"{lesson['date']} {lesson['time_from']}",
+                                    "%Y-%m-%d %H:%M",
+                                ),
+                                "lesson_to_dttm_ts": datetime.strptime(
+                                    f"{lesson['date']} {lesson['time_to']}",
+                                    "%Y-%m-%d %H:%M",
+                                ),
+                                "teacher_users": dumps(lesson["teacher_users"]),
+                                "study_groups": dumps(lesson["study_groups"]),
+                            }
+                        )
+                    except Exception as e:
+                        logging.error(
+                            f"Error taking data out: {e} for cource {source[0]} flow {source[1]}"
+                        )
             else:
                 logging.error(
                     "Error fetching course %d flow %d timetable: %d",
@@ -154,24 +158,10 @@ def flatten_timetable():
     return Dataset("ODS_MYMSUAPI.ods_timetable_api_flattened")
 
 
-# @dag(
-#     dag_id="download_mymsuapi_timetable",
-#     schedule="@once",
-#     start_date=datetime(2024, 1, 1),
-#     tags=["dwh", "timetable", "stg"],
-#     default_args={
-#         "owner": "zimovchik",
-#         "retries": 3,
-#         "retry_delay": timedelta(minutes=5),
-#     },
-# )
-# def mymsu_timetable_download():
-#     get_timetable_for_semester_to_db() >> flatten_timetable()
-
 with DAG(
     dag_id="download_mymsuapi_timetable",
-    schedule="@once",
-    start_date=datetime(2024, 1, 1),
+    schedule="0 0 */1 * *",
+    start_date=datetime(2024, 8, 27),
     tags=["dwh", "timetable", "stg"],
     default_args={
         "owner": "zimovchik",
