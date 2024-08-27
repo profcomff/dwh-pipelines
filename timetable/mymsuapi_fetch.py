@@ -80,13 +80,21 @@ def get_timetable_for_semester_to_db():
                                     f"{lesson['date']} {lesson['time_to']}",
                                     "%Y-%m-%d %H:%M",
                                 ),
-                                "teacher_users": dumps(lesson["teacher_users"]),
-                                "study_groups": dumps(lesson["study_groups"]),
+                                "teacher_users": dumps(
+                                    lesson["teacher_users"], ensure_ascii=False
+                                ),
+                                "study_groups": dumps(
+                                    lesson["study_groups"], ensure_ascii=False
+                                ),
                             }
                         )
                     except Exception as e:
                         logging.error(
-                            f"Error taking data out: {e} for cource {source[0]} flow {source[1]}"
+                            f"Error taking data out: %s for cource %d flow %d group %s",
+                            str(e),
+                            source[0],
+                            source[1],
+                            lesson["study_groups"][0]["name"],
                         )
             else:
                 logging.error(
@@ -105,7 +113,6 @@ def get_timetable_for_semester_to_db():
             raise AirflowException("Failed to fetch timetable")
     data = pd.DataFrame(data)
     sql_engine = sa.create_engine(DB_DSN)
-
     data.to_sql(
         "raw_timetable_api",
         con=sql_engine,
@@ -125,7 +132,8 @@ def flatten_timetable():
     sql_engine = sa.create_engine(DB_DSN)
     sql_engine.execute(
         """
-        INSERT INTO ODS_MYMSUAPI.ods_timetable_api_flattened (
+        DELETE FROM "ODS_MYMSUAPI".ods_timetable_api_flattened;
+        INSERT INTO "ODS_MYMSUAPI".ods_timetable_api_flattened (
             group_name,
             discipline_name,
             discipline_id,
@@ -147,12 +155,12 @@ def flatten_timetable():
             r.lesson_type_text,
             r.lesson_from_dttm_ts,
             r.lesson_to_dttm_ts,
-            json_build_string(t.first_name, ' ', t.sur_name, ' ', t.second_name) AS teacher_full_name,
-            s.id AS study_group_id,
-            s.name AS study_group_name
-        FROM STG_MYMSUAPI.raw_timetable_api r
-        CROSS JOIN LATERAL json_array_elements(r.teacher_users) AS t
-        CROSS JOIN LATERAL json_array_elements(r.study_groups) as s;
+            REPLACE(cast(t->'sur_name'as text) || ' ' || cast(t->'first_name' as text) || ' ' || cast(t->'second_name'::text as text), '"', '') AS teacher_full_name,
+            cast(cast(s->'id' as text) as integer) AS study_group_id,
+            s->'name' AS study_group_name
+        FROM "STG_MYMSUAPI".raw_timetable_api r
+        CROSS JOIN LATERAL json_array_elements(r.teacher_users::json) AS t
+        CROSS JOIN LATERAL json_array_elements(r.study_groups::json) as s
         """
     )
     return Dataset("ODS_MYMSUAPI.ods_timetable_api_flattened")
