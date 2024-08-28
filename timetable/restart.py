@@ -18,7 +18,7 @@ headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT")
 
 
-@task(task_id='restart', outlets=Dataset("STG_TIMETABLE.old"))
+@task(task_id='restart', outlets=Dataset("STG_RASPHYSMSU.old"))
 def restart():
     start_deleting = datetime.datetime.now()
     start_deleting = start_deleting.strftime("%Y-%m-%d")

@@ -33,8 +33,8 @@ environment = Variable.get("_ENVIRONMENT")
 
 @task(
     task_id="parsing",
-    inlets=Dataset("STG_TIMETABLE.raw_html"),
-    outlets=Dataset("STG_TIMETABLE.old"),
+    inlets=Dataset("STG_RASPHYSMSU.raw_html"),
+    outlets=Dataset("STG_RASPHYSMSU.old"),
 )
 def parsing():
     engine = sa.create_engine(DB_URI)
@@ -127,8 +127,8 @@ def parsing():
 
 @task(
     task_id="find_diff",
-    inlets=[Dataset("STG_TIMETABLE.old"), Dataset("STG_TIMETABLE.new")],
-    outlets=Dataset("STG_TIMETABLE.diff"),
+    inlets=[Dataset("STG_RASPHYSMSU.old"), Dataset("STG_RASPHYSMSU.new")],
+    outlets=Dataset("STG_RASPHYSMSU.diff"),
 )
 def find_diff():
     engine = sa.create_engine(DB_URI)
@@ -174,7 +174,7 @@ def find_diff():
     logging.info("Задача 'find_diff' выполнена.")
 
 
-@task(task_id="update", outlets=Dataset("STG_TIMETABLE.new"))
+@task(task_id="update", outlets=Dataset("STG_RASPHYSMSU.new"))
 def update():
     logging.info("Начало задачи 'update'")
     engine = sa.create_engine(DB_URI)
@@ -224,7 +224,7 @@ def update():
 
 
 @dag(
-    schedule=[Dataset("STG_TIMETABLE.raw_html")],
+    schedule=[Dataset("STG_RASPHYSMSU.raw_html")],
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
     max_active_runs=1,
     catchup=False,
