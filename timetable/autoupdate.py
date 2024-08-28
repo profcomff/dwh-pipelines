@@ -38,7 +38,7 @@ environment = Variable.get("_ENVIRONMENT")
 )
 def parsing():
     engine = sa.create_engine(DB_URI)
-    timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
+    timetables = pd.read_sql_query('select * from "STG_RASPHYSMSU".raw_html', engine)
     logging.info(
         f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}"
     )
@@ -65,7 +65,7 @@ def parsing():
     lessons = to_id(lessons, headers, environment)
     engine.execute(
         """
-       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
+       CREATE TABLE IF NOT EXISTS "STG_RASPHYSMSU"."new"(
            Id SERIAL PRIMARY key, subject varchar NOT NULL,
            odd bool NOT NULL, even bool NOT NULL,
            weekday INTEGER, num INTEGER,
@@ -73,7 +73,7 @@ def parsing():
            place INTEGER[], "group" INTEGER[],
            teacher INTEGER[], events_id INTEGER[] DEFAULT ARRAY[]::integer[]
        );
-       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."old"(
+       CREATE TABLE IF NOT EXISTS "STG_RASPHYSMSU"."old"(
            Id SERIAL PRIMARY key, subject varchar NOT NULL,
            odd bool NOT NULL, even bool NOT NULL,
            weekday INTEGER, num INTEGER,
@@ -81,7 +81,7 @@ def parsing():
            place INTEGER[], "group" INTEGER[],
            teacher INTEGER[], events_id INTEGER[] DEFAULT ARRAY[]::integer[]
        );
-       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".diff (
+       CREATE TABLE IF NOT EXISTS "STG_RASPHYSMSU".diff (
            subject varchar NULL, odd bool NULL,
            even bool NULL, weekday int4 NULL,
            num int4 NULL, "start" varchar NULL,
@@ -94,19 +94,19 @@ def parsing():
     )
     engine.execute(
         """
-        delete from "STG_TIMETABLE"."old";
-        insert into "STG_TIMETABLE"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+        delete from "STG_RASPHYSMSU"."old";
+        insert into "STG_RASPHYSMSU"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
         select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id"
-        from "STG_TIMETABLE"."new";
-        delete from "STG_TIMETABLE"."new";
-        delete from "STG_TIMETABLE".diff;
+        from "STG_RASPHYSMSU"."new";
+        delete from "STG_RASPHYSMSU"."new";
+        delete from "STG_RASPHYSMSU".diff;
     """
     )
     lessons.to_sql(
         name="new",
         con=engine,
-        schema="STG_TIMETABLE",
+        schema="STG_RASPHYSMSU",
         if_exists="append",
         index=False,
         dtype={
@@ -134,7 +134,7 @@ def find_diff():
     engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи 'find_diff'")
     sql_query = """
-    insert into "STG_TIMETABLE".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+    insert into "STG_RASPHYSMSU".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
     "teacher", "events_id", "id", "action")
     select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
     "teacher", "events_id", "id", "action" from
@@ -156,8 +156,8 @@ def find_diff():
             WHEN l.subject IS NULL THEN 'create'
             WHEN r.subject IS NULL THEN 'delete'
     END AS action
-    from "STG_TIMETABLE"."old" l
-    full outer join "STG_TIMETABLE"."new" r
+    from "STG_RASPHYSMSU"."old" l
+    full outer join "STG_RASPHYSMSU"."new" r
         on l.subject = r.subject
         and  l.odd = r.odd
         and  l.even = r.even
@@ -179,14 +179,14 @@ def update():
     logging.info("Начало задачи 'update'")
     engine = sa.create_engine(DB_URI)
     lessons_for_deleting = pd.read_sql_query(
-        """select events_id from "STG_TIMETABLE".diff
+        """select events_id from "STG_RASPHYSMSU".diff
     where action='delete'""",
         engine,
     )
     lessons_for_creating = pd.read_sql_query(
         """select id, subject, "start", "end", "group",
     teacher, place, odd, even,
-    weekday, num from "STG_TIMETABLE".diff where action='create'""",
+    weekday, num from "STG_RASPHYSMSU".diff where action='create'""",
         engine,
     )
     logging.info(f"Количество пар для удаления: {lessons_for_deleting.shape[0]}")
@@ -210,13 +210,13 @@ def update():
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
         event_id = post_event(headers, row, environment)
-        query = f'UPDATE "STG_TIMETABLE"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
+        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
         engine.execute(query)
     query = """
-    UPDATE "STG_TIMETABLE"."new" as ch
+    UPDATE "STG_RASPHYSMSU"."new" as ch
     SET events_id = ch.events_id || selected.events_id
     FROM
-    (SELECT id, events_id, "action" from "STG_TIMETABLE".diff) AS Selected
+    (SELECT id, events_id, "action" from "STG_RASPHYSMSU".diff) AS Selected
     WHERE ch.id  = Selected.id and selected."action" = 'remember';
     """
     engine.execute(query)

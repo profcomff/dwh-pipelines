@@ -36,9 +36,9 @@ def restart():
 
     engine = sa.create_engine(DB_URI)
     engine.execute("""
-    delete from "STG_TIMETABLE"."old";
-    delete from "STG_TIMETABLE"."new";
-    delete from "STG_TIMETABLE".diff;
+    delete from "STG_RASPHYSMSU"."old";
+    delete from "STG_RASPHYSMSU"."new";
+    delete from "STG_RASPHYSMSU".diff;
     """)
 
 
