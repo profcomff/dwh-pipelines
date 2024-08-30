@@ -207,19 +207,25 @@ def update():
     logging.info(
         f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий."
     )
-    for i, row in lessons_new.iterrows():
-        new_id = row["id"]
-        #event_id = post_event(headers, row, environment)
-        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
-        engine.execute(query)
-    query = """
-    UPDATE "STG_RASPHYSMSU"."new" as ch
-    SET events_id = ch.events_id || selected.events_id
-    FROM
-    (SELECT id, events_id, "action" from "STG_RASPHYSMSU".diff) AS Selected
-    WHERE ch.id  = Selected.id and selected."action" = 'remember';
-    """
-    engine.execute(query)
+    lessons_new.to_sql(
+        name="new_with_dates",
+        con=engine,
+        schema="STG_RASPHYSMSU",
+        if_exists="append",
+        index=False,
+        dtype={
+            "group": postgresql.ARRAY(sa.types.Integer),
+            "teacher": postgresql.ARRAY(sa.types.Integer),
+            "place": postgresql.ARRAY(sa.types.Integer),
+            "subject": postgresql.VARCHAR,
+            "odd": postgresql.BOOLEAN,
+            "even": postgresql.BOOLEAN,
+            "weekday": postgresql.INTEGER,
+            "num": postgresql.INTEGER,
+            "start": postgresql.VARCHAR,
+            "end": postgresql.VARCHAR,
+        },
+    )
     logging.info("Задача 'update' выполнена.")
 
 
