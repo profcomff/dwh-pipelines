@@ -18,11 +18,11 @@ headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT", "")
 
 
-@task(task_id='bulk_insert', inlets=Dataset("STG_RASPHYSMSU.new"))
+@task(task_id='bulk_insert', inlets=Dataset("STG_RASPHYSMSU.new_with_dates"))
 def bulk_insert():
     engine = sa.create_engine(DB_URI)
     events = engine.execute("""
-    select subject, place, group, teacher, start, end from "STG_RASPHYSMSU"."new"
+    select subject, place, group, teacher, start, end from "STG_RASPHYSMSU"."new_with_dates"
     """)
     res = []
     for event in events:
