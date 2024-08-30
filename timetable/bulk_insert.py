@@ -22,7 +22,7 @@ environment = Variable.get("_ENVIRONMENT", "")
 def bulk_insert():
     engine = sa.create_engine(DB_URI)
     events = engine.execute("""
-    select * from "STG_RASPHYSMSU"."new"
+    select subject, place, group, teacher, start, end from "STG_RASPHYSMSU"."new"
     """)
     res = []
     for event in events:
