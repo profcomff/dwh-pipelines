@@ -189,6 +189,15 @@ def update():
     weekday, num from "STG_RASPHYSMSU".diff where action='create'""",
         engine,
     )
+    lessons_in_new = pd.read_sql_query(
+        """select 
+            id, subject, "start", "end", "group",
+            teacher, place, odd, even,
+            weekday, num 
+        from "STG_RASPHYSMSU".new
+        """,
+        engine,
+    )
     logging.info(f"Количество пар для удаления: {lessons_for_deleting.shape[0]}")
     logging.info(f"Количество пар для создания: {lessons_for_creating.shape[0]}")
 
@@ -207,7 +216,21 @@ def update():
     logging.info(
         f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий."
     )
-    lessons_new.to_sql(
+    for i, row in lessons_new.iterrows():
+        new_id = row["id"]
+        #event_id = post_event(headers, row, environment)
+        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
+        engine.execute(query)
+    query = """
+    UPDATE "STG_RASPHYSMSU"."new" as ch
+    SET events_id = ch.events_id || selected.events_id
+    FROM
+    (SELECT id, events_id, "action" from "STG_RASPHYSMSU".diff) AS Selected
+    WHERE ch.id  = Selected.id and selected."action" = 'remember';
+    """
+    engine.execute(query)
+    logging.info("Задача 'update' выполнена.")
+    lessons_in_new.to_sql(
         name="new_with_dates",
         con=engine,
         schema="STG_RASPHYSMSU",
@@ -226,7 +249,7 @@ def update():
             "end": postgresql.VARCHAR,
         },
     )
-    logging.info("Задача 'update' выполнена.")
+    logging.info("Из new добавлены события на дату в new_with_dates")
 
 
 @dag(
