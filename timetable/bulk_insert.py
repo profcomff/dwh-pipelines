@@ -21,30 +21,38 @@ environment = Variable.get("_ENVIRONMENT", "")
 @task(task_id='bulk_insert', inlets=Dataset("STG_RASPHYSMSU.new_with_dates"))
 def bulk_insert():
     engine = sa.create_engine(DB_URI)
-    events = engine.execute("""
-    select * from "STG_RASPHYSMSU"."new_with_dates"
-    """)
-    res = []
-    for event in events:
-        res.append(
-            {
-                "name": event["subject"],
-                "room_id": event["place"],
-                "group_id": event["group"],
-                "lecturer_id": event["teacher"],
-                "start_ts": event["start"],
-                "end_ts": event["end"],
-            }
-        )
-        logging.info(event)
-    if environment == "test":
-        url = f'https://api.test.profcomff.com/timetable/event/bulk'
-        r = requests.post(url, headers=headers, json=res)
-        logging.info(f"{r.status_code=}")
-    if environment == "prod":
-        url = f'https://api.profcomff.com/timetable/event/bulk'
-        r = requests.post(url, headers=headers, json=res)
-        logging.info(f"{r.status_code=}")
+    batch_delta = 1000
+    total_size = 20000  # примерно
+    batches = [d*batch_delta for d in range(total_size//batch_delta + 1)]
+    offset = 0
+    for batch in batches:
+        events = engine.execute(f"""
+        select * from "STG_RASPHYSMSU"."new_with_dates"
+        limit {batch}
+        offset {offset}
+        """)
+        res = []
+        offset += batch
+        for event in events:
+            res.append(
+                {
+                    "name": event["subject"],
+                    "room_id": event["place"],
+                    "group_id": event["group"],
+                    "lecturer_id": event["teacher"],
+                    "start_ts": event["start"],
+                    "end_ts": event["end"],
+                }
+            )
+            logging.info(event)
+        if environment == "test":
+            url = f'https://api.test.profcomff.com/timetable/event/bulk'
+            r = requests.post(url, headers=headers, json=res)
+            logging.info(f"{r.status_code=}")
+        if environment == "prod":
+            url = f'https://api.profcomff.com/timetable/event/bulk'
+            r = requests.post(url, headers=headers, json=res)
+            logging.info(f"{r.status_code=}")
 
 
 @dag(
