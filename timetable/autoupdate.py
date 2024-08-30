@@ -235,7 +235,6 @@ def update():
     delete from "STG_RASPHYSMSU"."new_with_dates";
     """
     engine.execute(query)
-    lessons_in_new_w_dates.drop(columns=["odd", "even", "weekday", "num", "group", "teacher", "events_id"])
     lessons_in_new_w_dates.to_sql(
         name="link_new_with_dates",
         con=engine,
@@ -243,7 +242,14 @@ def update():
         if_exists="append",
         index=False,
         dtype={
+            "group": postgresql.ARRAY(sa.types.Integer),
+            "teacher": postgresql.ARRAY(sa.types.Integer),
+            "place": postgresql.ARRAY(sa.types.Integer),
             "subject": postgresql.VARCHAR,
+            "odd": postgresql.BOOLEAN,
+            "even": postgresql.BOOLEAN,
+            "weekday": postgresql.INTEGER,
+            "num": postgresql.INTEGER,
             "start": postgresql.VARCHAR,
             "end": postgresql.VARCHAR,
         },
