@@ -18,8 +18,8 @@ headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT", "")
 
 
-@task(task_id='restart', inlets=Dataset("STG_RASPHYSMSU.new"))
-def restart():
+@task(task_id='bulk_insert', inlets=Dataset("STG_RASPHYSMSU.new"))
+def bulk_insert():
     engine = sa.create_engine(DB_URI)
     events = engine.execute("""
     select * from "STG_RASPHYSMSU"."new"
@@ -29,9 +29,9 @@ def restart():
         res.append(
             {
                 "name": event["subject"],
-                "room_id": event["room"],
-                "group_id": event["room"],
-                "lecturer_id": event["room"],
+                "room_id": event["place"],
+                "group_id": event["group"],
+                "lecturer_id": event["teacher"],
                 "start_ts": event["start"],
                 "end_ts": event["end"],
             }
@@ -60,7 +60,7 @@ def restart():
     }
 )
 def bulk_insert_timetable():
-    restart()
+    bulk_insert()
 
 
 sync = bulk_insert_timetable()
