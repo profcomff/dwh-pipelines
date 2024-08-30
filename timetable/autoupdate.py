@@ -236,24 +236,37 @@ def update():
     """
     engine.execute(query)
     lessons_in_new_w_dates.to_sql(
-        name="new_with_dates",
+        name="link_new_with_dates",
         con=engine,
         schema="STG_RASPHYSMSU",
         if_exists="append",
         index=False,
         dtype={
-            "group": postgresql.ARRAY(sa.types.Integer),
-            "teacher": postgresql.ARRAY(sa.types.Integer),
-            "place": postgresql.ARRAY(sa.types.Integer),
             "subject": postgresql.VARCHAR,
-            "odd": postgresql.BOOLEAN,
-            "even": postgresql.BOOLEAN,
-            "weekday": postgresql.INTEGER,
-            "num": postgresql.INTEGER,
             "start": postgresql.VARCHAR,
             "end": postgresql.VARCHAR,
         },
     )
+    query = """
+    insert into "STG_RASPHYSMSU"."new_with_dates" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+        "teacher", "events_id")
+        select
+            coalesce(link."subject", new."subject"),
+            new."odd" as "odd",
+            new."even" as "even",
+            new."weekday" as "weekday",
+            new."num" as "num",
+            link."start" as "start",
+            link."end" as "end",
+            new."place" as "place",
+            new."group" as "group",
+            new."teacher" as "teacher",
+            new."events_id" as "events_id"
+        from "STG_RASPHYSMSU"."link_new_with_dates" as link
+        left join "STG_RASPHYSMSU"."new" as new
+        on link.id = new.id;
+    """
+    engine.execute(query)
     logging.info("Из new добавлены события на дату в new_with_dates")
 
 
