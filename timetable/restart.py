@@ -34,12 +34,12 @@ def restart():
         r = requests.delete(url, headers=headers)
         logging.info(r)
 
-    engine = sa.create_engine(DB_URI)
-    engine.execute("""
-    delete from "STG_RASPHYSMSU"."old";
-    delete from "STG_RASPHYSMSU"."new";
-    delete from "STG_RASPHYSMSU".diff;
-    """)
+    # engine = sa.create_engine(DB_URI)
+    # engine.execute("""
+    # delete from "STG_RASPHYSMSU"."old";
+    # delete from "STG_RASPHYSMSU"."new";
+    # delete from "STG_RASPHYSMSU".diff;
+    # """)
 
 
 @dag(

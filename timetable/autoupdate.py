@@ -258,9 +258,12 @@ def update():
     query = """
     insert into "STG_RASPHYSMSU"."new_with_dates" ("id", "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
-        select
+        select 
+            "id", "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id"
+        from(
+            select 
             cast(FLOOR(RANDOM() * 100000) as int) as id,
-            coalesce(link."subject", new."subject"),
+            coalesce(link."subject", new."subject") as "subject",
             new."odd" as "odd",
             new."even" as "even",
             new."weekday" as "weekday",
@@ -270,10 +273,13 @@ def update():
             new."place" as "place",
             new."group" as "group",
             new."teacher" as "teacher",
-            new."events_id" as "events_id"
-        from "STG_RASPHYSMSU"."link_new_with_dates" as link
-        join "STG_RASPHYSMSU"."new" as new
-        on link.id = new.id;
+            new."events_id" as "events_id",
+            row_number() over (partition by link.subject, link."start", link.group, link.place) as "rn"
+        from "STG_RASPHYSMSU"."new" as new
+        left join "STG_RASPHYSMSU"."link_new_with_dates" as link
+        on link.subject = new.subject and link.teacher = new.teacher and link.group = new.group and link.place = new.place
+        )
+        where "rn"=1;
     """
     engine.execute(query)
     logging.info("Из new добавлены события на дату в new_with_dates")
