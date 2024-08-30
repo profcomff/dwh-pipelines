@@ -22,7 +22,7 @@ environment = Variable.get("_ENVIRONMENT", "")
 def restart():
     engine = sa.create_engine(DB_URI)
     events = engine.execute("""
-    select * from "STG_RASPHYSMSU"."raw_html"
+    select * from "STG_RASPHYSMSU"."new"
     """)
     res = []
     for event in events:
