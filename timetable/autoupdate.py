@@ -258,6 +258,7 @@ def update():
     insert into "STG_RASPHYSMSU"."new_with_dates" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
         select
+            link.id+link.start as id,
             coalesce(link."subject", new."subject"),
             new."odd" as "odd",
             new."even" as "even",
