@@ -235,6 +235,7 @@ def update():
     delete from "STG_RASPHYSMSU"."new_with_dates";
     """
     engine.execute(query)
+    lessons_in_new_w_dates.drop(columns=["odd", "even", "weekday", "num", "group", "teacher", "events_id"])
     lessons_in_new_w_dates.to_sql(
         name="link_new_with_dates",
         con=engine,
