@@ -230,7 +230,12 @@ def update():
     """
     engine.execute(query)
     logging.info("Задача 'update' выполнена.")
-    lessons_in_new.to_sql(
+    lessons_in_new_w_dates = calc_date(lessons_in_new, begin, end, semester_start)
+    query = """
+    delete from "STG_RASPHYSMSU"."new_with_dates";
+    """
+    engine.execute(query)
+    lessons_in_new_w_dates.to_sql(
         name="new_with_dates",
         con=engine,
         schema="STG_RASPHYSMSU",
