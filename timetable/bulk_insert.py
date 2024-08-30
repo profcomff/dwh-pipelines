@@ -40,11 +40,11 @@ def bulk_insert():
     if environment == "test":
         url = f'https://api.test.profcomff.com/timetable/event/bulk'
         r = requests.post(url, headers=headers, json=res)
-        logging.info(r)
+        logging.info(f"{r.status_code=}")
     if environment == "prod":
         url = f'https://api.profcomff.com/timetable/event/bulk'
         r = requests.post(url, headers=headers, json=res)
-        logging.info(r)
+        logging.info(f"{r.status_code=}")
 
 
 @dag(
