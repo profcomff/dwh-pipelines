@@ -255,7 +255,7 @@ def update():
         },
     )
     query = """
-    insert into "STG_RASPHYSMSU"."new_with_dates" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+    insert into "STG_RASPHYSMSU"."new_with_dates" ("id", "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
         select
             cast(FLOOR(RANDOM() * 10000000000) as int) as id,
