@@ -271,7 +271,7 @@ def update():
             new."teacher" as "teacher",
             new."events_id" as "events_id"
         from "STG_RASPHYSMSU"."link_new_with_dates" as link
-        left join "STG_RASPHYSMSU"."new" as new
+        join "STG_RASPHYSMSU"."new" as new
         on link.id = new.id;
     """
     engine.execute(query)
