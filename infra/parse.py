@@ -53,7 +53,12 @@ def parse_data(data):
 @task(task_id='get_from_database_data', inlets=Dataset("STG_RASPHYSMSU.raw_html"), outlets =Dataset("ODS_TIMETABLE.ods_timetable_act"))
 def get_from_database_data():
     data = []
-    DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
+    DB_URI= (
+    Connection.get_connection_from_secrets("postgres_dwh")
+    .get_uri()
+    .replace("postgres://", "postgresql://")
+    .replace("?__extra__=%7B%7D", "")
+)
     sql_engine = sa.create_engine(DB_URI)
     with sql_engine.connect() as conn:
         data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
