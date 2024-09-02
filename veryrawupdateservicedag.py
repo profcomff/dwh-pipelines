@@ -7,85 +7,86 @@ import sqlalchemy as sa
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
+from bs4 import BeautifulSoup
 
+def parse_data(data):
+    event_text = []
+    group_text = []
+    time_interval_text = []
+    final_massive = []
+    for item in data:
+        print(item[1])
+        counter =0
+        soup = BeautifulSoup(item[1],'html.parser')
+        print(f'soup:{soup}') #всегда 6 пар в день
+        for i in soup.find_all('td',class_=['tditem1','tdsmall']):
+            counter +=1
+            o = i.get_text()
+            if (counter<=6):
+                o = o + " Понедельник"
+            elif (6<counter<=12):
+                o = o + " Вторник"
+            elif (12<counter<=18):
+                o = o + " Среда"
+            elif (18<counter<=24):
+                o = o + " Четверг"
+            elif (24<counter<=30):
+                o = o + " Пятница"
+            elif (30<counter<=36):
+                o = o +" Шаббат"
+            event_text.append(o)
+        for j in soup.find_all('td', class_='tdtime'):
+            time_interval_text.append(j.get_text())
+        for u in soup.find_all('tr', class_='tdheader'):
+            sample = re.compile(r"\d{3}")
+            res_middle = u.get_text()
+            for v in range(36):
+                group_text.append((sample.search(res_middle)).group(0))
+            print(f'gr:{group_text}')
+        for h in range(len(event_text)):
+            final_massive.append([event_text[h],time_interval_text[h],group_text[h]])
+            final_massive[h][0].replace('\xa0','')
+            print(f'fn:{final_massive}')
 
-USER_AGENT = (
-    "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36"
-)
-HEADERS = {"User-Agent": USER_AGENT}
+        return final_massive
 
-DB_URI = Connection.get_connection_from_secrets('postgres_dwh').get_uri().replace("postgres://", "postgresql://")
-
-
-@task(task_id='download_pages_to_db', outlets=Dataset("STG_".raw_html))
-def create_data():
+@task(task_id='get_from_database_data', inlets=Dataset("STG_RASPHYSMSU.raw_html"), outlets =Dataset("ODS_TIMETABLE.ods_timetable_act"))
+def get_from_database_data():
     data = []
-    i = 0
-    while (response = r.get(url, headers=HEADERS)): #типо пока делается делай, пока данные читаются, читай
-        url = f'http://ras.phys.msu.ru/table/{data[0]}/{data[1]}/{i}.htm'
-        i +=1
-        logging.info("Page %s fetched with status %d", url, response.status_code)
-        data.append(
-            {
-                'url': url,
-                'raw_html': response,
-            }
-        )
-        logging.info("starting parsing url and raw_html")
-        def _parse_data(data):
-            parsed_raw = {"event_text": None, "time_interval_text": None, "group_text": None}
-            data = _preprocessing(data)
-
-            # '... <nobr>12:00</nobr> 110
-            res = re.match(r"/\d+/g")
-            result = re.match(r"([А-Яа-яёЁa-zA-Z +,/.\-\d]+)+<nobr>([А-Яа-яёЁa-zA-Z +,/.\-\d]+)</nobr>"+r"/\d+/g")
-            if not (result is None):
-                if data == result[0]:
-                    parsed_raw["event_text"] = result[1]
-                    parsed_raw["time_interval_text"] = result[2]
-                    parsed_raw["group_text"] = result[3]
-                    return parsed_raw
-
+    DB_URI= (
+    Connection.get_connection_from_secrets("postgres_dwh")
+    .get_uri()
+    .replace("postgres://", "postgresql://")
+    .replace("?__extra__=%7B%7D", "")
+)
     sql_engine = sa.create_engine(DB_URI)
-
-    conn.commit()
-    sql_engine.execute(
-        """
-    CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);
-    CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".raw_html_old (url varchar(256) NULL, group_text text NULL, time_interval_text text NULL, event_text text NULL);
-    """
-    )
-    sql_engine.execute(
-        """
-    delete from "STG_TIMETABLE".raw_html_old;
-    """
-    )
-    logging.info("raw_html_old is empty")
-    sql_engine.execute(
-        """
-    insert into "STG_TIMETABLE".raw_html_old ("url", "event_text", "time_interval_text","group_text") select "url", "event_text","time_interval_text","group_text" from "STG_TIMETABLE".raw_html
-    """
-    )
-    logging.info("raw_html_old is full")
-    sql_engine.execute(
-        """
-    delete from "STG_TIMETABLE".raw_html;
-    """
-    )
-    logging.info("raw_html is empty")
-    data.to_sql('event_text'+'time_interval_text'+'group_text', sql_engine, schema='STG_TIMETABLE', if_exists='append', index=False)
-    logging.info("raw_html is full")
-    return Dataset("STG_TIMETABLE.raw_html")
-
-
-
+    with sql_engine.connect() as conn:
+        data = conn.execute(sa.text(f'''SELECT * FROM "STG_RASPHYSMSU".raw_html''')).fetchall()
+        print(f"Data: {data}")
+        logging.info("starting parsing")
+        parced = parse_data(data)
+        print(f"Parced: {parced}")
+        data = pd.DataFrame(parse_data(data))
+        print(f"Df: {data}")
+        data.to_sql(
+            "ods_timetable_act",
+            con=sql_engine,
+            schema="ODS_TIMETABLE",
+            if_exists="replace",
+            index=False,
+        )
+        conn.execute(sa.text(f''' delete from "ODS_TIMETABLE".ods_timetable_act where length("0") < 20 '''))
+        return Dataset("ODS_TIMETABLE.ods_timetable_act")
 @dag(
     schedule='0 */1 * * *',
     start_date=datetime(2024, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["dwh"],
-    default_args={"owner": "dwh", "retries": 3, "retry_delay": timedelta(minutes=5)},
+    default_args={"owner": "SofyaFin", "retries": 3, "retry_delay": timedelta(minutes=5)},
 )
+def parse_Rasphysmsu():
+    get_from_database_data()
 
+
+parse_Rasphysmsu()
 
