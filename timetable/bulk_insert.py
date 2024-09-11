@@ -1,5 +1,5 @@
 import logging
-
+import time
 import sqlalchemy as sa
 import datetime
 import requests
@@ -21,7 +21,7 @@ environment = Variable.get("_ENVIRONMENT", "")
 @task(task_id='bulk_insert', inlets=Dataset("STG_RASPHYSMSU.new_with_dates"))
 def bulk_insert():
     engine = sa.create_engine(DB_URI)
-    batch_delta = 1000
+    batch_delta = 100
     total_size = 20000  # примерно
     batches = [d*batch_delta for d in range(total_size//batch_delta + 1)]
     offset = 0
@@ -49,10 +49,12 @@ def bulk_insert():
             url = f'https://api.test.profcomff.com/timetable/event/bulk'
             r = requests.post(url, headers=headers, json=res)
             logging.info(f"{r.status_code=}")
+            time.sleep(1)
         if environment == "prod":
             url = f'https://api.profcomff.com/timetable/event/bulk'
             r = requests.post(url, headers=headers, json=res)
             logging.info(f"{r.status_code=}")
+            time.sleep(1)
 
 
 @dag(
