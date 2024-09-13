@@ -46,7 +46,7 @@ def bulk_insert():
             )
             logging.info(event)
         inserted = False  # for retries
-        retries_max_cnt = 10
+        retries_max_cnt = 100
         retries_cnt = 0
         if environment == "test":
             url = f'https://api.test.profcomff.com/timetable/event/bulk'
