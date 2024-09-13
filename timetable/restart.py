@@ -20,8 +20,10 @@ environment = Variable.get("_ENVIRONMENT")
 
 @task(task_id='restart', outlets=Dataset("STG_RASPHYSMSU.old"))
 def restart():
-    start_deleting = datetime.datetime.now()
-    start_deleting = start_deleting.strftime("%Y-%m-%d")
+    start_deleting = Variable.get("SEMESTER_START")
+    start_deleting = datetime.datetime.strptime(start_deleting, '%m/%d/%Y')
+    start_deleting = datetime.datetime.strftime(start_deleting, "%Y-%m-%d")
+    
     end_deleting = Variable.get("SEMESTER_END")
     end_deleting = datetime.datetime.strptime(end_deleting, '%m/%d/%Y')
     end_deleting = datetime.datetime.strftime(end_deleting, "%Y-%m-%d")
