@@ -21,7 +21,7 @@ environment = Variable.get("_ENVIRONMENT", "")
 @task(task_id='bulk_insert', inlets=Dataset("STG_RASPHYSMSU.new_with_dates"))
 def bulk_insert():
     engine = sa.create_engine(DB_URI)
-    batch_delta = 10
+    batch_delta = 100
     total_size = 20000  # примерно
     batches = [batch_delta for d in range(total_size//batch_delta + 1)]
     offset = 0
@@ -46,7 +46,7 @@ def bulk_insert():
             )
             logging.info(event)
         inserted = False  # for retries
-        retries_max_cnt = 100
+        retries_max_cnt = 10
         retries_cnt = 0
         if environment == "test":
             url = f'https://api.test.profcomff.com/timetable/event/bulk'
