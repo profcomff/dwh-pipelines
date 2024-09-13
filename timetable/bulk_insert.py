@@ -23,7 +23,7 @@ def bulk_insert():
     engine = sa.create_engine(DB_URI)
     batch_delta = 10
     total_size = 20000  # примерно
-    batches = [d*batch_delta for d in range(total_size//batch_delta + 1)]
+    batches = [batch_delta for d in range(total_size//batch_delta + 1)]
     offset = 0
     for batch in batches:
         events = engine.execute(f"""
