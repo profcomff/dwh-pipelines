@@ -54,9 +54,9 @@ def bulk_insert():
                 r = requests.post(url, headers=headers, json=res)
                 logging.info(f"{r.status_code=}")
                 if r.status_code == 200:
-                    retries_cnt += 1
-                    logging.info(f"tryna insert {batch=}, {retries_cnt=}")
                     inserted = True
+                retries_cnt += 1
+                logging.info(f"tryna insert {batch=}, {retries_cnt=}")
                 time.sleep(1)
         if environment == "prod":
             url = f'https://api.profcomff.com/timetable/event/bulk'
@@ -64,9 +64,9 @@ def bulk_insert():
                 r = requests.post(url, headers=headers, json=res)
                 logging.info(f"{r.status_code=}")
                 if r.status_code == 200:
-                    retries_cnt += 1
-                    logging.info(f"tryna insert {batch=}, {retries_cnt=}")
                     inserted = True
+                retries_cnt += 1
+                logging.info(f"tryna insert {batch=}, {retries_cnt=}")
                 time.sleep(1)
 
 
