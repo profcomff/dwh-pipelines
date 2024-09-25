@@ -102,7 +102,7 @@ def compare_pages():
         response = r.post(
             f"https://api.telegram.org/bot{token}/sendMessage",
             json={
-                "chat_id": int(Variable.get("TG_CHAT_VU")),
+                "chat_id": int(Variable.get("TG_CHAT_DWH")),
                 "text": "Изменились следующие страницы с расписанием "
                 f"({len(changed_urls)} из {number_of_groups}):\n{changed_urls_formated}",
             },
