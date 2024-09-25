@@ -58,7 +58,7 @@ def bulk_insert():
                 else:
                     retries_cnt += 1
                     logging.info(f"tryna insert {batch=}, {retries_cnt=}")
-                    time.sleep(1)
+                    time.sleep(2)
         if environment == "prod":
             url = f'https://api.profcomff.com/timetable/event/bulk'
             while not inserted and retries_cnt < retries_max_cnt:
@@ -69,7 +69,7 @@ def bulk_insert():
                 else:
                     retries_cnt += 1
                     logging.info(f"tryna insert {batch=}, {retries_cnt=}")
-                    time.sleep(1)
+                    time.sleep(2)
 
 
 @dag(
