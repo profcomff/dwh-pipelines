@@ -48,7 +48,7 @@ def parse_data(data):
             final_massive[h][0].replace('\xa0','')
             print(f'fn:{final_massive}')
 
-        return final_massive
+    return final_massive
 
 @task(task_id='get_from_database_data', inlets=Dataset("STG_RASPHYSMSU.raw_html"), outlets =Dataset("ODS_TIMETABLE.ods_timetable_act"))
 def get_from_database_data():
