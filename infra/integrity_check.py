@@ -90,13 +90,13 @@ def fetch_dwh_db(**context):
         api_cols = api_conn.execute(sa.text(
             "SELECT table_schema, table_name, column_name "
             "FROM information_schema.columns "
-            f"WHERE table_schema IN {tuple([key for key in SCHEMAS.keys()])}"
+            f"WHERE table_schema IN {tuple([key for key in SCHEMAS.keys()])} AND table_name != 'alembic_version'"
         ))
 
         dwh_cols = dwh_conn.execute(sa.text(
             "SELECT table_schema, table_name, column_name "
             "FROM information_schema.columns "
-            f"WHERE table_schema IN {tuple([value for value in SCHEMAS.values()])}"
+            f"WHERE table_schema IN {tuple([value for value in SCHEMAS.values()])} AND table_name != 'alembic_version'"
         ))
 
         api_cols = set((SCHEMAS[i.table_schema], i.table_name, i.column_name) for i in api_cols)
@@ -120,7 +120,7 @@ def fetch_dwh_db(**context):
 with DAG(
     dag_id="dwh_integrity_check",
     start_date=datetime(2022, 1, 1),
-    schedule="*/15 * * * *",
+    schedule="@daily",
     catchup=False,
     tags= ["dwh", "infra"],
     default_args={"owner": "roslavtsevsv"}
