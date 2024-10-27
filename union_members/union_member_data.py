@@ -58,7 +58,7 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Академическая группа' then value end, ', ') as "group",
   string_agg(distinct case when p.name = 'Должность' then value end, ', ') as position,
   string_agg(distinct case when p.name = 'Номер студенческого билета' then value end, ', ') as student_id_number,
-  string_agg(distinct case w hen p.name = 'Кафедра' then value end, ', ') as department,
+  string_agg(distinct case when p.name = 'Кафедра' then value end, ', ') as department,
   string_agg(distinct case when p.name = 'Форма обучения' then value end, ', ') as mode_of_study,
   string_agg(distinct case when p.name = 'Полное имя' then value end, ', ') as full_name,
   string_agg(distinct case when p.name = 'Дата рождения' then value end, ', ') as birth_date,
