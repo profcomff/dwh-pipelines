@@ -76,11 +76,11 @@ with DAG(
     start_date = datetime(2024, 1, 1),
     schedule_interval = '@daily',
     catchup=False,
-    tags=["dwh", "infra", "union_member", "userdata"],
+    tags=["dwh", "union_member", "userdata"],
     description='union_members_data_format_correction',
     default_args = {
         'retries': 1,
-        'tags':["dwh", "infra", "union_member", "userdata"],
+        'tags':["dwh", "union_member", "userdata"],
         'owner':'redstoneenjoyer',
     },
 ) as dag:
