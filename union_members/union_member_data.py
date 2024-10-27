@@ -1,11 +1,12 @@
 import logging
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.datasets import Dataset
 
 from datetime import datetime
 from airflow import DAG
 
-@task(task_id = 'execute_sql_for_data_corr')
+@task(task_id = 'execute_sql_for_data_corr', inlets=Dataset("STG_USERDATA"), outlets=Dataset("ODS_INFO"))
 def execute_sql(sql_code, postgres_conn_id):
     PostgresOperator(
         task_id = 'execute_sql_op',
@@ -27,8 +28,8 @@ insert into "ODS_INFO".info (
   home_phone_number,
   education_level,
   university,
-  "group",
   faculty,
+  "group",
   position,
   student_id_number,
   department,
@@ -42,29 +43,29 @@ insert into "ODS_INFO".info (
 )
 select -- полная таблица
   owner_id as user_id,
-  string_agg(distinct case when p.name = 'Электронная почта' then value end, ', ') as электронная_почта,
-  string_agg(distinct case when p.name = 'Номер телефона' then value end, ', ') as номер_телефона,
-  string_agg(distinct case when p.name = 'Имя пользователя VK' then value end, ', ') as имя_пользователя_vk,
-  string_agg(distinct case when p.name = 'Город' then value end, ', ') as город,
-  string_agg(distinct case when p.name = 'Родной город' then value end, ', ') as родной_город,
-  string_agg(distinct case when p.name = 'Место жительства' then value end, ', ') as место_жительства,
-  string_agg(distinct case when p.name = 'Имя пользователя GitHub' then value end, ', ') as имя_пользователя_github,
-  string_agg(distinct case when p.name = 'Имя пользователя Telegram' then value end, ', ') as имя_пользователя_telegram,
-  string_agg(distinct case when p.name = 'Домашний номер телефона' then value end, ', ') as домашний_номер_телефона,
-  string_agg(distinct case when p.name = 'Ступень обучения' then value end, ', ') as ступень_обучения,
-  string_agg(distinct case when p.name = 'ВУЗ' then value end, ', ') as вуз,
-  string_agg(distinct case when p.name = 'Факультет' then value end, ', ') as факультет,
-  string_agg(distinct case when p.name = 'Академическая группа' then value end, ', ') as академическая_группа,
-  string_agg(distinct case when p.name = 'Должность' then value end, ', ') as должность,
-  string_agg(distinct case when p.name = 'Номер студенческого билета' then value end, ', ') as номер_студенческого_билета,
-  string_agg(distinct case when p.name = 'Кафедра' then value end, ', ') as кафедра,
-  string_agg(distinct case when p.name = 'Форма обучения' then value end, ', ') as форма_обучения,
-  string_agg(distinct case when p.name = 'Полное имя' then value end, ', ') as полное_имя,
-  string_agg(distinct case when p.name = 'Дата рождения' then value end, ', ') as дата_рождения,
-  string_agg(distinct case when p.name = 'Фото' then value end, ', ') as фото,
-  string_agg(distinct case when p.name = 'Пол' then value end, ', ') as пол,
-  string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as место_работы,
-  string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as расположение_работы
+  string_agg(distinct case when p.name = 'Электронная почта' then value end, ', ') as email,
+  string_agg(distinct case when p.name = 'Номер телефона' then value end, ', ') as phone_number,
+  string_agg(distinct case when p.name = 'Имя пользователя VK' then value end, ', ') as vk_name,
+  string_agg(distinct case when p.name = 'Город' then value end, ', ') as city,
+  string_agg(distinct case when p.name = 'Родной город' then value end, ', ') as hometown,
+  string_agg(distinct case when p.name = 'Место жительства' then value end, ', ') as location,
+  string_agg(distinct case when p.name = 'Имя пользователя GitHub' then value end, ', ') as github_name,
+  string_agg(distinct case when p.name = 'Имя пользователя Telegram' then value end, ', ') as telegram_name,
+  string_agg(distinct case when p.name = 'Домашний номер телефона' then value end, ', ') as home_phone_number,
+  string_agg(distinct case when p.name = 'Ступень обучения' then value end, ', ') as education_level,
+  string_agg(distinct case when p.name = 'ВУЗ' then value end, ', ') as university,
+  string_agg(distinct case when p.name = 'Факультет' then value end, ', ') as faculty,
+  string_agg(distinct case when p.name = 'Академическая группа' then value end, ', ') as "group",
+  string_agg(distinct case when p.name = 'Должность' then value end, ', ') as position,
+  string_agg(distinct case when p.name = 'Номер студенческого билета' then value end, ', ') as student_id_number,
+  string_agg(distinct case w hen p.name = 'Кафедра' then value end, ', ') as department,
+  string_agg(distinct case when p.name = 'Форма обучения' then value end, ', ') as mode_of_study,
+  string_agg(distinct case when p.name = 'Полное имя' then value end, ', ') as full_name,
+  string_agg(distinct case when p.name = 'Дата рождения' then value end, ', ') as birth_date,
+  string_agg(distinct case when p.name = 'Фото' then value end, ', ') as photo,
+  string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
+  string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
+  string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
 from "STG_USERDATA".info i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
@@ -72,7 +73,7 @@ order by owner_id;
 """
 
 with DAG(
-    dag_id = 'data_format_correction',
+    dag_id = 'union_member_data_correction_STG_USERDATA.info-to-ODS_INFO.info',
     start_date = datetime(2024, 1, 1),
     schedule_interval = '@daily',
     catchup=False,
@@ -80,7 +81,7 @@ with DAG(
     description='union_members_data_format_correction',
     default_args = {
         'retries': 1,
-        'tags':["dwh", "union_member", "userdata"],
+        'tags':["ods", "union_member", "userdata"],
         'owner':'redstoneenjoyer',
     },
 ) as dag:
