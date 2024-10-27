@@ -86,4 +86,3 @@ with DAG(
     },
 ) as dag:
     result = execute_sql(sql_schema, "postgres_dwh")
-    # Поменять "postgres_dwh" на aiflow postgress connection id из Admin -> Connections
