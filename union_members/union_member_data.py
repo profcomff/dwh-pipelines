@@ -33,8 +33,7 @@ insert into "ODS_INFO".info (
   sex,
   job,
   work_location
-
-(
+)
 select -- полная таблица
   owner_id as user_id,
   string_agg(distinct case when p.name = 'Электронная почта' then value end, ', ') as email,
@@ -63,10 +62,7 @@ select -- полная таблица
 "STG_USERDATA".info i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
-order by owner_id;
-) source_table
-on conflict (user_id)
-do update set
+on conflict (user_id) do update set
 	email = EXCLUDED.email;
 	phone_number = EXCLUDED.phone_number;
 	vk_name = EXCLUDED.vk_name;
