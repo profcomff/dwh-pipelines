@@ -33,7 +33,7 @@ insert into "ODS_INFO".info (
   sex,
   job,
   work_location
-)
+
 (
 select -- полная таблица
   owner_id as user_id,
