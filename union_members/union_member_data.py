@@ -34,7 +34,6 @@ insert into "ODS_INFO".info (
   job,
   work_location
 )
-from
 (
 select -- полная таблица
   owner_id as user_id,
