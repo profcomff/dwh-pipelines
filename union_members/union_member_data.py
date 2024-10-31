@@ -3,16 +3,9 @@ from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.datasets import Dataset
 
+from textwrap import dedent
 from datetime import datetime
 from airflow import DAG
-
-@task(task_id = 'execute_sql_for_data_corr', inlets=Dataset("STG_USERDATA"), outlets=Dataset("ODS_INFO"))
-def execute_sql(sql_code, postgres_conn_id):
-    PostgresOperator(
-        task_id = 'execute_sql_op',
-        postgres_conn_id = postgres_conn_id,
-        sql = sql_code,
-    )
 
 sql_schema = """
 insert into "ODS_INFO".info (
@@ -41,6 +34,8 @@ insert into "ODS_INFO".info (
   job,
   work_location
 )
+from
+(
 select -- полная таблица
   owner_id as user_id,
   string_agg(distinct case when p.name = 'Электронная почта' then value end, ', ') as email,
@@ -70,10 +65,36 @@ from "STG_USERDATA".info i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
 order by owner_id;
+) source_table
+on conflict (user_id)
+do update set
+	email = EXCLUDED.email;
+	phone_number = EXCLUDED.phone_number;
+	vk_name = EXCLUDED.vk_name;
+	city = EXCLUDED.city;
+	hometown = EXCLUDED.hometown;
+	location = EXCLUDED.location;
+	github_name = EXCLUDED.github_name;
+	telegram_name = EXCLUDED.telegram_name;
+	home_phone_number = EXCLUDED.home_phone_number;
+	education_level = EXCLUDED.education_level;
+	university = EXCLUDED.university;
+	faculty = EXCLUDED.faculty;
+	"group" = EXCLUDED."group";
+	position = EXCLUDED.position;
+	student_id_number = EXCLUDED.student_id_number;
+	department = EXCLUDED.department;
+	mode_of_study = EXCLUDED.mode_of_study;
+	full_name = EXCLUDED.full_name;
+	birth_date = EXCLUDED.birth_date;
+	photo = EXCLUDED.photo;
+	sex = EXCLUDED.sex;
+	job = EXCLUDED.job;
+	work_location = EXCLUDED.work_location;
 """
 
 with DAG(
-    dag_id = 'union_member_data_correction_STG_USERDATA.info-to-ODS_INFO.info',
+    dag_id = 'inserting_into_ODS_INFO.info',
     start_date = datetime(2024, 1, 1),
     schedule_interval = '@daily',
     catchup=False,
@@ -84,5 +105,11 @@ with DAG(
         'tags':["ods", "union_member", "userdata"],
         'owner':'redstoneenjoyer',
     },
-) as dag:
-    result = execute_sql(sql_schema, "postgres_dwh")
+):
+    PostgresOperator(
+        task_id='execute_sql_for_data_corr',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent(sql_schema),
+        inlets = [Dataset("STG_USERDATA")],
+        outlets = [Dataset("ODS_INFO")],
+    )
