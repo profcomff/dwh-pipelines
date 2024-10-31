@@ -60,7 +60,7 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
   string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
-from "STG_USERDATA".info i
+"STG_USERDATA".info i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
 order by owner_id;
