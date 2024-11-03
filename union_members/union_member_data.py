@@ -108,3 +108,111 @@ with DAG(
         inlets = [Dataset("STG_USERDATA")],
         outlets = [Dataset("ODS_INFO")],
     )
+
+
+with DAG(
+    dag_id = 'ODS_INFO.info_hist',
+    start_date = datetime(2024, 11, 1),
+    schedule_interval = '@daily',
+    catchup=False,
+    tags=["ods", "user_info", "userdata"],
+    description='scd2_info_hist',
+    default_args = {
+        'retries': 1,
+        'owner':'mixx3',
+    },
+):
+    PostgresOperator(
+        task_id='info_hist',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent("""
+        merge into "ODS_INFO".info_hist as dst
+        using "STG_USERDATA".info as src
+        on dst.id = src.id
+        when matched then update-- close old rows
+        set valid_to_dt = '{{ ds }}'::Date
+        when not matched then -- open new row
+        insert (
+            id,
+            param_id,
+            source_id,
+            owner_id,
+            value,
+            create_ts,
+            modify_ts,
+            is_deleted,
+            valid_from_dt,
+            valid_to_dt
+        )
+        values (
+            src.id,
+            src.param_id,
+            src.source_id,
+            src.owner_id,
+            src.value,
+            src.create_ts,
+            src.modify_ts,
+            src.is_deleted,
+            '{{ ds }}'::Date,
+            null
+        );
+        """),
+        inlets = [Dataset("STG_USERDATA.info")],
+        outlets = [Dataset("ODS_INFO.info_hist")],
+    )
+
+
+with DAG(
+    dag_id = 'ODS_INFO.param_hist',
+    start_date = datetime(2024, 11, 1),
+    schedule_interval = '@daily',
+    catchup=False,
+    tags=["ods", "user_info", "userdata"],
+    description='scd2_info_hist',
+    default_args = {
+        'retries': 1,
+        'owner':'mixx3',
+    },
+):
+    PostgresOperator(
+        task_id='param_hist',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent("""
+        merge into "ODS_INFO".param_hist as dst
+        using "STG_USERDATA".param as src
+        on dst.id = src.id
+        when matched then update-- close old rows
+        set valid_to_dt = '{{ ds }}'::Date
+        when not matched then -- open new row
+        insert (
+            id,
+            name,
+            category_id,
+            is_required,
+            changeable,
+            type,
+            create_ts,
+            modify_ts,
+            is_deleted,
+            validation,
+            valid_from_dt,
+            valid_to_dt
+        )
+        values (
+            src.id,
+            src.name,
+            src.category_id,
+            src.is_required,
+            src.changeable,
+            src.type,
+            src.create_ts,
+            src.modify_ts,
+            src.is_deleted,
+            src.validation,
+            '{{ ds }}'::Date,
+            null
+        );
+        """),
+        inlets = [Dataset("STG_USERDATA.param")],
+        outlets = [Dataset("ODS_INFO.param_hist")],
+    )
