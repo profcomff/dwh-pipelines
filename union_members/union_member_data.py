@@ -59,32 +59,32 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
   string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
-"STG_USERDATA".info i
+from "STG_USERDATA".info i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
 on conflict (user_id) do update set
-	email = EXCLUDED.email;
-	phone_number = EXCLUDED.phone_number;
-	vk_name = EXCLUDED.vk_name;
-	city = EXCLUDED.city;
-	hometown = EXCLUDED.hometown;
-	location = EXCLUDED.location;
-	github_name = EXCLUDED.github_name;
-	telegram_name = EXCLUDED.telegram_name;
-	home_phone_number = EXCLUDED.home_phone_number;
-	education_level = EXCLUDED.education_level;
-	university = EXCLUDED.university;
-	faculty = EXCLUDED.faculty;
-	"group" = EXCLUDED."group";
-	position = EXCLUDED.position;
-	student_id_number = EXCLUDED.student_id_number;
-	department = EXCLUDED.department;
-	mode_of_study = EXCLUDED.mode_of_study;
-	full_name = EXCLUDED.full_name;
-	birth_date = EXCLUDED.birth_date;
-	photo = EXCLUDED.photo;
-	sex = EXCLUDED.sex;
-	job = EXCLUDED.job;
+	email = EXCLUDED.email,
+	phone_number = EXCLUDED.phone_number,
+	vk_name = EXCLUDED.vk_name,
+	city = EXCLUDED.city,
+	hometown = EXCLUDED.hometown,
+	location = EXCLUDED.location,
+	github_name = EXCLUDED.github_name,
+	telegram_name = EXCLUDED.telegram_name,
+	home_phone_number = EXCLUDED.home_phone_number,
+	education_level = EXCLUDED.education_level,
+	university = EXCLUDED.university,
+	faculty = EXCLUDED.faculty,
+	"group" = EXCLUDED."group",
+	position = EXCLUDED.position,
+	student_id_number = EXCLUDED.student_id_number,
+	department = EXCLUDED.department,
+	mode_of_study = EXCLUDED.mode_of_study,
+	full_name = EXCLUDED.full_name,
+	birth_date = EXCLUDED.birth_date,
+	photo = EXCLUDED.photo,
+	sex = EXCLUDED.sex,
+	job = EXCLUDED.job,
 	work_location = EXCLUDED.work_location;
 """
 
