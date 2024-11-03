@@ -130,7 +130,7 @@ with DAG(
         using "STG_USERDATA".info as src
         on dst.id = src.id
         when matched then update-- close old rows
-        set valid_to_dt = {{ ds }}::Date
+        set valid_to_dt = '{{ ds }}'::Date
         when not matched then -- open new row
         insert (
             id,
@@ -153,7 +153,7 @@ with DAG(
             src.create_ts,
             src.modify_ts,
             src.is_deleted,
-            {{ ds }}::Date,
+            '{{ ds }}'::Date,
             null
         );
         """),
@@ -182,7 +182,7 @@ with DAG(
         using "STG_USERDATA".param as src
         on dst.id = src.id
         when matched then update-- close old rows
-        set valid_to_dt = {{ ds }}::Date
+        set valid_to_dt = '{{ ds }}'::Date
         when not matched then -- open new row
         insert (
             id,
@@ -209,7 +209,7 @@ with DAG(
             src.modify_ts,
             src.is_deleted,
             src.validation,
-            {{ ds }}::Date,
+            '{{ ds }}'::Date,
             null
         );
         """),
