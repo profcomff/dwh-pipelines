@@ -8,7 +8,7 @@ from datetime import datetime
 from airflow import DAG
 
 sql_schema = """
-insert into "ODS_INFO".info (
+insert into "DWH_USER_INFO".info (
   user_id,
   email,
   phone_number,
@@ -89,15 +89,14 @@ on conflict (user_id) do update set
 """
 
 with DAG(
-    dag_id = 'inserting_into_ODS_INFO.info',
-    start_date = datetime(2024, 1, 1),
+    dag_id = 'DWH_USER_INFO.info',
+    start_date = datetime(2024, 10, 1),
     schedule_interval = '@daily',
     catchup=False,
-    tags=["dwh", "union_member", "userdata"],
+    tags=["dwh", "core", "user_info"],
     description='union_members_data_format_correction',
     default_args = {
         'retries': 1,
-        'tags':["ods", "union_member", "userdata"],
         'owner':'redstoneenjoyer',
     },
 ):
@@ -105,8 +104,8 @@ with DAG(
         task_id='execute_sql_for_data_corr',
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_schema),
-        inlets = [Dataset("STG_USERDATA")],
-        outlets = [Dataset("ODS_INFO")],
+        inlets = [Dataset("ODS_INFO.param_hist"), Dataset("ODS_INFO.info_hist")],
+        outlets = [Dataset("DWH_USER_INFO.info")],
     )
 
 
@@ -115,7 +114,7 @@ with DAG(
     start_date = datetime(2024, 11, 1),
     schedule_interval = '@daily',
     catchup=False,
-    tags=["ods", "user_info", "userdata"],
+    tags=["ods", "src", "userdata"],
     description='scd2_info_hist',
     default_args = {
         'retries': 1,
@@ -167,7 +166,7 @@ with DAG(
     start_date = datetime(2024, 11, 1),
     schedule_interval = '@daily',
     catchup=False,
-    tags=["ods", "user_info", "userdata"],
+    tags=["ods", "src", "userdata"],
     description='scd2_info_hist',
     default_args = {
         'retries': 1,
