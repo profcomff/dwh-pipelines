@@ -91,7 +91,7 @@ on conflict (user_id) do update set
 with DAG(
     dag_id = 'DWH_USER_INFO.info',
     start_date = datetime(2024, 10, 1),
-    schedule_interval = '@daily',
+    schedule=[Dataset("ODS_INFO.info_hist"), Dataset("ODS_INFO.param_hist")],
     catchup=False,
     tags=["dwh", "core", "user_info"],
     description='union_members_data_format_correction',
@@ -112,7 +112,7 @@ with DAG(
 with DAG(
     dag_id = 'ODS_INFO.info_hist',
     start_date = datetime(2024, 11, 1),
-    schedule_interval = '@daily',
+    schedule=[Dataset("STG_USERDATA.info")],
     catchup=False,
     tags=["ods", "src", "userdata"],
     description='scd2_info_hist',
@@ -164,7 +164,7 @@ with DAG(
 with DAG(
     dag_id = 'ODS_INFO.param_hist',
     start_date = datetime(2024, 11, 1),
-    schedule_interval = '@daily',
+    schedule=[Dataset("STG_USERDATA.param")],
     catchup=False,
     tags=["ods", "src", "userdata"],
     description='scd2_info_hist',
