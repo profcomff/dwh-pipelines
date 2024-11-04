@@ -47,7 +47,7 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_AUTH".user as stg
-            full outer join "ODS_INFO".user as dst
+            full outer join "ODS_AUTH".user as dst
 	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
@@ -99,7 +99,7 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_AUTH".auth_method as stg
-            full outer join "ODS_INFO".auth_method as dst
+            full outer join "ODS_AUTH".auth_method as dst
 	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
