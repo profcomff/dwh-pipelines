@@ -182,13 +182,15 @@ with DAG(
             select ods.id from
                 (select 
                     id,
-                    param_id,
-                    source_id,
-                    owner_id,
-                    value,
+                    name,
+                    category_id,
+                    is_required,
+                    changeable,
+                    type,
                     create_ts,
                     modify_ts,
-                    is_deleted
+                    is_deleted,
+                    validation
                 from "ODS_INFO".param_hist
                 ) as ods
             join "STG_USERDATA".param as stg
