@@ -21,7 +21,7 @@ with DAG(
     },
 ):
     PostgresOperator(
-        task_id='info_hist',
+        task_id='user_hist',
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
         -- close records
@@ -47,7 +47,7 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_AUTH".user as stg
-            full outer join "ODS_INFO".param_hist as dst
+            full outer join "ODS_INFO".user as dst
 	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
@@ -69,7 +69,7 @@ with DAG(
     },
 ):
     PostgresOperator(
-        task_id='param_hist',
+        task_id='auth_method_hist',
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
         -- close records
@@ -99,7 +99,7 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_AUTH".auth_method as stg
-            full outer join "ODS_INFO".param_hist as dst
+            full outer join "ODS_INFO".auth_method as dst
 	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
