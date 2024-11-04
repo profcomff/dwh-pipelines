@@ -25,7 +25,7 @@ with DAG(
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
         -- close records
-        update "ODS_AUTH".auth_method as am
+        update "ODS_AUTH".user as am
         set valid_to_dt = '{{ ds }}'::Date
         where am.id=any(
             select ods.id from
@@ -34,20 +34,20 @@ with DAG(
                     create_ts,
                     update_ts,
                     is_deleted,
-                from "ODS_AUTH".auth_method
+                from "ODS_AUTH".user
                 ) as ods
-            join "STG_AUTH".auth_method as stg
+            join "STG_AUTH".user as stg
             on md5(ods::text) != md5(stg::text)
         );
 
         --evaluate increment
-        insert into "ODS_AUTH".auth_method
+        insert into "ODS_AUTH".user
         select 
             stg.*,
             '{{ ds }}'::Date,
             null
-            from "STG_AUTH".auth_method as stg
-            join "ODS_AUTH".auth_method as dst
+            from "STG_AUTH".user as stg
+            join "ODS_AUTH".user as dst
             on stg.id != dst.id or dst.valid_from_dt is not null
         ;
         """),

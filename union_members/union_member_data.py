@@ -137,7 +137,7 @@ with DAG(
                     value,
                     create_ts,
                     modify_ts,
-                    is_deleted,
+                    is_deleted
                 from "ODS_INFO".info_hist
                 ) as ods
             join "STG_USERDATA".info as stg
@@ -176,7 +176,7 @@ with DAG(
         task_id='param_hist',
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
-        update "ODS_INFO".info_hist as am
+        update "ODS_INFO".param_hist as am
         set valid_to_dt = '{{ ds }}'::Date
         where am.id=any(
             select ods.id from
@@ -188,21 +188,21 @@ with DAG(
                     value,
                     create_ts,
                     modify_ts,
-                    is_deleted,
-                from "ODS_INFO".info_hist
+                    is_deleted
+                from "ODS_INFO".param_hist
                 ) as ods
             join "STG_USERDATA".param as stg
             on md5(ods::text) != md5(stg::text)
         );
 
         --evaluate increment
-        insert into "ODS_INFO".info_hist
+        insert into "ODS_INFO".param_hist
         select 
             stg.*,
             '{{ ds }}'::Date,
             null
             from "STG_USERDATA".param as stg
-            join "ODS_INFO".info_hist as dst
+            join "ODS_INFO".param_hist as dst
             on stg.id != dst.id or dst.valid_from_dt is not null
         ;
         """),
