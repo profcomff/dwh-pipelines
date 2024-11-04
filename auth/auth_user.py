@@ -33,7 +33,7 @@ with DAG(
                     id,
                     create_ts,
                     update_ts,
-                    is_deleted,
+                    is_deleted
                 from "ODS_AUTH".user
                 ) as ods
             join "STG_AUTH".user as stg
