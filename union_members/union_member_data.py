@@ -141,7 +141,7 @@ with DAG(
                 from "ODS_INFO".info_hist
                 ) as ods
             join "STG_USERDATA".info as stg
-            on md5(ods::text) != md5(stg::text)
+            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
         );
 
         --evaluate increment
@@ -151,8 +151,8 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_USERDATA".info as stg
-            join "ODS_INFO".info_hist as dst
-            on stg.id != dst.id or dst.valid_from_dt is not null
+            full outer join "ODS_INFO".param_hist as dst
+	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
         inlets = [Dataset("STG_USERDATA.info")],
@@ -194,7 +194,7 @@ with DAG(
                 from "ODS_INFO".param_hist
                 ) as ods
             join "STG_USERDATA".param as stg
-            on md5(ods::text) != md5(stg::text)
+            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
         );
 
         --evaluate increment
@@ -204,8 +204,8 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_USERDATA".param as stg
-            join "ODS_INFO".param_hist as dst
-            on stg.id != dst.id or dst.valid_from_dt is not null
+            full outer join "ODS_INFO".param_hist as dst
+	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
         inlets = [Dataset("STG_USERDATA.param")],

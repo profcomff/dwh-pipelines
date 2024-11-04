@@ -37,7 +37,7 @@ with DAG(
                 from "ODS_AUTH".user
                 ) as ods
             join "STG_AUTH".user as stg
-            on md5(ods::text) != md5(stg::text)
+            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
         );
 
         --evaluate increment
@@ -47,8 +47,8 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_AUTH".user as stg
-            join "ODS_AUTH".user as dst
-            on stg.id != dst.id or dst.valid_from_dt is not null
+            full outer join "ODS_INFO".param_hist as dst
+	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
         inlets = [Dataset("STG_AUTH.user")],
@@ -89,7 +89,7 @@ with DAG(
                 from "ODS_AUTH".auth_method
                 ) as ods
             join "STG_AUTH".auth_method as stg
-            on md5(ods::text) != md5(stg::text)
+            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
         );
 
         --evaluate increment
@@ -99,8 +99,8 @@ with DAG(
             '{{ ds }}'::Date,
             null
             from "STG_AUTH".auth_method as stg
-            join "ODS_AUTH".auth_method as dst
-            on stg.id != dst.id or dst.valid_from_dt is not null
+            full outer join "ODS_INFO".param_hist as dst
+	        on stg.id = dst.id and dst.valid_to_dt is null
         ;
         """),
         inlets = [Dataset("STG_AUTH.auth_method")],
