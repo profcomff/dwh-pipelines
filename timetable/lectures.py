@@ -19,7 +19,7 @@ DWH_DB_DSN = (
     .replace("postgres://", "postgresql://")
     .replace("?__extra__=%7B%7D", "")
 )
-TOKEN_ROBOT_TIMETABLE = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST" if environment in {"test", "development"} else "TOKEN_ROBOT_TIMETABLE")
+TOKEN_ROBOT_TIMETABLE = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
 
 
 @task(task_id="send_lecturers", retries=3)
