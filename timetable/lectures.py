@@ -48,7 +48,7 @@ def send_lecturers():
             "timetable_id": lectuter[0]
         }
         res = requests.post(
-            f"{API_LINK}/timetable/lecturer/",
+            f"{API_LINK}/rating/lecturer/",
             headers={"Authorization": TOKEN_ROBOT_TIMETABLE},
             json=body,
         )
