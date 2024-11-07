@@ -33,12 +33,12 @@ environment = Variable.get("_ENVIRONMENT")
 
 @task(
     task_id="parsing",
-    inlets=Dataset("STG_TIMETABLE.raw_html"),
-    outlets=Dataset("STG_TIMETABLE.old"),
+    inlets=Dataset("STG_RASPHYSMSU.raw_html"),
+    outlets=Dataset("STG_RASPHYSMSU.old"),
 )
 def parsing():
     engine = sa.create_engine(DB_URI)
-    timetables = pd.read_sql_query('select * from "STG_TIMETABLE".raw_html', engine)
+    timetables = pd.read_sql_query('select * from "STG_RASPHYSMSU".raw_html', engine)
     logging.info(
         f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}"
     )
@@ -65,7 +65,7 @@ def parsing():
     lessons = to_id(lessons, headers, environment)
     engine.execute(
         """
-       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."new"(
+       CREATE TABLE IF NOT EXISTS "STG_RASPHYSMSU"."new"(
            Id SERIAL PRIMARY key, subject varchar NOT NULL,
            odd bool NOT NULL, even bool NOT NULL,
            weekday INTEGER, num INTEGER,
@@ -73,7 +73,7 @@ def parsing():
            place INTEGER[], "group" INTEGER[],
            teacher INTEGER[], events_id INTEGER[] DEFAULT ARRAY[]::integer[]
        );
-       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE"."old"(
+       CREATE TABLE IF NOT EXISTS "STG_RASPHYSMSU"."old"(
            Id SERIAL PRIMARY key, subject varchar NOT NULL,
            odd bool NOT NULL, even bool NOT NULL,
            weekday INTEGER, num INTEGER,
@@ -81,7 +81,7 @@ def parsing():
            place INTEGER[], "group" INTEGER[],
            teacher INTEGER[], events_id INTEGER[] DEFAULT ARRAY[]::integer[]
        );
-       CREATE TABLE IF NOT EXISTS "STG_TIMETABLE".diff (
+       CREATE TABLE IF NOT EXISTS "STG_RASPHYSMSU".diff (
            subject varchar NULL, odd bool NULL,
            even bool NULL, weekday int4 NULL,
            num int4 NULL, "start" varchar NULL,
@@ -94,19 +94,19 @@ def parsing():
     )
     engine.execute(
         """
-        delete from "STG_TIMETABLE"."old";
-        insert into "STG_TIMETABLE"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+        delete from "STG_RASPHYSMSU"."old";
+        insert into "STG_RASPHYSMSU"."old" ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
         "teacher", "events_id")
         select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id"
-        from "STG_TIMETABLE"."new";
-        delete from "STG_TIMETABLE"."new";
-        delete from "STG_TIMETABLE".diff;
+        from "STG_RASPHYSMSU"."new";
+        delete from "STG_RASPHYSMSU"."new";
+        delete from "STG_RASPHYSMSU".diff;
     """
     )
     lessons.to_sql(
         name="new",
         con=engine,
-        schema="STG_TIMETABLE",
+        schema="STG_RASPHYSMSU",
         if_exists="append",
         index=False,
         dtype={
@@ -127,14 +127,14 @@ def parsing():
 
 @task(
     task_id="find_diff",
-    inlets=[Dataset("STG_TIMETABLE.old"), Dataset("STG_TIMETABLE.new")],
-    outlets=Dataset("STG_TIMETABLE.diff"),
+    inlets=[Dataset("STG_RASPHYSMSU.old"), Dataset("STG_RASPHYSMSU.new")],
+    outlets=Dataset("STG_RASPHYSMSU.diff"),
 )
 def find_diff():
     engine = sa.create_engine(DB_URI)
     logging.info("Начало задачи 'find_diff'")
     sql_query = """
-    insert into "STG_TIMETABLE".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+    insert into "STG_RASPHYSMSU".diff ("subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
     "teacher", "events_id", "id", "action")
     select "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
     "teacher", "events_id", "id", "action" from
@@ -156,8 +156,8 @@ def find_diff():
             WHEN l.subject IS NULL THEN 'create'
             WHEN r.subject IS NULL THEN 'delete'
     END AS action
-    from "STG_TIMETABLE"."old" l
-    full outer join "STG_TIMETABLE"."new" r
+    from "STG_RASPHYSMSU"."old" l
+    full outer join "STG_RASPHYSMSU"."new" r
         on l.subject = r.subject
         and  l.odd = r.odd
         and  l.even = r.even
@@ -174,19 +174,28 @@ def find_diff():
     logging.info("Задача 'find_diff' выполнена.")
 
 
-@task(task_id="update", outlets=Dataset("STG_TIMETABLE.new"))
+@task(task_id="update", outlets=Dataset("STG_RASPHYSMSU.new"))
 def update():
     logging.info("Начало задачи 'update'")
     engine = sa.create_engine(DB_URI)
     lessons_for_deleting = pd.read_sql_query(
-        """select events_id from "STG_TIMETABLE".diff
+        """select events_id from "STG_RASPHYSMSU".diff
     where action='delete'""",
         engine,
     )
     lessons_for_creating = pd.read_sql_query(
         """select id, subject, "start", "end", "group",
     teacher, place, odd, even,
-    weekday, num from "STG_TIMETABLE".diff where action='create'""",
+    weekday, num from "STG_RASPHYSMSU".diff where action='create'""",
+        engine,
+    )
+    lessons_in_new = pd.read_sql_query(
+        """select 
+            id, subject, "start", "end", "group",
+            teacher, place, odd, even,
+            weekday, num 
+        from "STG_RASPHYSMSU".new
+        """,
         engine,
     )
     logging.info(f"Количество пар для удаления: {lessons_for_deleting.shape[0]}")
@@ -209,22 +218,75 @@ def update():
     )
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
-        event_id = post_event(headers, row, environment)
-        query = f'UPDATE "STG_TIMETABLE"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
+        #event_id = post_event(headers, row, environment)
+        event_id = []
+        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
         engine.execute(query)
     query = """
-    UPDATE "STG_TIMETABLE"."new" as ch
+    UPDATE "STG_RASPHYSMSU"."new" as ch
     SET events_id = ch.events_id || selected.events_id
     FROM
-    (SELECT id, events_id, "action" from "STG_TIMETABLE".diff) AS Selected
+    (SELECT id, events_id, "action" from "STG_RASPHYSMSU".diff) AS Selected
     WHERE ch.id  = Selected.id and selected."action" = 'remember';
     """
     engine.execute(query)
     logging.info("Задача 'update' выполнена.")
+    lessons_in_new_w_dates = calc_date(lessons_in_new, begin, end, semester_start)
+    query = """
+    delete from "STG_RASPHYSMSU"."new_with_dates";
+    """
+    engine.execute(query)
+    lessons_in_new_w_dates.to_sql(
+        name="link_new_with_dates",
+        con=engine,
+        schema="STG_RASPHYSMSU",
+        if_exists="append",
+        index=False,
+        dtype={
+            "group": postgresql.ARRAY(sa.types.Integer),
+            "teacher": postgresql.ARRAY(sa.types.Integer),
+            "place": postgresql.ARRAY(sa.types.Integer),
+            "subject": postgresql.VARCHAR,
+            "odd": postgresql.BOOLEAN,
+            "even": postgresql.BOOLEAN,
+            "weekday": postgresql.INTEGER,
+            "num": postgresql.INTEGER,
+            "start": postgresql.VARCHAR,
+            "end": postgresql.VARCHAR,
+        },
+    )
+    query = """
+    insert into "STG_RASPHYSMSU"."new_with_dates" ("id", "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group",
+        "teacher", "events_id")
+        select 
+            "id", "subject", "odd", "even", "weekday", "num", "start", "end", "place", "group", "teacher", "events_id"
+        from(
+            select 
+            cast(FLOOR(RANDOM() * 100000) as int) as id,
+            coalesce(link."subject", new."subject") as "subject",
+            new."odd" as "odd",
+            new."even" as "even",
+            new."weekday" as "weekday",
+            new."num" as "num",
+            link."start" as "start",
+            link."end" as "end",
+            new."place" as "place",
+            new."group" as "group",
+            new."teacher" as "teacher",
+            new."events_id" as "events_id",
+            row_number() over (partition by link.subject, link."start", link.group, link.place) as "rn"
+        from "STG_RASPHYSMSU"."new" as new
+        left join "STG_RASPHYSMSU"."link_new_with_dates" as link
+        on link.subject = new.subject and link.teacher = new.teacher and link.group = new.group and link.place = new.place
+        )
+        where "rn"=1;
+    """
+    engine.execute(query)
+    logging.info("Из new добавлены события на дату в new_with_dates")
 
 
 @dag(
-    schedule=[Dataset("STG_TIMETABLE.raw_html")],
+    schedule=[Dataset("STG_RASPHYSMSU.raw_html")],
     start_date=datetime.datetime(2023, 8, 1, 2, 0, 0),
     max_active_runs=1,
     catchup=False,
