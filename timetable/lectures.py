@@ -24,6 +24,15 @@ TOKEN_RATING_TEST = Variable.get("TOKEN_RATING_TEST")
 
 @task(task_id="send_lecturers", retries=3)
 def send_lecturers():
+    headers = {
+            'accept': 'application/json',
+            'Authorization': TOKEN_RATING_TEST,
+            'Content-Type': 'application/json',
+        }
+    res = requests.get(
+        f"{API_LINK}/rating/lecturer/"
+    )
+    print(res.status_code)
     dwh_sql_engine = create_engine(DWH_DB_DSN)
     with dwh_sql_engine.connect() as dwh_conn:
         lecturers = dwh_conn.execute(
@@ -46,11 +55,6 @@ def send_lecturers():
             "last_name": lectuter[3],
             "avatar_link": lectuter[4],
             "timetable_id": lectuter[0]
-        }
-        headers = {
-            'accept': 'application/json',
-            'Authorization': TOKEN_RATING_TEST,
-            'Content-Type': 'application/json',
         }
         res = requests.post(
             f"{API_LINK}/rating/lecturer/",
