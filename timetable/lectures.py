@@ -50,10 +50,11 @@ def send_lecturers():
         res = requests.post(
             f"{API_LINK}/timetable/lecturer/",
             headers={"Authorization": TOKEN_ROBOT_TIMETABLE},
-            data=body,
+            json=body,
         )
-        logging.info(res.status_code)
-        logging.info(res.text)
+        if res.status_code != 200:
+            logging.info(res.status_code)
+            logging.info(res.text)
 
 
 
