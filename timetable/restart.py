@@ -18,10 +18,12 @@ headers = {"Authorization": f"{token}"}
 environment = Variable.get("_ENVIRONMENT")
 
 
-@task(task_id='restart', outlets=Dataset("STG_TIMETABLE.old"))
+@task(task_id='restart', outlets=Dataset("STG_RASPHYSMSU.old"))
 def restart():
-    start_deleting = datetime.datetime.now()
-    start_deleting = start_deleting.strftime("%Y-%m-%d")
+    start_deleting = Variable.get("SEMESTER_START")
+    start_deleting = datetime.datetime.strptime(start_deleting, '%m/%d/%Y')
+    start_deleting = datetime.datetime.strftime(start_deleting, "%Y-%m-%d")
+    
     end_deleting = Variable.get("SEMESTER_END")
     end_deleting = datetime.datetime.strptime(end_deleting, '%m/%d/%Y')
     end_deleting = datetime.datetime.strftime(end_deleting, "%Y-%m-%d")
@@ -34,12 +36,12 @@ def restart():
         r = requests.delete(url, headers=headers)
         logging.info(r)
 
-    engine = sa.create_engine(DB_URI)
-    engine.execute("""
-    delete from "STG_TIMETABLE"."old";
-    delete from "STG_TIMETABLE"."new";
-    delete from "STG_TIMETABLE".diff;
-    """)
+    # engine = sa.create_engine(DB_URI)
+    # engine.execute("""
+    # delete from "STG_RASPHYSMSU"."old";
+    # delete from "STG_RASPHYSMSU"."new";
+    # delete from "STG_RASPHYSMSU".diff;
+    # """)
 
 
 @dag(
