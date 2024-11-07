@@ -52,9 +52,8 @@ def send_lecturers():
             headers={"Authorization": TOKEN_ROBOT_TIMETABLE},
             json=body,
         )
-        if res.status_code != 200:
-            logging.info(res.status_code)
-            logging.info(res.text)
+        logging.info(res.status_code)
+        logging.info(res.text)
 
 
 
