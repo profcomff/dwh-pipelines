@@ -47,9 +47,14 @@ def send_lecturers():
             "avatar_link": lectuter[4],
             "timetable_id": lectuter[0]
         }
+        headers = {
+            'accept': 'application/json',
+            'Authorization': TOKEN_ROBOT_TIMETABLE,
+            'Content-Type': 'application/json',
+        }
         res = requests.post(
             f"{API_LINK}/rating/lecturer/",
-            headers={"Authorization": TOKEN_ROBOT_TIMETABLE},
+            headers=headers,
             json=body,
         )
         if res.status_code != 200:
