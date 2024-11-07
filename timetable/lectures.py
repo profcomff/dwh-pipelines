@@ -37,14 +37,15 @@ def send_lecturers():
                 FROM "STG_TIMETABLE".lecturer;
             """)
         ).fetchall()
+        log.info(lecturers[0])
 
     for lectuter in lecturers:
         body = {
-            "first_name": lectuter[0],
-            "middle_name": lectuter[1],
-            "last_name": lectuter[2],
-            "avatar_link": lectuter[3],
-            "timetable_id": lectuter[4]
+            "first_name": lectuter[1],
+            "middle_name": lectuter[2],
+            "last_name": lectuter[3],
+            "avatar_link": lectuter[4],
+            "timetable_id": lectuter[0]
         }
         res = requests.post(
             f"{API_LINK}/timetable/lecturer/",
