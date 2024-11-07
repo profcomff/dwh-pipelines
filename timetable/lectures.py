@@ -37,7 +37,7 @@ def send_lecturers():
                 FROM "STG_TIMETABLE".lecturer;
             """)
         ).fetchall()
-        log.info(lecturers[0])
+        logging.info(lecturers[0])
 
     for lectuter in lecturers:
         body = {
