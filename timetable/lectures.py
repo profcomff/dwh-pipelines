@@ -26,16 +26,18 @@ def send_lecturers():
     with dwh_sql_engine.connect() as dwh_conn:
         lecturers = dwh_conn.execute(
             sa.text(
-                """SELECT first_name, middle_name, last_name, description FROM "DM_TIMETABLE".dim_lecturer_act"""
+                """SELECT lecturer_first_name, lecturer_middle_name, lecturer_last_name, lecturer_avatar_id, lecturer_api_id FROM "DM_TIMETABLE".dim_lecturer_act"""
             )
         ).fetchall()
 
     for lectuter in lecturers:
+        avatar_link = dwh_conn.execute(f'''SELECT link FROM "STG_TIMETABLE WHERE id={lectuter[3]}"''')
         body = {
             "first_name": lectuter[0],
             "middle_name": lectuter[1],
             "last_name": lectuter[2],
-            "description": lectuter[3],
+            "avatar_link": avatar_link,
+            "timetable_id": lectuter[4]
         }
         requests.post(
             f"{API_LINK}/timetable/lecturer/",
