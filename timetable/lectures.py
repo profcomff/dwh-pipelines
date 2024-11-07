@@ -54,6 +54,7 @@ def send_lecturers():
         )
         if res.status_code != 200:
             logging.info(res.status_code)
+            logging.info(TOKEN_ROBOT_TIMETABLE[:15])
             logging.info(res.text)
 
 
