@@ -51,7 +51,7 @@ def send_lecturers():
             headers={"Authorization": TOKEN_ROBOT_TIMETABLE},
             data=body,
         )
-        logging.info(resp)
+        logging.info(res)
 
 
 
