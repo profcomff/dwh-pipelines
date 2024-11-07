@@ -108,106 +108,107 @@ with DAG(
         outlets = [Dataset("DWH_USER_INFO.info")],
     )
 
+# TODO@parfenovma: these sql queries led to multiplication of data, need to be refactored
 
-with DAG(
-    dag_id = 'ODS_INFO.info_hist',
-    start_date = datetime(2024, 11, 1),
-    schedule=[Dataset("STG_USERDATA.info")],
-    catchup=False,
-    tags=["ods", "src", "userdata"],
-    description='scd2_info_hist',
-    default_args = {
-        'retries': 1,
-        'owner':'mixx3',
-    },
-):
-    PostgresOperator(
-        task_id='info_hist',
-        postgres_conn_id="postgres_dwh",
-        sql=dedent("""
-        update "ODS_INFO".info_hist as am
-        set valid_to_dt = '{{ ds }}'::Date
-        where am.id=any(
-            select ods.id from
-                (select 
-                    id,
-                    param_id,
-                    source_id,
-                    owner_id,
-                    value,
-                    create_ts,
-                    modify_ts,
-                    is_deleted
-                from "ODS_INFO".info_hist
-                ) as ods
-            join "STG_USERDATA".info as stg
-            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
-        );
+# with DAG(
+#     dag_id = 'ODS_INFO.info_hist',
+#     start_date = datetime(2024, 11, 1),
+#     schedule=[Dataset("STG_USERDATA.info")],
+#     catchup=False,
+#     tags=["ods", "src", "userdata"],
+#     description='scd2_info_hist',
+#     default_args = {
+#         'retries': 1,
+#         'owner':'mixx3',
+#     },
+# ):
+#     PostgresOperator(
+#         task_id='info_hist',
+#         postgres_conn_id="postgres_dwh",
+#         sql=dedent("""
+#         update "ODS_INFO".info_hist as am
+#         set valid_to_dt = '{{ ds }}'::Date
+#         where am.id=any(
+#             select ods.id from
+#                 (select 
+#                     id,
+#                     param_id,
+#                     source_id,
+#                     owner_id,
+#                     value,
+#                     create_ts,
+#                     modify_ts,
+#                     is_deleted
+#                 from "ODS_INFO".info_hist
+#                 ) as ods
+#             join "STG_USERDATA".info as stg
+#             on ods.id = stg.id and md5(ods::text) != md5(stg::text)
+#         );
 
-        --evaluate increment
-        insert into "ODS_INFO".info_hist
-        select 
-            stg.*,
-            '{{ ds }}'::Date,
-            null
-            from "STG_USERDATA".info as stg
-            full outer join "ODS_INFO".param_hist as dst
-	        on stg.id = dst.id and dst.valid_to_dt is null
-        ;
-        """),
-        inlets = [Dataset("STG_USERDATA.info")],
-        outlets = [Dataset("ODS_INFO.info_hist")],
-    )
+#         --evaluate increment
+#         insert into "ODS_INFO".info_hist
+#         select 
+#             stg.*,
+#             '{{ ds }}'::Date,
+#             null
+#             from "STG_USERDATA".info as stg
+#             full outer join "ODS_INFO".param_hist as dst
+# 	        on stg.id = dst.id and dst.valid_to_dt is null
+#         ;
+#         """),
+#         inlets = [Dataset("STG_USERDATA.info")],
+#         outlets = [Dataset("ODS_INFO.info_hist")],
+#     )
 
 
-with DAG(
-    dag_id = 'ODS_INFO.param_hist',
-    start_date = datetime(2024, 11, 1),
-    schedule=[Dataset("STG_USERDATA.param")],
-    catchup=False,
-    tags=["ods", "src", "userdata"],
-    description='scd2_info_hist',
-    default_args = {
-        'retries': 1,
-        'owner':'mixx3',
-    },
-):
-    PostgresOperator(
-        task_id='param_hist',
-        postgres_conn_id="postgres_dwh",
-        sql=dedent("""
-        update "ODS_INFO".param_hist as am
-        set valid_to_dt = '{{ ds }}'::Date
-        where am.id=any(
-            select ods.id from
-                (select 
-                    id,
-                    name,
-                    category_id,
-                    is_required,
-                    changeable,
-                    type,
-                    create_ts,
-                    modify_ts,
-                    is_deleted,
-                    validation
-                from "ODS_INFO".param_hist
-                ) as ods
-            join "STG_USERDATA".param as stg
-            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
-        );
+# with DAG(
+#     dag_id = 'ODS_INFO.param_hist',
+#     start_date = datetime(2024, 11, 1),
+#     schedule=[Dataset("STG_USERDATA.param")],
+#     catchup=False,
+#     tags=["ods", "src", "userdata"],
+#     description='scd2_info_hist',
+#     default_args = {
+#         'retries': 1,
+#         'owner':'mixx3',
+#     },
+# ):
+#     PostgresOperator(
+#         task_id='param_hist',
+#         postgres_conn_id="postgres_dwh",
+#         sql=dedent("""
+#         update "ODS_INFO".param_hist as am
+#         set valid_to_dt = '{{ ds }}'::Date
+#         where am.id=any(
+#             select ods.id from
+#                 (select 
+#                     id,
+#                     name,
+#                     category_id,
+#                     is_required,
+#                     changeable,
+#                     type,
+#                     create_ts,
+#                     modify_ts,
+#                     is_deleted,
+#                     validation
+#                 from "ODS_INFO".param_hist
+#                 ) as ods
+#             join "STG_USERDATA".param as stg
+#             on ods.id = stg.id and md5(ods::text) != md5(stg::text)
+#         );
 
-        --evaluate increment
-        insert into "ODS_INFO".param_hist
-        select 
-            stg.*,
-            '{{ ds }}'::Date,
-            null
-            from "STG_USERDATA".param as stg
-            full outer join "ODS_INFO".param_hist as dst
-	        on stg.id = dst.id and dst.valid_to_dt is null
-        ;
-        """),
-        inlets = [Dataset("STG_USERDATA.param")],
-        outlets = [Dataset("ODS_INFO.param_hist")],
-    )
+#         --evaluate increment
+#         insert into "ODS_INFO".param_hist
+#         select 
+#             stg.*,
+#             '{{ ds }}'::Date,
+#             null
+#             from "STG_USERDATA".param as stg
+#             full outer join "ODS_INFO".param_hist as dst
+# 	        on stg.id = dst.id and dst.valid_to_dt is null
+#         ;
+#         """),
+#         inlets = [Dataset("STG_USERDATA.param")],
+#         outlets = [Dataset("ODS_INFO.param_hist")],
+#     )
