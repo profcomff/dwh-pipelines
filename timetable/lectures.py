@@ -19,7 +19,7 @@ DWH_DB_DSN = (
     .replace("postgres://", "postgresql://")
     .replace("?__extra__=%7B%7D", "")
 )
-TOKEN_ROBOT_TIMETABLE = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST")
+TOKEN_RATING_TEST = Variable.get("TOKEN_RATING_TEST")
 
 
 @task(task_id="send_lecturers", retries=3)
@@ -49,7 +49,7 @@ def send_lecturers():
         }
         headers = {
             'accept': 'application/json',
-            'Authorization': TOKEN_ROBOT_TIMETABLE,
+            'Authorization': TOKEN_RATING_TEST,
             'Content-Type': 'application/json',
         }
         res = requests.post(
@@ -59,7 +59,7 @@ def send_lecturers():
         )
         if res.status_code != 200:
             logging.info(res.status_code)
-            logging.info(TOKEN_ROBOT_TIMETABLE[:15])
+            logging.info(TOKEN_RATING_TEST[:15])
             logging.info(res.text)
 
 
