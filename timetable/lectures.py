@@ -59,7 +59,7 @@ def send_lecturers():
         )
         if res.status_code != 200:
             logging.info(res.status_code)
-            logging.info(TOKEN_RATING_TEST[:15])
+            logging.info(TOKEN_RATING_TEST[:15] + "...." + TOKEN_RATING_TEST[-15:])
             logging.info(res.text)
 
 
