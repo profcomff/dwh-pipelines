@@ -10,14 +10,16 @@ from airflow.decorators import task
 from airflow.models import Connection, Variable
 import requests
 
-API_LINK = Variable.get("API_LINK")
+
+environment = Variable.get("_ENVIRONMENT")
+API_LINK = f"https://api{'.test' if  environment in {'test', 'development'} else ''}.profcomff.com"
 DWH_DB_DSN = (
     Connection.get_connection_from_secrets("postgres_dwh")
     .get_uri()
     .replace("postgres://", "postgresql://")
     .replace("?__extra__=%7B%7D", "")
 )
-TOKEN_ROBOT_TIMETABLE = Variable.get("TOKEN_ROBOT_TIMETABLE")
+TOKEN_ROBOT_TIMETABLE = Variable.get("TOKEN_ROBOT_TIMETABLE_TEST" if environment in {"test", "development"} else "TOKEN_ROBOT_TIMETABLE")
 
 
 @task(task_id="send_lecturers", retries=3)
@@ -25,25 +27,32 @@ def send_lecturers():
     dwh_sql_engine = create_engine(DWH_DB_DSN)
     with dwh_sql_engine.connect() as dwh_conn:
         lecturers = dwh_conn.execute(
-            sa.text(
-                """SELECT lecturer_first_name, lecturer_middle_name, lecturer_last_name, lecturer_avatar_id, lecturer_api_id FROM "DM_TIMETABLE".dim_lecturer_act"""
-            )
+            sa.text("""
+                SELECT 
+                    id,
+                    first_name,
+                    middle_name,
+                    last_name,
+                    avatar_id as avatar_link
+                FROM "STG_TIMETABLE".lecturer;
+            """)
         ).fetchall()
 
     for lectuter in lecturers:
-        avatar_link = dwh_conn.execute(f'''SELECT link FROM "STG_TIMETABLE WHERE id={lectuter[3]}"''')
         body = {
             "first_name": lectuter[0],
             "middle_name": lectuter[1],
             "last_name": lectuter[2],
-            "avatar_link": avatar_link,
+            "avatar_link": lectuter[3],
             "timetable_id": lectuter[4]
         }
-        requests.post(
+        res = requests.post(
             f"{API_LINK}/timetable/lecturer/",
             headers={"Authorization": TOKEN_ROBOT_TIMETABLE},
             body=body,
         )
+        logging.info(resp)
+
 
 
 with DAG(
