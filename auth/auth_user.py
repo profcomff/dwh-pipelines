@@ -8,103 +8,112 @@ from datetime import datetime
 from airflow import DAG
 
 
-# TODO@parfenovma: these sql queries led to multiplication of data, need to be refactored
 
-# with DAG(
-#     dag_id = 'ODS_AUTH.user',
-#     start_date = datetime(2024, 11, 3),
-#     schedule=[Dataset("STG_AUTH.user")],
-#     catchup=False,
-#     tags=["ods", "src", "auth"],
-#     description='scd2_user_hist',
-#     default_args = {
-#         'retries': 1,
-#         'owner':'mixx3',
-#     },
-# ):
-#     PostgresOperator(
-#         task_id='user_hist',
-#         postgres_conn_id="postgres_dwh",
-#         sql=dedent("""
-#         -- close records
-#         update "ODS_AUTH".user as am
-#         set valid_to_dt = '{{ ds }}'::Date
-#         where am.id=any(
-#             select ods.id from
-#                 (select 
-#                     id,
-#                     create_ts,
-#                     update_ts,
-#                     is_deleted
-#                 from "ODS_AUTH".user
-#                 ) as ods
-#             join "STG_AUTH".user as stg
-#             on ods.id = stg.id and md5(ods::text) != md5(stg::text)
-#         );
+with DAG(
+    dag_id = 'ODS_AUTH.user',
+    start_date = datetime(2024, 11, 3),
+    schedule=[Dataset("STG_AUTH.user")],
+    catchup=False,
+    tags=["ods", "src", "auth"],
+    description='scd2_user_hist',
+    default_args = {
+        'retries': 1,
+        'owner':'mixx3',
+    },
+):
+    PostgresOperator(
+        task_id='user_hist',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent("""
+        -- close records
+        update "ODS_AUTH".user as am
+        set valid_to_dt = '{{ ds }}'::Date
+        where am.id=any(
+            select ods.id from
+                (select 
+                    id,
+                    create_ts,
+                    update_ts,
+                    is_deleted
+                from "ODS_AUTH".user
+                ) as ods
+            join "STG_AUTH".user as stg
+            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
+        );
 
-#         --evaluate increment
-#         insert into "ODS_AUTH".user
-#         select 
-#             stg.*,
-#             '{{ ds }}'::Date,
-#             null
-#             from "STG_AUTH".user as stg
-#             full outer join "ODS_AUTH".user as dst
-# 	        on stg.id = dst.id and dst.valid_to_dt is null
-#         ;
-#         """),
-#         inlets = [Dataset("STG_AUTH.user")],
-#         outlets = [Dataset("ODS_AUTH.user")],
-#     )
+        --evaluate increment
+        insert into "ODS_AUTH".user
+        select 
+            stg.*,
+            '{{ ds }}'::Date,
+            null
+            from "STG_AUTH".user as stg
+            full outer join "ODS_AUTH".user as ods
+              on stg.id = ods.id
+            where 
+              ods.id is NULL
+              or stg.id is NULL
+              or ods.valid_to_dt='{{ ds }}'::Date
+              LIMIT 100000; -- чтобы не раздуло
+        ;
+        """),
+        inlets = [Dataset("STG_AUTH.user")],
+        outlets = [Dataset("ODS_AUTH.user")],
+    )
 
 
-# with DAG(
-#     dag_id = 'ODS_AUTH.auth_method',
-#     start_date = datetime(2024, 11, 3),
-#     schedule=[Dataset("STG_AUTH.auth_method")],
-#     catchup=False,
-#     tags=["ods", "src", "auth"],
-#     description='scd2_auth_method_hist',
-#     default_args = {
-#         'retries': 1,
-#         'owner':'mixx3',
-#     },
-# ):
-#     PostgresOperator(
-#         task_id='auth_method_hist',
-#         postgres_conn_id="postgres_dwh",
-#         sql=dedent("""
-#         -- close records
-#         update "ODS_AUTH".auth_method as am
-#         set valid_to_dt = '{{ ds }}'::Date
-#         where am.id=any(
-#             select ods.id from
-#                 (select 
-#                     id,
-#                     user_id,
-#                     auth_method,
-#                     param,
-#                     value,
-#                     create_ts,
-#                     update_ts,
-#                     is_deleted
-#                 from "ODS_AUTH".auth_method
-#                 ) as ods
-#             join "STG_AUTH".auth_method as stg
-#             on ods.id = stg.id and md5(ods::text) != md5(stg::text)
-#         );
+with DAG(
+    dag_id = 'ODS_AUTH.auth_method',
+    start_date = datetime(2024, 11, 3),
+    schedule=[Dataset("STG_AUTH.auth_method")],
+    catchup=False,
+    tags=["ods", "src", "auth"],
+    description='scd2_auth_method_hist',
+    default_args = {
+        'retries': 1,
+        'owner':'mixx3',
+    },
+):
+    PostgresOperator(
+        task_id='auth_method_hist',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent("""
+        -- close records
+        update "ODS_AUTH".auth_method as am
+        set valid_to_dt = '{{ ds }}'::Date
+        where am.id=any(
+            select ods.id from
+                (select 
+                    id,
+                    user_id,
+                    auth_method,
+                    param,
+                    value,
+                    create_ts,
+                    update_ts,
+                    is_deleted
+                from "ODS_AUTH".auth_method
+                ) as ods
+            join "STG_AUTH".auth_method as stg
+            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
+        );
 
-#         --evaluate increment
-#         insert into "ODS_AUTH".auth_method
-#         select 
-#             stg.*,
-#             '{{ ds }}'::Date,
-#             null
-#             from "STG_AUTH".auth_method as stg
-#             full outer join "ODS_AUTH".auth_method as dst
-# 	        on stg.id = dst.id and dst.valid_to_dt is null
-#         ;
-#         """),
-#         inlets = [Dataset("STG_AUTH.auth_method")],
-#         outlets = [Dataset("ODS_AUTH.auth_method")],
-#     )
+        --evaluate increment
+        insert into "ODS_AUTH".auth_method
+        select 
+            stg.*,
+            '{{ ds }}'::Date,
+            null
+            from "STG_AUTH".auth_method as stg
+            full outer join "ODS_AUTH".auth_method as ods
+              on stg.id = ods.id
+            where 
+              ods.id is NULL
+              or stg.id is NULL
+              or ods.valid_to_dt='{{ ds }}'::Date
+              LIMIT 100000; -- чтобы не раздуло
+        ;
+        """),
+        inlets = [Dataset("STG_AUTH.auth_method")],
+        outlets = [Dataset("ODS_AUTH.auth_method")],
+    )
