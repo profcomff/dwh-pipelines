@@ -148,7 +148,7 @@ with DAG(
                 or ods.owner_id != stg.owner_id
                 or ods.value != stg.value
                 or ods.create_ts != stg.create_ts
-                or ods.update_ts != stg.update_ts
+                or ods.modify_ts != stg.modify_ts
                 or ods.is_deleted != stg.is_deleted
             )
         );

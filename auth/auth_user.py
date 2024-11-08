@@ -40,8 +40,7 @@ with DAG(
             join "STG_AUTH".user as stg
             on ods.id = stg.id
             and (
-                ods.user_id != stg.user_id
-                or ods.create_ts != stg.create_ts
+                ods.create_ts != stg.create_ts
                 or ods.update_ts != stg.update_ts
                 or ods.is_deleted != stg.is_deleted
             )
