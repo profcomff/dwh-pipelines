@@ -141,7 +141,16 @@ with DAG(
                 from "ODS_INFO".info_hist
                 ) as ods
             join "STG_USERDATA".info as stg
-            on ods.id = stg.id and md5(ods::text) = md5(stg::text)
+            on ods.id = stg.id
+            and (
+                ods.param_id != stg.param_id
+                or ods.source_id != stg.source_id
+                or ods.owner_id != stg.owner_id
+                or ods.value != stg.value
+                or ods.create_ts != stg.create_ts
+                or ods.update_ts != stg.update_ts
+                or ods.is_deleted != stg.is_deleted
+            )
         );
 
         --evaluate increment
@@ -198,7 +207,17 @@ with DAG(
                 from "ODS_INFO".param_hist
                 ) as ods
             join "STG_USERDATA".param as stg
-            on ods.id = stg.id and md5(ods::text) = md5(stg::text)
+            on ods.id = stg.id
+            and (
+                ods.name != stg.name
+                or ods.category_id != stg.category_id
+                or ods.is_required != stg.is_required
+                or ods.changeable != stg.changeable
+                or ods.type != stg.type
+                or ods.create_ts != stg.create_ts
+                or ods.modify_ts != stg.modify_ts
+                or ods.is_deleted != stg.is_deleted
+            )
         );
 
         --evaluate increment

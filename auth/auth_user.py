@@ -38,7 +38,13 @@ with DAG(
                 from "ODS_AUTH".user
                 ) as ods
             join "STG_AUTH".user as stg
-            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
+            on ods.id = stg.id
+            and (
+                ods.user_id != stg.user_id
+                or ods.create_ts != stg.create_ts
+                or ods.update_ts != stg.update_ts
+                or ods.is_deleted != stg.is_deleted
+            )
         );
 
         --evaluate increment
@@ -95,7 +101,16 @@ with DAG(
                 from "ODS_AUTH".auth_method
                 ) as ods
             join "STG_AUTH".auth_method as stg
-            on ods.id = stg.id and md5(ods::text) != md5(stg::text)
+            on ods.id = stg.id 
+            and (
+                ods.user_id != stg.user_id
+                or ods.auth_method != stg.auth_method
+                or ods.param != stg.param
+                or ods.value != stg.value
+                or ods.create_ts != stg.create_ts
+                or ods.update_ts != stg.update_ts
+                or ods.is_deleted != stg.is_deleted
+            )
         );
 
         --evaluate increment
