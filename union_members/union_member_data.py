@@ -7,7 +7,7 @@ from textwrap import dedent
 from datetime import datetime
 from airflow import DAG
 
-sql_schema = """
+sql_sorting_for_ODS = """
 insert into "DWH_USER_INFO".info (
   user_id,
   email,
@@ -88,6 +88,22 @@ on conflict (user_id) do update set
 	work_location = EXCLUDED.work_location;
 """
 
+sql_merging_auth = """
+insert into "ODS_USER".info
+select *
+from "DWH_USER_INFO".info
+left join
+(
+select
+    user_id,
+    any_value(u.is_deleted) as is_deleted,
+    string_agg(distinct case when param = 'email' then value end, ', ') as auth_email
+from "STG_AUTH".auth_method as au
+left join "STG_AUTH".user as u on u.id = au.user_id
+group by au.user_id
+) using (user_id)
+"""
+
 with DAG(
     dag_id = 'DWH_USER_INFO.info',
     start_date = datetime(2024, 10, 1),
@@ -103,9 +119,30 @@ with DAG(
     PostgresOperator(
         task_id='execute_sql_for_data_corr',
         postgres_conn_id="postgres_dwh",
-        sql=dedent(sql_schema),
+        sql=dedent(sql_sorting_for_ODS),
         inlets = [Dataset("ODS_INFO.param_hist"), Dataset("ODS_INFO.info_hist")],
         outlets = [Dataset("DWH_USER_INFO.info")],
+    )
+
+
+with DAG(
+    dag_id = 'ODS_INFO.info',
+    start_date = datetime(2024, 10, 1),
+    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
+    catchup=False,
+    tags=["ods", "src", "user_info"],
+    description='union_members_data_format_correction',
+    default_args = {
+        'retries': 1,
+        'owner':'redstoneenjoyer',
+    },
+):
+    PostgresOperator(
+        task_id='merginng_and_inserting_into_ODS_INFO',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent(sql_sorting_for_ODS),
+        inlets = [Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
+        outlets = [Dataset("ODS_INFO.info")],
     )
 
 
