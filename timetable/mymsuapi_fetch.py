@@ -40,7 +40,7 @@ LESSONS_ROUTE = API_URL + "public_content/lessons"
 
 
 @task(
-    task_id="get_timetable_for_semester",
+    task_id="STG_MYMSUAPI.raw_timetable_apir",
     outlets=Dataset("STG_MYMSUAPI.raw_timetable_api"),
 )
 def get_timetable_for_semester_to_db():
@@ -168,9 +168,9 @@ def flatten_timetable():
 
 with DAG(
     dag_id="download_mymsuapi_timetable",
-    schedule="0 0 */1 * *",
+    schedule="50 2 */1 * *",
     start_date=datetime(2024, 8, 27),
-    tags=["dwh", "timetable", "stg"],
+    tags=["ods", "src", "mymsuapi"],
     default_args={
         "owner": "zimovchik",
         "retries": 3,
