@@ -28,7 +28,7 @@ with DAG(
         -- close records
         update "ODS_AUTH".user as am
         set valid_to_dt = '{{ ds }}'::Date
-        where am.id=any(
+        where am.id NOT IN(
             select ods.id from
                 (select 
                     id,
@@ -40,9 +40,9 @@ with DAG(
             join "STG_AUTH".user as stg
             on ods.id = stg.id
             and (
-                ods.create_ts != stg.create_ts
-                or ods.update_ts != stg.update_ts
-                or ods.is_deleted != stg.is_deleted
+                ods.create_ts = stg.create_ts
+                or ods.update_ts = stg.update_ts
+                or ods.is_deleted = stg.is_deleted
             )
         );
 
@@ -86,7 +86,7 @@ with DAG(
         -- close records
         update "ODS_AUTH".auth_method as am
         set valid_to_dt = '{{ ds }}'::Date
-        where am.id=any(
+        where am.id NOT IN(
             select ods.id from
                 (select 
                     id,
@@ -102,13 +102,13 @@ with DAG(
             join "STG_AUTH".auth_method as stg
             on ods.id = stg.id 
             and (
-                ods.user_id != stg.user_id
-                or ods.auth_method != stg.auth_method
-                or ods.param != stg.param
-                or ods.value != stg.value
-                or ods.create_ts != stg.create_ts
-                or ods.update_ts != stg.update_ts
-                or ods.is_deleted != stg.is_deleted
+                ods.user_id = stg.user_id
+                or ods.auth_method = stg.auth_method
+                or ods.param = stg.param
+                or ods.value = stg.value
+                or ods.create_ts = stg.create_ts
+                or ods.update_ts = stg.update_ts
+                or ods.is_deleted = stg.is_deleted
             )
         );
 

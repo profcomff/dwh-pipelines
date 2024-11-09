@@ -180,13 +180,13 @@ with DAG(
             join "STG_USERDATA".info as stg
             on ods.id = stg.id
             and (
-                ods.param_id != stg.param_id
-                or ods.source_id != stg.source_id
-                or ods.owner_id != stg.owner_id
-                or ods.value != stg.value
-                or ods.create_ts != stg.create_ts
-                or ods.modify_ts != stg.modify_ts
-                or ods.is_deleted != stg.is_deleted
+                ods.param_id = stg.param_id
+                or ods.source_id = stg.source_id
+                or ods.owner_id = stg.owner_id
+                or ods.value = stg.value
+                or ods.create_ts = stg.create_ts
+                or ods.modify_ts = stg.modify_ts
+                or ods.is_deleted = stg.is_deleted
             )
         );
 
@@ -246,14 +246,14 @@ with DAG(
             join "STG_USERDATA".param as stg
             on ods.id = stg.id
             and (
-                ods.name != stg.name
-                or ods.category_id != stg.category_id
-                or ods.is_required != stg.is_required
-                or ods.changeable != stg.changeable
-                or ods.type != stg.type
-                or ods.create_ts != stg.create_ts
-                or ods.modify_ts != stg.modify_ts
-                or ods.is_deleted != stg.is_deleted
+                ods.name = stg.name
+                or ods.category_id = stg.category_id
+                or ods.is_required = stg.is_required
+                or ods.changeable = stg.changeable
+                or ods.type = stg.type
+                or ods.create_ts = stg.create_ts
+                or ods.modify_ts = stg.modify_ts
+                or ods.is_deleted = stg.is_deleted
             )
         );
 
