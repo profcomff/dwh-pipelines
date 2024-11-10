@@ -25,9 +25,9 @@ TOKEN_RATING_TEST = Variable.get("TOKEN_RATING_TEST")
 @task(task_id="send_lecturers", retries=3)
 def send_lecturers():
     headers = {
-            'accept': 'application/json',
-            'Authorization': TOKEN_RATING_TEST,
-            'Content-Type': 'application/json',
+            # 'accept': 'application/json',
+            'Authorization': f"{TOKEN_RATING_TEST}",
+            # 'Content-Type': 'application/json',
         }
     res = requests.get(
         f"{API_LINK}/rating/lecturer/"
@@ -48,13 +48,13 @@ def send_lecturers():
         ).fetchall()
         logging.info(lecturers[0])
 
-    for lectuter in lecturers:
+    for lecturer in lecturers:
         body = {
-            "first_name": lectuter[1],
-            "middle_name": lectuter[2],
-            "last_name": lectuter[3],
-            "avatar_link": lectuter[4],
-            "timetable_id": lectuter[0]
+            "first_name": lecturer[1],
+            "middle_name": lecturer[2],
+            "last_name": lecturer[3],
+            "avatar_link": lecturer[4],
+            "timetable_id": lecturer[0]
         }
         res = requests.post(
             f"{API_LINK}/rating/lecturer/",
