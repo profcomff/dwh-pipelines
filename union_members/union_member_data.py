@@ -140,7 +140,7 @@ with DAG(
     PostgresOperator(
         task_id='merginng_and_inserting_into_ODS_INFO',
         postgres_conn_id="postgres_dwh",
-        sql=dedent(sql_sorting_for_ODS),
+        sql=dedent(sql_merging_auth),
         inlets = [Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
         outlets = [Dataset("ODS_INFO.info")],
     )
