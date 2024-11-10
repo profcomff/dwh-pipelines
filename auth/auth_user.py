@@ -28,7 +28,7 @@ with DAG(
         -- close records
         update "ODS_AUTH".user as am
         set valid_to_dt = '{{ ds }}'::Date
-        where am.id=any(
+        where am.id NOT IN(
             select ods.id from
                 (select 
                     id,
@@ -39,11 +39,9 @@ with DAG(
                 ) as ods
             join "STG_AUTH".user as stg
             on ods.id = stg.id
-            and (
-                ods.create_ts != stg.create_ts
-                or ods.update_ts != stg.update_ts
-                or ods.is_deleted != stg.is_deleted
-            )
+            and ods.create_ts = stg.create_ts
+            and ods.update_ts = stg.update_ts
+            and ods.is_deleted = stg.is_deleted
         );
 
         --evaluate increment
@@ -57,10 +55,8 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
-              LIMIT 100000; -- чтобы не раздуло
-        ;
+        LIMIT 100000; -- чтобы не раздуло
         """),
         inlets = [Dataset("STG_AUTH.user")],
         outlets = [Dataset("ODS_AUTH.user")],
@@ -86,7 +82,7 @@ with DAG(
         -- close records
         update "ODS_AUTH".auth_method as am
         set valid_to_dt = '{{ ds }}'::Date
-        where am.id=any(
+        where am.id NOT IN(
             select ods.id from
                 (select 
                     id,
@@ -101,15 +97,13 @@ with DAG(
                 ) as ods
             join "STG_AUTH".auth_method as stg
             on ods.id = stg.id 
-            and (
-                ods.user_id != stg.user_id
-                or ods.auth_method != stg.auth_method
-                or ods.param != stg.param
-                or ods.value != stg.value
-                or ods.create_ts != stg.create_ts
-                or ods.update_ts != stg.update_ts
-                or ods.is_deleted != stg.is_deleted
-            )
+            and ods.user_id = stg.user_id
+            and ods.auth_method = stg.auth_method
+            and ods.param = stg.param
+            and ods.value = stg.value
+            and ods.create_ts = stg.create_ts
+            and ods.update_ts = stg.update_ts
+            and ods.is_deleted = stg.is_deleted
         );
 
         --evaluate increment
@@ -123,10 +117,8 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
-              LIMIT 100000; -- чтобы не раздуло
-        ;
+        LIMIT 100000; -- чтобы не раздуло
         """),
         inlets = [Dataset("STG_AUTH.auth_method")],
         outlets = [Dataset("ODS_AUTH.auth_method")],

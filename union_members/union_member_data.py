@@ -233,15 +233,13 @@ with DAG(
                 ) as ods
             join "STG_USERDATA".info as stg
             on ods.id = stg.id
-            and (
-                ods.param_id != stg.param_id
-                or ods.source_id != stg.source_id
-                or ods.owner_id != stg.owner_id
-                or ods.value != stg.value
-                or ods.create_ts != stg.create_ts
-                or ods.modify_ts != stg.modify_ts
-                or ods.is_deleted != stg.is_deleted
-            )
+            and ods.param_id = stg.param_id
+            and ods.source_id = stg.source_id
+            and ods.owner_id = stg.owner_id
+            and ods.value = stg.value
+            and ods.create_ts = stg.create_ts
+            and ods.modify_ts = stg.modify_ts
+            and ods.is_deleted = stg.is_deleted
         );
 
         --evaluate increment
@@ -255,9 +253,8 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
-              LIMIT 100000; -- чтобы не раздуло
+        LIMIT 100000; -- чтобы не раздуло
         """),
         inlets = [Dataset("STG_USERDATA.info")],
         outlets = [Dataset("ODS_INFO.info_hist")],
@@ -299,16 +296,14 @@ with DAG(
                 ) as ods
             join "STG_USERDATA".param as stg
             on ods.id = stg.id
-            and (
-                ods.name != stg.name
-                or ods.category_id != stg.category_id
-                or ods.is_required != stg.is_required
-                or ods.changeable != stg.changeable
-                or ods.type != stg.type
-                or ods.create_ts != stg.create_ts
-                or ods.modify_ts != stg.modify_ts
-                or ods.is_deleted != stg.is_deleted
-            )
+            and ods.name = stg.name
+            and ods.category_id = stg.category_id
+            and ods.is_required = stg.is_required
+            and ods.changeable = stg.changeable
+            and ods.type = stg.type
+            and ods.create_ts = stg.create_ts
+            and ods.modify_ts = stg.modify_ts
+            and ods.is_deleted = stg.is_deleted
         );
 
         --evaluate increment
@@ -322,9 +317,8 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
-            LIMIT 100000; -- чтобы не раздуло
+        LIMIT 100000; -- чтобы не раздуло
         """),
         inlets = [Dataset("STG_USERDATA.param")],
         outlets = [Dataset("ODS_INFO.param_hist")],
