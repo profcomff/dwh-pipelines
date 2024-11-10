@@ -9,19 +9,19 @@ from airflow import DAG
 
 
 with DAG(
-    dag_id = 'ODS_INFO.param_hist',
-    start_date = datetime(2024, 11, 1),
-    schedule=[Dataset("STG_USERDATA.param")],
+    dag_id="DM_MONITORING.db_monitoring_snp",
+    start_date = datetime(2024, 11, 10),
+    schedule="0 */1 * * *",
     catchup=False,
     tags=["ods", "src", "userdata"],
-    description='scd2_info_hist',
+    description='data weight monitoring',
     default_args = {
         'retries': 1,
         'owner':'mixx3',
     },
 ):
     PostgresOperator(
-        task_id='param_hist',
+        task_id="dm_monitoring",
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
         INSERT_INTO "DM_MONITORING".db_monitoring_snp
@@ -48,6 +48,6 @@ with DAG(
         ) AS pretty_sizes;
         LIMIT 100000; -- чтобы не раздуло
         """),
-        inlets = [Dataset("STG_USERDATA.param")],
-        outlets = [Dataset("ODS_INFO.param_hist")],
+        inlets = [],
+        outlets = [Dataset("DM_MONITORING.db_monitoring_snp")],
     )
