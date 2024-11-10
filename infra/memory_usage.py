@@ -24,14 +24,15 @@ with DAG(
         task_id="dm_monitoring",
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
-        INSERT_INTO "DM_MONITORING".db_monitoring_snp
+        INSERT INTO "DM_MONITORING".db_monitoring_snp 
+        (table_name, table_schema, table_size_mb, indexes_size_mb, total_size_mb, state_dt)
         SELECT
             table_name,
             table_schema,
-            pg_size_pretty(table_size) AS table_size,
-            pg_size_pretty(indexes_size) AS indexes_size,
-            pg_size_pretty(total_size) AS total_size,
-            '{{ ds }}'::Date as record_dt
+            table_size/(1024*1024),
+            indexes_size/(1024*1024),
+            total_size/(1024*1024),
+            '2024-11-10'::Date
         FROM (
             SELECT
                 table_name,
