@@ -186,7 +186,6 @@ with DAG(
             and ods.create_ts = stg.create_ts
             and ods.modify_ts = stg.modify_ts
             and ods.is_deleted = stg.is_deleted
-            
         );
 
         --evaluate increment
@@ -200,7 +199,6 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
         LIMIT 100000; -- чтобы не раздуло
         """),
@@ -265,7 +263,6 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
         LIMIT 100000; -- чтобы не раздуло
         """),

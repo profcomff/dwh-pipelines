@@ -55,7 +55,6 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
         LIMIT 100000; -- чтобы не раздуло
         """),
@@ -118,7 +117,6 @@ with DAG(
               on stg.id = ods.id
             where 
               ods.id is NULL
-              or stg.id is NULL
               or ods.valid_to_dt='{{ ds }}'::Date
         LIMIT 100000; -- чтобы не раздуло
         """),
