@@ -89,8 +89,62 @@ on conflict (user_id) do update set
 """
 
 sql_merging_auth = """
-insert into "ODS_USER".info
-select *
+insert into "ODS_USER".info 
+(
+  id,
+  auth_email,
+  email,
+  phone_number,
+  vk_name,
+  city,
+  hometown,
+  location,
+  github_name,
+  telegram_name,
+  home_phone_number,
+  education_level,
+  university,
+  faculty,
+  "group",
+  position,
+  student_id_number,
+  department,
+  mode_of_study,
+  full_name,
+  birth_date,
+  photo,
+  sex,
+  job,
+  work_location,
+  is_deleted
+)
+select
+  user_id as id,
+  auth_email,
+  email,
+  phone_number,
+  vk_name,
+  city,
+  hometown,
+  location,
+  github_name,
+  telegram_name,
+  home_phone_number,
+  education_level,
+  university,
+  faculty,
+  "group",
+  position,
+  student_id_number,
+  department,
+  mode_of_study,
+  full_name,
+  birth_date,
+  photo,
+  sex,
+  job,
+  work_location,
+  is_deleted
 from "DWH_USER_INFO".info
 left join
 (
