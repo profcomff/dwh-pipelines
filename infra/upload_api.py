@@ -185,7 +185,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_auth",
     start_date=datetime(2024, 1, 1),
-    schedule="0 */1 * * *",
+    schedule="@daily",
     catchup=False,
     tags=["dwh", "stg", "auth"],
     default_args={"owner": "dyakovri"},
@@ -404,7 +404,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_userdata",
     start_date=datetime(2024, 1, 1),
-    schedule="0 */1 * * *",
+    schedule="@daily",
     catchup=False,
     tags=["dwh", "stg", "userdata"],
     default_args={"owner": "dyakovri"},
