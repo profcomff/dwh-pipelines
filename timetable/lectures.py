@@ -67,7 +67,6 @@ def send_lecturers():
             logging.info(res.text)
 
 
-
 with DAG(
     dag_id="send_lecturers_timetable",
     start_date=datetime(2022, 1, 1),

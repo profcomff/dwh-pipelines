@@ -46,7 +46,7 @@ with DAG(
                 FROM information_schema.tables
             ) AS all_tables
             ORDER BY total_size DESC
-        ) AS pretty_sizes;
+        ) AS pretty_sizes
         LIMIT 100000; -- чтобы не раздуло
         """),
         inlets = [],
