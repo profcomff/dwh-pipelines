@@ -25,7 +25,7 @@ with DAG(
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
         INSERT INTO "DM_MONITORING".db_monitoring_snp 
-        (table_name, table_schema, table_size_mb, indexes_size_mb, total_size_mb, state_dt)
+        (id, table_name, table_schema, table_size_mb, indexes_size_mb, total_size_mb, state_dt)
         SELECT
             to_char(CURRENT_DATE, 'YYYYMMDD')::integer,
             table_name,
