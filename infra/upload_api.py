@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 
 from sqlalchemy import create_engine
@@ -159,7 +159,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = "achievement", "achievement_reciever"
@@ -230,7 +230,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = "actions_info", "user"
@@ -262,7 +262,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = "file", "print_fact", "union_member"
@@ -294,7 +294,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = "button", "category", "scope"
@@ -326,7 +326,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = (
@@ -366,7 +366,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = (
@@ -443,7 +443,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = ("tg_user",)
@@ -475,7 +475,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": datetime.timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3)
     },
 ):
     tables = ("vk_user",)
