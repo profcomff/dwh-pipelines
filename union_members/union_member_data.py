@@ -32,7 +32,8 @@ insert into "DWH_USER_INFO".info (
   photo,
   sex,
   job,
-  work_location
+  work_location,
+  student_id
 )
 select -- полная таблица
   owner_id as user_id,
@@ -58,7 +59,8 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Фото' then value end, ', ') as photo,
   string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
-  string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
+  string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location,
+  string_agg(distinct case when p.name = 'Номер студенческого билета' then value end, ', ') as student_id
 from "STG_USERDATA".info i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
@@ -85,7 +87,8 @@ on conflict (user_id) do update set
 	photo = EXCLUDED.photo,
 	sex = EXCLUDED.sex,
 	job = EXCLUDED.job,
-	work_location = EXCLUDED.work_location;
+	work_location = EXCLUDED.work_location,
+	student_id = EXCLUDED.student_id;
 """
 
 sql_merging_auth = """
@@ -116,6 +119,7 @@ insert into "ODS_USER".info
   sex,
   job,
   work_location,
+  student_id,
   is_deleted
 )
 select
@@ -144,6 +148,7 @@ select
   sex,
   job,
   work_location,
+  student_id,
   is_deleted
 from "DWH_USER_INFO".info
 left join
