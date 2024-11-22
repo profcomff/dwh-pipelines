@@ -95,7 +95,6 @@ sql_merging_auth = """
 insert into "ODS_USER".info 
 (
   id,
-  auth_email,
   email,
   phone_number,
   vk_name,
@@ -119,12 +118,10 @@ insert into "ODS_USER".info
   sex,
   job,
   work_location,
-  student_id,
   is_deleted
 )
 select
   user_id as id,
-  auth_email,
   email,
   phone_number,
   vk_name,
@@ -148,7 +145,6 @@ select
   sex,
   job,
   work_location,
-  student_id,
   is_deleted
 from "DWH_USER_INFO".info
 left join
