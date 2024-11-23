@@ -207,7 +207,7 @@ with DAG(
 
 
 with DAG(
-    dag_id = 'ODS_INFO.info',
+    dag_id = 'ODS_USER.info',
     start_date = datetime(2024, 10, 1),
     schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
     catchup=False,
