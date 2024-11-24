@@ -92,7 +92,6 @@ sql_merging_auth = """
 insert into "ODS_USER".info 
 (
   id,
-  auth_email,
   email,
   phone_number,
   vk_name,
@@ -120,7 +119,6 @@ insert into "ODS_USER".info
 )
 select
   user_id as id,
-  auth_email,
   email,
   phone_number,
   vk_name,
@@ -156,6 +154,31 @@ from "STG_AUTH".auth_method as au
 left join "STG_AUTH".user as u on u.id = au.user_id
 group by au.user_id
 ) using (user_id)
+on conflict (id) do update set
+	email = EXCLUDED.email,
+	phone_number = EXCLUDED.phone_number,
+	vk_name = EXCLUDED.vk_name,
+	city = EXCLUDED.city,
+	hometown = EXCLUDED.hometown,
+	location = EXCLUDED.location,
+	github_name = EXCLUDED.github_name,
+	telegram_name = EXCLUDED.telegram_name,
+	home_phone_number = EXCLUDED.home_phone_number,
+	education_level = EXCLUDED.education_level,
+	university = EXCLUDED.university,
+	faculty = EXCLUDED.faculty,
+	"group" = EXCLUDED."group",
+	position = EXCLUDED.position,
+	student_id_number = EXCLUDED.student_id_number,
+	department = EXCLUDED.department,
+	mode_of_study = EXCLUDED.mode_of_study,
+	full_name = EXCLUDED.full_name,
+	birth_date = EXCLUDED.birth_date,
+	photo = EXCLUDED.photo,
+	sex = EXCLUDED.sex,
+	job = EXCLUDED.job,
+	work_location = EXCLUDED.work_location,
+	is_deleted = EXCLUDED.is_deleted;
 """
 
 with DAG(
@@ -180,7 +203,7 @@ with DAG(
 
 
 with DAG(
-    dag_id = 'ODS_INFO.info',
+    dag_id = 'ODS_USER.info',
     start_date = datetime(2024, 10, 1),
     schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
     catchup=False,
