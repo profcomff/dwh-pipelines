@@ -261,8 +261,7 @@ HEADERS = {"User-Agent": USER_AGENT}
 
 def parse_timetable_for_group(html) -> pd.DataFrame:
     """
-
-    :param url: URL страницы расписания.
+    :param html: HTML страницы расписания.
     :return: DataFrame с результатами парсинга.
     """
     results = pd.DataFrame(run(html))
