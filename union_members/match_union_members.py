@@ -1,8 +1,18 @@
 from datetime import datetime
 from textwrap import dedent
+import logging
 
 from airflow import DAG, Dataset
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.operators.python import PythonOperator
+logger = logging.getLogger(__name__)
+
+def check_column_counts(**kwargs):
+    result = kwargs['ti'].xcom_pull(task_ids='check_column_count')
+    
+    if result and 'Количество колонок не совпадает' in result:
+        logger.error(result) 
+        raise ValueError(result) 
 
 with DAG(
     dag_id="union_members_match",
@@ -52,13 +62,19 @@ with DAG(
                 )
             SELECT 
                 CASE 
-                    WHEN ods.column_count = stg.column_count THEN 'Количество колонок совпадает: ' || ods.column_count
-                    ELSE 'Количество колонок не совпадает: ODS.User.union_member имеет ' || ods.column_count || 
-                         ' колонок, а STG.Union_member.Union_member имеет ' || stg.column_count || ' колонок.'
+                    WHEN ods.column_count <> stg.column_count THEN 
+                        'Количество колонок не совпадает: ODS.User.union_member имеет ' || ods.column_count || 
+                        ' колонок, а STG.Union_member.Union_member имеет ' || stg.column_count || ' колонок.'
                 END AS result
             FROM count_ods ods, count_stg stg;
         """),
+        do_xcom_push=True,
     )
 
-    insert_union_members >> check_column_count  # Set task dependency
+    log_column_count_check = PythonOperator(
+        task_id='log_column_count_check',
+        python_callable=check_column_counts,
+        provide_context=True,
+    )
 
+    insert_union_members >> check_column_count >> log_column_count_check 
