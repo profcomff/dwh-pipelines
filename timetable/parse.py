@@ -316,7 +316,7 @@ def raw_timetable_parse():
         "ods_timetable_act",
         schema="ODS_TIMETABLE",
         con=sql_engine,
-        if_exists="replace",
+        if_exists="append",
         index=False,
     )
     return Dataset("ODS_TIMETABLE.ods_timetable_act")
