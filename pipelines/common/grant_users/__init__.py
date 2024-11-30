@@ -76,7 +76,7 @@ def grant_groups():
         # drop all users from all groups
         groups, excluded = filter_groups(read_only_groups, DENY_ACCESS_TABLE_LIST)
         # add users
-        for grpup_name in groups:
+        for group_name in groups:
             for user in users:
                 try:
                     dwh_conn.execute(sa.text(f"""alter group {group_name} add user {user[0]}"""))
