@@ -304,7 +304,10 @@ def raw_timetable_parse():
         for group in range(1, source[2] + 1):
             url = f"http://ras.phys.msu.ru/table/{source[0]}/{source[1]}/{group}.htm"
             group_html = conn.execute(
-                f"""SELECT * FROM "STG_RASPHYSMSU".raw_html WHERE url = '{url}'"""
+                f"""
+                    DELETE FROM "ODS_TIMETABLE".ods_timetable_act;
+                    SELECT * FROM "STG_RASPHYSMSU".raw_html WHERE url = '{url}'
+                """
             ).one_or_none()
             if not group_html:
                 logging.info(f"{url} is not in STG_RASPHYSMSU.raw_html")
@@ -313,6 +316,7 @@ def raw_timetable_parse():
             result.append(group_result)
     result = pd.concat(result, ignore_index=True)
     loging.info(result.info(verbose=True))
+
     result.to_sql(
         "ods_timetable_act",
         schema="ODS_TIMETABLE",
