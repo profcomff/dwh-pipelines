@@ -121,6 +121,7 @@ insert into "DWH_AUTH_USER".info
 select
   user_id as id,
   email,
+  auth_email,
   phone_number,
   vk_name,
   city,
@@ -142,7 +143,8 @@ select
   photo,
   sex,
   job,
-  work_location
+  work_location,
+  is_deleted
 from "DWH_USER_INFO".info
 left join
 (
@@ -208,7 +210,7 @@ with DAG(
     start_date = datetime(2024, 10, 1),
     schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
     catchup=False,
-    tags=["ods", "src", "user_info"],
+    tags=["dwh", "src", "user_info"],
     description='union_members_data_format_correction',
     default_args = {
         'retries': 1,
