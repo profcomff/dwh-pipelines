@@ -94,4 +94,4 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
 ) as dag:
-    (get_timetable_for_semester_to_db() >> flatten_timetable())
+    flatten_timetable()
