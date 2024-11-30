@@ -315,7 +315,7 @@ def raw_timetable_parse():
             group_result = parse_timetable_for_group(group_html.raw_html)
             result.append(group_result)
     result = pd.concat(result, ignore_index=True)
-    loging.info(result.info(verbose=True))
+    logging.info(result.info(verbose=True))
 
     result.to_sql(
         "ods_timetable_act",
