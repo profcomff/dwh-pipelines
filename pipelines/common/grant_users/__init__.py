@@ -11,7 +11,7 @@ from airflow.models import Connection, Variable
 environment = Variable.get("_ENVIRONMENT")
 
 DWH_DB_DSN = (
-    Connection.get_connection_from_secrets("postgres_dwh")
+    Connection.get_connection_from_secrets("supercomnnection")  # TODO@mixx3 fix this!
     .get_uri()
     .replace("postgres://", "postgresql://")
     .replace("?__extra__=%7B%7D", "")
