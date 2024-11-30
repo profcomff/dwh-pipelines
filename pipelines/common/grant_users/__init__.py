@@ -58,7 +58,6 @@ def grant_groups():
                 where usename not ilike '%srvc%' and not usesuper;
             """)
         ).fetchall()
-        logging.info(users)
         logging.info(len(users))
         read_only_groups = dwh_conn.execute(
             sa.text("""
@@ -73,8 +72,6 @@ def grant_groups():
                 where groname not ilike '%prod_dwh%' and groname ilike '%read%';
             """)
         ).fetchall()
-        logging.info(read_only_groups)
-        raise KeyboardInterrupt
         logging.info(len(users))
         # drop all users from all groups
         groups, excluded = filter_groups(read_only_groups, DENY_ACCESS_TABLE_LIST)
@@ -91,7 +88,7 @@ def grant_groups():
         for group_name in excluded:
             for user in ALLOW_SELECT_USER_LIST:
                 try:
-                    dwh_conn.execute(sa.text(f"""alter group {group_name} add user {user[0]}"""))
+                    dwh_conn.execute(sa.text(f"""alter group {group_name} add user {user}"""))
                 except Exception as e:
                     logging.warning(f"{user[0]} is already in group {group_name} or something else happened")
                     raise e
