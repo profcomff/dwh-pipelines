@@ -80,16 +80,18 @@ def grant_groups():
             for user in users:
                 try:
                     dwh_conn.execute(sa.text(f"""alter group {group_name} add user {user[0]}"""))
-                except Exception:
+                except Exception as e:
                     logging.warning(f"{user[0]} is already in group {group_name} or something else happened")
+                    raise e
 
         # sensetive data
         for group_name in excluded:
             for user in ALLOW_SELECT_USER_LIST:
                 try:
                     dwh_conn.execute(sa.text(f"""alter group {group_name} add user {user[0]}"""))
-                except Exception:
+                except Exception as e:
                     logging.warning(f"{user[0]} is already in group {group_name} or something else happened")
+                    raise e
         # TODO@mixx3 add scope to dev users
 
     
