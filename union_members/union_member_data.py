@@ -208,7 +208,7 @@ with DAG(
 with DAG(
     dag_id = 'DWH_AUTH_USER.info',
     start_date = datetime(2024, 10, 1),
-    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
+    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("ODS_AUTH.auth_method"), Dataset("ODS_AUTH.user")],
     catchup=False,
     tags=["dwh", "src", "user_info"],
     description='union_members_data_format_correction',
