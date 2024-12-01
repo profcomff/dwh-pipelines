@@ -68,7 +68,7 @@ def grant_groups():
             """ if environment == "test" else """
                 select 
                     groname
-                from pg_catalog.pg_user
+                from pg_catalog.pg_group
                 where groname not ilike '%prod_dwh%' and groname ilike '%read%';
             """)
         ).fetchall()
