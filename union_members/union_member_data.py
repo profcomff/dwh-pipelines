@@ -7,7 +7,7 @@ from textwrap import dedent
 from datetime import datetime
 from airflow import DAG
 
-sql_sorting_for_ODS = """
+sql_sorting_for_DWH = """
 insert into "DWH_USER_INFO".info (
   user_id,
   email,
@@ -89,10 +89,11 @@ on conflict (user_id) do update set
 """
 
 sql_merging_auth = """
-insert into "ODS_USER".info 
+insert into "DWH_AUTH_USER".info 
 (
   id,
   email,
+  auth_email,
   phone_number,
   vk_name,
   city,
@@ -120,6 +121,7 @@ insert into "ODS_USER".info
 select
   user_id as id,
   email,
+  auth_email,
   phone_number,
   vk_name,
   city,
@@ -156,6 +158,7 @@ group by au.user_id
 ) using (user_id)
 on conflict (id) do update set
 	email = EXCLUDED.email,
+	auth_email = EXCLUDED.auth_email,
 	phone_number = EXCLUDED.phone_number,
 	vk_name = EXCLUDED.vk_name,
 	city = EXCLUDED.city,
@@ -196,18 +199,18 @@ with DAG(
     PostgresOperator(
         task_id='execute_sql_for_data_corr',
         postgres_conn_id="postgres_dwh",
-        sql=dedent(sql_sorting_for_ODS),
+        sql=dedent(sql_sorting_for_DWH),
         inlets = [Dataset("ODS_INFO.param_hist"), Dataset("ODS_INFO.info_hist")],
         outlets = [Dataset("DWH_USER_INFO.info")],
     )
 
 
 with DAG(
-    dag_id = 'ODS_USER.info',
+    dag_id = 'DWH_AUTH_USER.info',
     start_date = datetime(2024, 10, 1),
-    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
+    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("ODS_AUTH.auth_method"), Dataset("ODS_AUTH.user")],
     catchup=False,
-    tags=["ods", "src", "user_info"],
+    tags=["dwh", "src", "user_info"],
     description='union_members_data_format_correction',
     default_args = {
         'retries': 1,
@@ -218,8 +221,8 @@ with DAG(
         task_id='merginng_and_inserting_into_ODS_INFO',
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_merging_auth),
-        inlets = [Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
-        outlets = [Dataset("ODS_INFO.info")],
+        inlets = [Dataset("DWH_USER_INFO.info"), Dataset("ODS_AUTH.auth_method"), Dataset("ODS_AUTH.user")],
+        outlets = [Dataset("DWH_AUTH_USER.info")],
     )
 
 
