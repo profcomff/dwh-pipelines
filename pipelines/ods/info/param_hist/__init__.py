@@ -64,7 +64,7 @@ with DAG(
             stg.changeable,
             stg.type,
             stg.create_ts,
-            stg.modify.ts,
+            stg.modify_ts,
             stg.is_deleted,
             stg.validation,
             '{{ ds }}'::Date,
