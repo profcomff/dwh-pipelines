@@ -221,7 +221,7 @@ with DAG(
         task_id='merginng_and_inserting_into_ODS_INFO',
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_merging_auth),
-        inlets = [Dataset("DWH_USER_INFO.info"), Dataset("STG_AUTH.auth_method"), Dataset("STG_AUTH.user")],
+        inlets = [Dataset("DWH_USER_INFO.info"), Dataset("ODS_AUTH.auth_method"), Dataset("ODS_AUTH.user")],
         outlets = [Dataset("DWH_AUTH_USER.info")],
     )
 
