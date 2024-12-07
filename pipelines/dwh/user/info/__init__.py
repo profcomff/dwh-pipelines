@@ -60,7 +60,7 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
   string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
 from "ODS_INFO".info_hist i
-left join "ODS_INFO".info_hist p on i.param_id = p.id 
+left join "ODS_INFO".param_hist p on i.param_id = p.id 
 group by owner_id
 on conflict (user_id) do update set
 	email = EXCLUDED.email,
