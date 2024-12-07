@@ -59,8 +59,8 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
   string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
-from "STG_USERDATA".info i
-left join "STG_USERDATA".param p on i.param_id = p.id 
+from "ODS_INFO".info_hist i
+left join "ODS_INFO".info_hist p on i.param_id = p.id 
 group by owner_id
 on conflict (user_id) do update set
 	email = EXCLUDED.email,
@@ -104,6 +104,6 @@ with DAG(
         task_id='execute_sql_for_data_corr',
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_sorting_for_DWH),
-        inlets = [Dataset("STG_USERDATA.info")],
+        inlets = [Dataset("ODS_INFO.param_hist"), Dataset("ODS_INFO.info_hist")],
         outlets = [Dataset("DWH_USER_INFO.info")],
     )
