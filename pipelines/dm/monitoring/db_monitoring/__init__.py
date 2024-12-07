@@ -11,7 +11,7 @@ from airflow import DAG
 with DAG(
     dag_id="DM_MONITORING.db_monitoring_snp",
     start_date = datetime(2024, 11, 10),
-    schedule="0 */1 * * *",
+    schedule="@daily",
     catchup=False,
     tags=["ods", "src", "userdata"],
     description='data weight monitoring',
