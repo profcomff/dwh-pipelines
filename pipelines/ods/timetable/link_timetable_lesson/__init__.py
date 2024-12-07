@@ -7,8 +7,8 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 
 with DAG(
-    dag_id="ODS_TIMETABLE.ods_link_timetable_dim_event",
-    start_date=datetime(2024, 12, 1),
+    dag_id="ODS_TIMETABLE.ods_link_timetable_lesson",
+    start_date=datetime(2024, 12, 7),
     schedule=[Dataset("ODS_TIMETABLE.ods_timetable_act")],
     catchup=False,
     tags=["ods", "core", "timetable", "link_timetable_dim_event"],
