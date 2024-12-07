@@ -104,6 +104,6 @@ with DAG(
         task_id='execute_sql_for_data_corr',
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_sorting_for_DWH),
-        inlets = [Dataset("ODS_INFO.param_hist"), Dataset("ODS_INFO.info_hist")],
+        inlets = [Dataset("STG_USERDATA.info")],
         outlets = [Dataset("DWH_USER_INFO.info")],
     )
