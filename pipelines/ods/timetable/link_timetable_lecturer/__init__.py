@@ -9,7 +9,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 with DAG(
     dag_id="ODS_TIMETABLE.ods_link_timetable_lecturer",
     start_date=datetime(2024, 12, 7),
-    schedule=[Dataset("ODS_TIMETABLE.ods_timetable_act")],
+    schedule=[Dataset("DM_TIMETABLE.dim_lecturer_act")],
     catchup=False,
     tags=["ods", "core", "timetable", "link_timetable_lecturer"],
     default_args={"owner": "mixx3"},
