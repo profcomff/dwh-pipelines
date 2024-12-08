@@ -18,7 +18,7 @@ with DAG(
         postgres_conn_id="postgres_dwh",
         sql=dedent(r"""
             -- truncate old state
-            delete from "ODS_TIMETABLE".ods_link_timetable_dim_event;
+            delete from "ODS_TIMETABLE".ods_link_timetable_lesson;
 
             insert into "ODS_TIMETABLE".ods_link_timetable_lesson (
                 "group",
