@@ -7,20 +7,20 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 
 with DAG(
-    dag_id="ODS_TIMETABLE.ods_link_timetable_lecturer",
+    dag_id="ODS_TIMETABLE.ods_link_timetable_teacher",
     start_date=datetime(2024, 12, 7),
     schedule=[Dataset("DM_TIMETABLE.dim_lecturer_act")],
     catchup=False,
-    tags=["ods", "core", "timetable", "link_timetable_lecturer"],
+    tags=["ods", "core", "timetable", "link_timetable_teacher"],
     default_args={"owner": "mixx3"},
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
         sql=dedent(r"""
             -- truncate old state
-            delete from "ODS_TIMETABLE".ods_link_timetable_lecturer;
+            delete from "ODS_TIMETABLE".ods_link_timetable_teacher;
 
-            insert into "ODS_TIMETABLE".ods_link_timetable_lecturer (
+            insert into "ODS_TIMETABLE".ods_link_timetable_teacher (
                 "group",
                 event_tr,
                 teacher_id
@@ -48,5 +48,5 @@ with DAG(
         """),
         task_id="execute_query",
         inlets=[Dataset("ODS_TIMETABLE.ods_timetable_act"), Dataset("DM_TIMETABLE.dim_lecturer_act")],
-        outlets=[Dataset("ODS_TIMETABLE.ods_link_timetable_lecturer")],
+        outlets=[Dataset("ODS_TIMETABLE.ods_link_timetable_teacher")],
     )
