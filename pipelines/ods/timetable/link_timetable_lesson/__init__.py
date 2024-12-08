@@ -20,13 +20,18 @@ with DAG(
             -- truncate old state
             delete from "ODS_TIMETABLE".ods_link_timetable_dim_event;
 
+            insert into "ODS_TIMETABLE".ods_link_timetable_lesson (
+                "group",
+                event_tr,
+                lesson_id
+            )
             select 
                 *
                 from(
                     select 
                         event."group" as "group",
                         event.id as event_tr,
-                        dim_event.id as group_id,
+                        dim_event.id as lesson_id,
                     -- оконка чтобы отобрать самое лучшее совпадение по триграмме
                     row_number() 
                     over (

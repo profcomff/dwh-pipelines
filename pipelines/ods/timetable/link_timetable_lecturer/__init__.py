@@ -23,7 +23,7 @@ with DAG(
             insert into "ODS_TIMETABLE".ods_link_timetable_lecturer (
                 "group",
                 event_tr,
-                teacher_id,
+                teacher_id
             )
             select 
                 *

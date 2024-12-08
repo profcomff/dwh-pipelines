@@ -23,7 +23,7 @@ with DAG(
             insert into "ODS_TIMETABLE".ods_link_timetable_cabinet (
                 "group",
                 event_tr,
-                cabinet_id,
+                cabinet_id
             )
             select 
                 *

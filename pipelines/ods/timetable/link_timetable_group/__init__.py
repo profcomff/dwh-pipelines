@@ -23,7 +23,7 @@ with DAG(
             insert into "ODS_TIMETABLE".ods_link_timetable_group (
                 "group",
                 event_tr,
-                group_id,
+                group_id
             )
             select 
                 *
