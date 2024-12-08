@@ -26,10 +26,12 @@ with DAG(
                 teacher_id
             )
             select 
-                *
+                "group",
+                event_tr,
+                teacher_id
                 from(
                     select 
-                        event."lecturer" as "group",
+                        event."group" as "group",
                         event.id as event_tr,
                         lecturer.id as teacher_id,
                     -- оконка чтобы отобрать самое лучшее совпадение по триграмме
