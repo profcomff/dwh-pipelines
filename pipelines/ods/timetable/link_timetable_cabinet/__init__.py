@@ -26,7 +26,9 @@ with DAG(
                 cabinet_id
             )
             select 
-                *
+                "group",
+                event_tr,
+                cabinet_id
                 from(
                     select 
                         event."group" as "group",

@@ -26,7 +26,9 @@ with DAG(
                 lesson_id
             )
             select 
-                *
+                "group",
+                event_tr,
+                lesson_id
                 from(
                     select 
                         event."group" as "group",
