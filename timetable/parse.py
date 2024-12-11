@@ -317,24 +317,13 @@ def raw_timetable_parse():
             result.append(group_result)
     result = pd.concat(result, ignore_index=True)
     logging.info(result.info(verbose=True))
-    result['uuid'] = [uuid.uuid4() for _ in range(len(result.index))]
+    result['id'] = [uuid.uuid4() for _ in range(len(result.index))]
     result.to_sql(
         "ods_timetable_act",
         schema="ODS_TIMETABLE",
         con=sql_engine,
         if_exists="append",
         index=False,
-        columns={
-            "uuid": "id",
-            "name": "name",
-            "odd": "odd",
-            "even": "even",
-            "weekday": "weekday",
-            "num": "num",
-            "start": "start",
-            "end": "end",
-            "group": "group",
-        }
     )
     return Dataset("ODS_TIMETABLE.ods_timetable_act")
 
