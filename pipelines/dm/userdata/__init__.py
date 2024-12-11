@@ -19,27 +19,37 @@ DB_DSN = (
     .replace("?__extra__=%7B%7D", "")
 )
 
+
 @task(
     task_id="make_join",
     inlets=Dataset("DWH_USER.union_member", "DWH_USER.info"),
-    outlets=Dataset("DM_USER.union_member_join")
+    outlets=Dataset("DM_USER.union_member_join"),
 )
 def make_join():
     sql_engine = sa.create_engine(DB_DSN)
     sql_engine.execute(
         """
         INSERT INTO "DM_USER".union_member_join
-        SELECT 
-            t1.*,
-            t2.card_status,
-            t2.card_date,
-            t2.card_number
-        FROM 
-            "DWH_USER".info AS t1
-        INNER JOIN 
-            "DWH_USER".union_member AS t2
-        ON 
-            t1.full_name = t2.full_name;
+        select 
+        userdata.user_id as userdata_user_id,
+        userdata.full_name as full_name,
+        um.first_name as first_name,
+        um.last_name as last_name,
+        um.type_of_learning as type_of_learning,
+        um.rzd_status as wtf_value,
+        um.academic_level as academic_level,
+        um.rzd_number as rzd_number,
+        um.card_id as card_id,
+        um.card_number as card_number
+        from 
+        (SELECT 
+        STRING_TO_ARRAY(email, ',') as email_list,
+        user_id,
+        full_name
+        FROM "DWH_USER_INFO".info
+        ) as userdata
+        join "STG_UNION_MEMBER".union_member as um
+        on um.email=any(userdata.email_list)
         """
     )
     return Dataset("DM_USER.union_member_join")
