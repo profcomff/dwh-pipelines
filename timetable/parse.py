@@ -4,6 +4,7 @@
 """
 
 import logging
+import uuid
 from typing import Any, List, Dict
 from datetime import datetime, timedelta
 import pandas as pd
@@ -316,19 +317,30 @@ def raw_timetable_parse():
             result.append(group_result)
     result = pd.concat(result, ignore_index=True)
     logging.info(result.info(verbose=True))
-
+    result['uuid'] = [uuid.uuid4() for _ in range(len(result.index))]
     result.to_sql(
         "ods_timetable_act",
         schema="ODS_TIMETABLE",
         con=sql_engine,
         if_exists="append",
         index=False,
+        columns={
+            "uuid": "id",
+            "name": "name",
+            "odd": "odd",
+            "even": "even",
+            "weekday": "weekday",
+            "num": "num",
+            "start": "start",
+            "end": "end",
+            "group": "group",
+        }
     )
     return Dataset("ODS_TIMETABLE.ods_timetable_act")
 
 
 with DAG(
-    dag_id="parse_raw_timetable_from_html",
+    dag_id="ODS_TIMETABLE.ods_timetable_act",
     schedule="@daily",
     start_date=datetime(2024, 11, 24),
     tags=["ods", "rasphysmsu"],
