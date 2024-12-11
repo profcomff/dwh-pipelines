@@ -21,18 +21,17 @@ with DAG(
             delete from "ODS_TIMETABLE".ods_link_timetable_teacher;
 
             insert into "ODS_TIMETABLE".ods_link_timetable_teacher (
-                "group",
-                event_tr,
+                id,
+                event_id,
                 teacher_id
             )
-            select 
-                "group",
-                event_tr,
+            select
+                gen_random_uuid(),
+                event_id,
                 teacher_id
                 from(
-                    select 
-                        event."group" as "group",
-                        event.id as event_tr,
+                    select
+                        event.id as event_id,
                         lecturer.id as teacher_id,
                     -- оконка чтобы отобрать самое лучшее совпадение по триграмме
                     row_number() 
