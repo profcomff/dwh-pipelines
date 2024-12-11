@@ -56,7 +56,7 @@ with DAG(
             """,
             inlets=[
                 Dataset("DWH_USER_INFO.info"),
-                Dataset("STG_UNION_MEMBER".union_member),
+                Dataset("STG_UNION_MEMBER.union_member"),
             ],
             outlets=[Dataset("DM_USER.union_member_join")],
         ),
