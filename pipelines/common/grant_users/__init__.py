@@ -69,7 +69,7 @@ def grant_groups():
                 select 
                     groname
                 from pg_catalog.pg_group
-                where groname not ilike '%prod_dwh%' and groname ilike '%read%';
+                where groname ilike '%prod_dwh%' and groname ilike '%read%';
             """)
         ).fetchall()
         logging.info(len(users))
