@@ -50,6 +50,18 @@ def make_join():
         ) as userdata
         join "STG_UNION_MEMBER".union_member as um
         on um.email=any(userdata.email_list)
+        ON CONFLICT (full_name)
+        DO UPDATE SET
+            userdata_user_id = EXCLUDED.userdata_user_id,
+            full_name = EXCLUDED.full_name,
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            type_of_learning = EXCLUDED.type_of_learning,
+            wtf_value = EXCLUDED.wtf_value,
+            academic_level = EXCLUDED.academic_level,
+            rzd_number = EXCLUDED.rzd_number,
+            card_id = EXCLUDED.card_id,
+            card_number = EXCLUDED.card_number;
         """
     )
     return Dataset("DM_USER.union_member_join")
