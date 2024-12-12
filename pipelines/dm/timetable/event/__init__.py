@@ -31,7 +31,7 @@ with DAG(
                 gen_random_uuid(),
                 name as event_name_text,
                 'profcomff_timetable_api' as source_name,
-                id as event_api_id
+                min(id) as event_api_id
             from "STG_TIMETABLE"."event"
             where not is_deleted
             group by name
