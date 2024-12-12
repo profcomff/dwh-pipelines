@@ -42,6 +42,7 @@ with DAG(
                     ) as rn
                     from "ODS_TIMETABLE".ods_timetable_act as event
                     cross join "DM_TIMETABLE".dim_group_act as "group"
+                   where event.name ilike '%' || "group".group_number|| '%'
                 )
                 where rn = 1
         """),

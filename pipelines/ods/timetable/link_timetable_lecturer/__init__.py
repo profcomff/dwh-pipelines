@@ -42,6 +42,7 @@ with DAG(
                     ) as rn -- TODO@mixx3: Подумать, можно ли искать ещё по фио и какая будет разница
                     from "ODS_TIMETABLE".ods_timetable_act as event
                     cross join "DM_TIMETABLE".dim_lecturer_act as lecturer
+                    where event.name ilike '%' || lecturer.lecturer_last_name || '%'
                 )
                 where rn = 1
         """),

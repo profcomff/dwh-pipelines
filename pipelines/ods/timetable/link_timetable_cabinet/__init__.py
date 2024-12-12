@@ -42,6 +42,7 @@ with DAG(
                     ) as rn
                     from "ODS_TIMETABLE".ods_timetable_act as event
                     cross join "DM_TIMETABLE".dim_room_act as room
+                    where event.name ilike '%' || room.room_name || '%'
                 )
             where rn = 1
         """),
