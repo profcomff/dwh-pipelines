@@ -21,6 +21,7 @@ with DAG(
             where source_name = 'profcomff_timetable_api';
 
             insert into "DM_TIMETABLE".dim_room_act (
+                id,
                 room_direction_text_type,
                 room_api_id,
                 room_name,
@@ -28,13 +29,16 @@ with DAG(
                 source_name
             )
             select
-                direction as room_api_id,
-                id as room_api_id,
+                gen_random_uuid(),
+                direction as room_direction_text_type,
+                min(id) as room_api_id,
                 name as room_name,
                 building as room_department,
                 'profcomff_timetable_api' as source_name
                 from "STG_TIMETABLE"."room"
             where not is_deleted
+            group by name, building, direction
+            order by room_api_id
         """),
         task_id="execute_merge_statement",
         inlets=[Dataset("STG_TIMETABLE.room")],

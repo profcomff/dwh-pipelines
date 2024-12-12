@@ -22,6 +22,7 @@ with DAG(
             where source_name = 'profcomff_timetable_api';
 
             insert into "DM_TIMETABLE".dim_lecturer_act (
+                id,
                 lecturer_api_id,
                 lecturer_first_name,
                 lecturer_middle_name,
@@ -31,15 +32,18 @@ with DAG(
                 source_name
             )
             select
-                id as lecturer_api_id,
+                gen_random_uuid(),
+                min(id) as lecturer_api_id,
                 first_name,
                 middle_name,
                 last_name,
-                avatar_id,
-                description,
+                min(avatar_id),
+                min(description),
                 'profcomff_timetable_api' as source_name
                 from "STG_TIMETABLE"."lecturer"
             where not is_deleted
+            group by first_name, middle_name, last_name
+            order by lecturer_api_id
         """),
         task_id="execute_merge_statement",
         inlets=[Dataset("STG_TIMETABLE.lecturer")],
