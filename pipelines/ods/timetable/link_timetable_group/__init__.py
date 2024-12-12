@@ -26,7 +26,7 @@ with DAG(
                 group_id
             )
             select 
-                gen_random_uuid()
+                gen_random_uuid(),
                 event_id,
                 group_id
                 from(
