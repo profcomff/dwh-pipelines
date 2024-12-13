@@ -54,10 +54,10 @@ with DAG(
                 card_id = EXCLUDED.card_id,
                 card_number = EXCLUDED.card_number;
             """,
-            inlets=[
-                Dataset("DWH_USER_INFO.info"),
-                Dataset("STG_UNION_MEMBER.union_member"),
-            ],
-            outlets=[Dataset("DM_USER.union_member_join")],
         ),
+        inlets=[
+            Dataset("DWH_USER_INFO.info"),
+            Dataset("STG_UNION_MEMBER.union_member"),
+        ],
+        outlets=[Dataset("DM_USER.union_member_join")],
     )
