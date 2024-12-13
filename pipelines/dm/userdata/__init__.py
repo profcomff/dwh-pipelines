@@ -6,7 +6,7 @@ from airflow.datasets import Dataset
 
 with DAG(
     dag_id="DM_USER.unionmembers_join_with_users",
-    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_UNION_MEMBE.union_member")],
+    schedule=[Dataset("DWH_USER_INFO.info"), Dataset("STG_UNION_MEMBER.union_member")],
     start_date=datetime(2024, 8, 27),
     tags=["dm", "src", "userdata"],
     default_args={
