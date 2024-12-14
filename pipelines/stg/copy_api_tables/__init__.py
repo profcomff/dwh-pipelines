@@ -435,6 +435,38 @@ with DAG(
 
 
 with DAG(
+    dag_id="upload_api_rating",
+    start_date=datetime(2024, 12, 14),
+    schedule="@daily",
+    catchup=False,
+    tags=["dwh", "stg", "rating"],
+    default_args={"owner": "dyakovri"},
+):
+    tables = (
+        "lecturer",
+        "comment",
+        "lecturer_user_comment",
+    )
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
+    prev = None
+    for table in tables:
+        curr = copy_table_to_dwh.override(
+            task_id=f"copy-{table}",
+            outlets=[Dataset(f"STG_RATING.{table}")],
+        )(
+            "api_rating",
+            table,
+            "STG_RATING",
+            table,
+        )
+        # Выставляем копирование по порядку
+        if prev:
+            prev >> curr
+        prev = curr
+        prev >> tg_task
+
+
+with DAG(
     dag_id="upload_bot_tg_print",
     start_date=datetime(2024, 1, 1),
     schedule="@daily",
