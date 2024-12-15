@@ -32,7 +32,7 @@ with DAG(
                 from(
                     select
                         event.id as event_id,
-                        room.room_api_id as room_id,
+                        room.id as room_id,
                     -- оконка чтобы отобрать самое лучшее совпадение по триграмме
                     row_number() 
                     over (
