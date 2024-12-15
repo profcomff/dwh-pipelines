@@ -21,7 +21,7 @@ with DAG(
             delete from "ODS_TIMETABLE".ods_link_timetable_lesson;
 
             insert into "ODS_TIMETABLE".ods_link_timetable_lesson (
-                id
+                id,
                 event_id,
                 lesson_id
             )
