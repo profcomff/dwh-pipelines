@@ -23,16 +23,16 @@ with DAG(
             insert into "ODS_TIMETABLE".ods_link_timetable_room (
                 id,
                 event_id,
-                cabinet_id
+                room_id
             )
             select 
                 gen_random_uuid(),
                 event_id,
-                cabinet_id
+                room_id
                 from(
                     select
                         event.id as event_id,
-                        room.id as cabinet_id,
+                        room.room_api_id as room_id,
                     -- оконка чтобы отобрать самое лучшее совпадение по триграмме
                     row_number() 
                     over (
