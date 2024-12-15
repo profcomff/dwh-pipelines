@@ -43,12 +43,10 @@ with DAG(
                     from "ODS_TIMETABLE".ods_timetable_act as event
                     cross join (
                         select 
-                            max(id) as id,  
+                            id as id,  
                             event_name_text
                         from "DM_TIMETABLE".dim_event_act
                         where source_name = 'profcomff_timetable_api'
-                        group by 
-                            event_name_text
                     ) as dim_event
                 )
             where rn = 1
