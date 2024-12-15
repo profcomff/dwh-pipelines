@@ -22,7 +22,7 @@ with DAG(
         postgres_conn_id="postgres_dwh",
         sql=dedent(r"""
             -- truncate old state
-            delete from "DM_TIMETABLE".dm_timetable_act
+            delete from "DM_TIMETABLE".dm_timetable_act;
 
             insert into "DM_TIMETABLE".dm_timetable_act (
                 event_id,
