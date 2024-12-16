@@ -8,7 +8,7 @@ from datetime import datetime
 from airflow import DAG
 
 sql_sorting_for_DWH = """
-insert into "DWH_USER_INFO".info (
+upsert into "DWH_USER_INFO".info (
   user_id,
   email,
   phone_number,
@@ -62,30 +62,7 @@ select -- полная таблица
 from "ODS_INFO".info_hist i
 left join "ODS_INFO".param_hist p on i.param_id = p.id 
 group by owner_id
-on conflict (user_id) do update set
-	email = EXCLUDED.email,
-	phone_number = EXCLUDED.phone_number,
-	vk_name = EXCLUDED.vk_name,
-	city = EXCLUDED.city,
-	hometown = EXCLUDED.hometown,
-	location = EXCLUDED.location,
-	github_name = EXCLUDED.github_name,
-	telegram_name = EXCLUDED.telegram_name,
-	home_phone_number = EXCLUDED.home_phone_number,
-	education_level = EXCLUDED.education_level,
-	university = EXCLUDED.university,
-	faculty = EXCLUDED.faculty,
-	"group" = EXCLUDED."group",
-	position = EXCLUDED.position,
-	student_id_number = EXCLUDED.student_id_number,
-	department = EXCLUDED.department,
-	mode_of_study = EXCLUDED.mode_of_study,
-	full_name = EXCLUDED.full_name,
-	birth_date = EXCLUDED.birth_date,
-	photo = EXCLUDED.photo,
-	sex = EXCLUDED.sex,
-	job = EXCLUDED.job,
-	work_location = EXCLUDED.work_location;
+;
 """
 
 with DAG(
