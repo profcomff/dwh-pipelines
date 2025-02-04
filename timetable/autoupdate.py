@@ -107,8 +107,11 @@ def room_to_id(lessons, headers, base):
     Превращает названия комнат в расписании в id для базы данных.
     """
     _logger.info("Превращаю названия комнат в id...")
+    url = "https://api.test.profcomff.com"
+    if base == "prod":
+        url = "https://api.profcomff.com"
 
-    response = requests.get(urls_api.get_url_room("get", base), headers=headers)
+    response = requests.get(url + "/timetable/room/?limit=0&offset=0", headers=headers)
     rooms = response.json()["items"]
 
     place = lessons["place"].tolist()
@@ -135,8 +138,12 @@ def group_to_id(lessons, headers, base):
     Превращает названия групп в расписании в id для базы данных.
     """
     _logger.info("Превращаю названия групп в id...")
+    url = "https://api.test.profcomff.com"
+    if base == "prod":
+        url = "https://api.profcomff.com"
 
-    response = requests.get(urls_api.get_url_group("get", base), headers=headers)
+
+    response = requests.get(url + "/timetable/group/?limit=0&offset=0", headers=headers)
     groups = response.json()["items"]
 
     new_groups = lessons["group"].tolist()
@@ -150,7 +157,7 @@ def group_to_id(lessons, headers, base):
                     break
             if not b:
                 body = {"name": f"Группа # {row['group'][j]}", 'number': row['group'][j]}
-                response = requests.request(urls_api.get_url_group(urls_api.MODES_URL.post, base), headers=headers, json=body)
+                response = requests.post(url + '/timetable/group/', headers=headers, json=body)
                 new_groups[i][j] = response.json()["id"]
                 _logger.info(f'Новая группа: {response}')
     lessons["group"] = new_groups
@@ -163,6 +170,10 @@ def teacher_to_id(lessons, headers, base):
     Превращает препов в расписании в id для базы данных.
     """
     _logger.info("Превращаю преподавателей в id...")
+    url = "https://api.test.profcomff.com"
+    if base == "prod":
+        url = "https://api.profcomff.com"
+
 
     response = requests.get(urls_api.get_url_lecturer("get", base), headers=headers)
     teachers = response.json()["items"]
@@ -183,7 +194,7 @@ def teacher_to_id(lessons, headers, base):
             if not b:
                 item = item_.split()
                 body = {"first_name": item[1][0], "middle_name": item[2][0], "last_name": item[0], "description": "Преподаватель физического факультета" }
-                response = requests.request(urls_api.get_url_lecturer("post", base), headers=headers,
+                response = requests.post(url + '/timetable/lecturer/', headers=headers,
                                             json=body)
                 new_teacher[i][j] = response.json()["id"]
                 _logger.info(f'Новый преподаватель: {response}')
