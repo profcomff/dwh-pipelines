@@ -97,7 +97,7 @@ PROD_URL = "https://api.profcomff.com"
 def get_url(base):
     if base == "prod":
         return PROD_URL
-    if base == "test":
+    else:
         return TEST_URL
 
 def room_to_id(lessons, headers, base):
