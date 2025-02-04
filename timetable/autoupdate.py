@@ -48,46 +48,46 @@ MODES_URL = enum.Enum("Modes", "get delete post patch")
 
 
 def get_url_room(mode_, base):
-    if mode_ == MODES_URL.get:
+    if mode_ == "get":
         return get_url(base) + "/timetable/room/?limit=0&offset=0"
-    if mode_ == MODES_URL.delete:
+    if mode_ == "delete":
         return get_url(base) + '/timetable/room/'
-    if mode_ == MODES_URL.post:
+    if mode_ == "post":
         return get_url(base) + '/timetable/room/'
-    if mode_ == MODES_URL.patch:
+    if mode_ == "patch":
         return get_url(base) + '/timetable/room/'
 
 
 def get_url_group(mode_, base):
-    if mode_ == MODES_URL.get:
+    if mode_ == "get":
         return get_url(base) + "/timetable/group/?limit=0&offset=0"
-    if mode_ == MODES_URL.delete:
+    if mode_ == "delete":
         return get_url(base) + '/timetable/group/'
-    if mode_ == MODES_URL.post:
+    if mode_ == "post":
         return get_url(base) + '/timetable/group/'
-    if mode_ == MODES_URL.patch:
+    if mode_ == "patch":
         return get_url(base) + '/timetable/group/'
 
 
 def get_url_lecturer(mode_, base):
-    if mode_ == MODES_URL.get:
+    if mode_ == "get":
         return get_url(base) + "/timetable/lecturer/?limit=0&offset=0"
-    if mode_ == MODES_URL.delete:
+    if mode_ == "delete":
         return get_url(base) + '/timetable/lecturer/'
-    if mode_ == MODES_URL.post:
+    if mode_ == "post":
         return get_url(base) + '/timetable/lecturer/'
-    if mode_ == MODES_URL.patch:
+    if mode_ == "patch":
         return get_url(base) + '/timetable/lecturer/'
 
 
 def get_url_event(mode_, base):
-    if mode_ == MODES_URL.get:
+    if mode_ == "get":
         return get_url(base) + "/timetable/event/"
-    if mode_ == MODES_URL.delete:
+    if mode_ == "delete":
         return get_url(base) + '/timetable/event/'
-    if mode_ == MODES_URL.post:
+    if mode_ == "post":
         return get_url(base) + '/timetable/event/'
-    if mode_ == MODES_URL.patch:
+    if mode_ == "patch":
         return get_url(base) + '/timetable/event/'
 
 
@@ -106,7 +106,7 @@ def room_to_id(lessons, headers, base):
     """
     _logger.info("Превращаю названия комнат в id...")
 
-    response = requests.get(urls_api.get_url_room(urls_api.MODES_URL.get, base), headers=headers)
+    response = requests.get(urls_api.get_url_room("get", base), headers=headers)
     rooms = response.json()["items"]
 
     place = lessons["place"].tolist()
@@ -134,7 +134,7 @@ def group_to_id(lessons, headers, base):
     """
     _logger.info("Превращаю названия групп в id...")
 
-    response = requests.get(urls_api.get_url_group(urls_api.MODES_URL.get, base), headers=headers)
+    response = requests.get(urls_api.get_url_group("get", base), headers=headers)
     groups = response.json()["items"]
 
     new_groups = lessons["group"].tolist()
@@ -162,7 +162,7 @@ def teacher_to_id(lessons, headers, base):
     """
     _logger.info("Превращаю преподавателей в id...")
 
-    response = requests.get(urls_api.get_url_lecturer(urls_api.MODES_URL.get, base), headers=headers)
+    response = requests.get(urls_api.get_url_lecturer("get", base), headers=headers)
     teachers = response.json()["items"]
 
     new_teacher = lessons["teacher"].tolist()
@@ -181,7 +181,7 @@ def teacher_to_id(lessons, headers, base):
             if not b:
                 item = item_.split()
                 body = {"first_name": item[1][0], "middle_name": item[2][0], "last_name": item[0], "description": "Преподаватель физического факультета" }
-                response = requests.request(urls_api.get_url_lecturer(urls_api.MODES_URL.post, base), headers=headers,
+                response = requests.request(urls_api.get_url_lecturer("post", base), headers=headers,
                                             json=body)
                 new_teacher[i][j] = response.json()["id"]
                 _logger.info(f'Новый преподаватель: {response}')
