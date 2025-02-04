@@ -158,8 +158,11 @@ def group_to_id(lessons, headers, base):
             if not b:
                 body = {"name": f"Группа # {row['group'][j]}", 'number': row['group'][j]}
                 response = requests.post(url + '/timetable/group/', headers=headers, json=body)
-                new_groups[i][j] = response.json()["id"]
-                _logger.info(f'Новая группа: {response}')
+                if response.status_code == 200:
+                    new_groups[i][j] = response.json()["id"]
+                    _logger.info(f'Новая группа: {response}')
+                else:
+                    _logger.info(f'error {response.text=}')
     lessons["group"] = new_groups
 
     return lessons
