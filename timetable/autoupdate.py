@@ -178,7 +178,7 @@ def teacher_to_id(lessons, headers, base):
         url = "https://api.profcomff.com"
 
 
-    response = requests.get(urls_api.get_url_lecturer("get", base), headers=headers)
+    response = requests.get(url + "/timetable/lecturer/?limit=0&offset=0", headers=headers)
     teachers = response.json()["items"]
 
     new_teacher = lessons["teacher"].tolist()
