@@ -331,8 +331,8 @@ def find_diff():
         coalesce(l.place, r.place) as place,
         coalesce(l.group, r.group) as group,
         coalesce(l.teacher, r.teacher) as teacher,
-        l.events_id as events_id ,
-        r.id as id,
+        coalesce(l.events_id, r.events_id) as events_id ,
+        coalesce(r.id, l.id) as id,
         CASE
             WHEN l.subject = r.subject THEN 'remember'
             WHEN l.subject IS NULL THEN 'create'
