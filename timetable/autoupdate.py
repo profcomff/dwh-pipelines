@@ -43,17 +43,13 @@ import enum
 # MODES = enum.Enum("Modes", "test prod")
 # mode = MODES.test
 
-TEST_URL = "https://api.test.profcomff.com"
-PROD_URL = "https://api.profcomff.com"
 MODES_URL = enum.Enum("Modes", "get delete post patch")
 
 
 def get_url_room(mode_, base):
-    url = TEST_URL
+    url = "https://api.test.profcomff.com"
     if base == "prod":
-        url = PROD_URL
-    else:
-        url = TEST_URL
+        url = "https://api.profcomff.com"
     if mode_ == "get":
         return url + "/timetable/room/?limit=0&offset=0"
     if mode_ == "delete":
@@ -65,11 +61,9 @@ def get_url_room(mode_, base):
 
 
 def get_url_group(mode_, base):
-    url = TEST_URL
+    url = "https://api.test.profcomff.com"
     if base == "prod":
-        url = PROD_URL
-    else:
-        url = TEST_URL
+        url = "https://api.profcomff.com"
     if mode_ == "get":
         return url + "/timetable/group/?limit=0&offset=0"
     if mode_ == "delete":
@@ -81,11 +75,9 @@ def get_url_group(mode_, base):
 
 
 def get_url_lecturer(mode_, base):
-    url = TEST_URL
+    url = "https://api.test.profcomff.com"
     if base == "prod":
-        url = PROD_URL
-    else:
-        url = TEST_URL
+        url = "https://api.profcomff.com"
     if mode_ == "get":
         return url + "/timetable/lecturer/?limit=0&offset=0"
     if mode_ == "delete":
@@ -97,9 +89,9 @@ def get_url_lecturer(mode_, base):
 
 
 def get_url_event(mode_, base):
-    url = TEST_URL
+    url = "https://api.test.profcomff.com"
     if base == "prod":
-        url = PROD_URL
+        url = "https://api.profcomff.com"
     if mode_ == "get":
         return url + "/timetable/event/"
     if mode_ == "delete":
