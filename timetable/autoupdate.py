@@ -402,7 +402,7 @@ def update():
         new_id = row["id"]
         #event_id = post_event(headers, row, environment)
         event_id = []
-        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}] WHERE id={new_id}'
+        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}]::integer[] WHERE id={new_id}'
         engine.execute(query)
     query = """
     UPDATE "STG_RASPHYSMSU"."new" as ch
