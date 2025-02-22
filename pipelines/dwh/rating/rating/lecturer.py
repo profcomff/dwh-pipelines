@@ -1,6 +1,6 @@
 import logging
 from airflow.decorators import dag, task
-from airflow.providers.poodsres.operators.poodsres import PoodsresOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.datasets import Dataset
 
 from textwrap import dedent
@@ -21,9 +21,9 @@ with DAG(
         'owner':'mixx3',
     },
 ):
-    PoodsresOperator(
+    PostgresOperator(
         task_id='lecturer_hist',
-        poodsres_conn_id="postgres_dwh",
+        postgres_conn_id="postgres_dwh",
         sql=dedent("""
         -- close records
         update "DWH_RATING".lecturer as lecturer
