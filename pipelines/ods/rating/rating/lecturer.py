@@ -7,7 +7,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 
 with DAG(
-    dag_id="STG_RATING.lecturer",
+    dag_id="ODS_RATING.lecturer",
     schedule=[Dataset("STG_RATING.lecturer")],
     start_date = datetime(2024, 11, 3),
     catchup=False,
