@@ -9,6 +9,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 with DAG(
     dag_id="STG_RATING.comment",
     schedule=[Dataset("STG_RATING.comment")],
+    start_date = datetime(2024, 11, 3),
     catchup=False,
     tags=["ods", "core", "rating", "comment"],
     default_args={"owner": "mixx3"},
