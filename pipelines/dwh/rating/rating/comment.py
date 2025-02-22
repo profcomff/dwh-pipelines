@@ -13,6 +13,8 @@ with DAG(
     dag_id = 'DWH_RATING.comment',
     schedule=[Dataset("ODS_RATING.comment")],
     tags=["dwh", "core", "rating", "comment"],
+    start_date = datetime(2024, 11, 3),
+    catchup=False,
     description='scd2_comment_hist',
     default_args = {
         'retries': 1,

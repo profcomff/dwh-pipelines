@@ -14,6 +14,8 @@ with DAG(
     schedule=[Dataset("ODS_RATING.lecturer")],
     tags=["dwh", "core", "rating", "comment"],
     description='scd2_lecturer_hist',
+    start_date = datetime(2024, 11, 3),
+    catchup=False,
     default_args = {
         'retries': 1,
         'owner':'mixx3',
@@ -21,7 +23,7 @@ with DAG(
 ):
     PoodsresOperator(
         task_id='lecturer_hist',
-        poodsres_conn_id="poodsres_dwh",
+        poodsres_conn_id="postgres_dwh",
         sql=dedent("""
         -- close records
         update "DWH_RATING".lecturer as lecturer
