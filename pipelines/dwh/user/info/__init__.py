@@ -59,8 +59,8 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
   string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
-from "ODS_INFO".info_hist i
-left join "ODS_INFO".param_hist p on i.param_id = p.id 
+from "STG_USERDATA".info i
+left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
 on conflict (user_id) do update set
 	email = EXCLUDED.email,
@@ -91,7 +91,7 @@ on conflict (user_id) do update set
 with DAG(
     dag_id = 'DWH_USER_INFO.info',
     start_date = datetime(2024, 10, 1),
-    schedule=[Dataset("ODS_INFO.info_hist"), Dataset("ODS_INFO.param_hist")],
+    schedule=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
     catchup=False,
     tags=["dwh", "core", "user_info"],
     description='union_members_data_format_correction',
@@ -104,6 +104,6 @@ with DAG(
         task_id='execute_sql_for_data_corr',
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_sorting_for_DWH),
-        inlets = [Dataset("ODS_INFO.param_hist"), Dataset("ODS_INFO.info_hist")],
+        inlets = [Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
         outlets = [Dataset("DWH_USER_INFO.info")],
     )

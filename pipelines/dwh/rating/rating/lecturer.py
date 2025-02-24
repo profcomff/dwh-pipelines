@@ -28,10 +28,9 @@ with DAG(
         -- close records
         update "DWH_RATING".lecturer as lecturer
         set valid_to_dt = '{{ ds }}'::Date
-        where lecturer.uuid NOT IN(
-            select dwh.uuid from
-                (select 
-                    uuid,
+        where lecturer.api_id NOT IN(
+            select dwh.api_id from
+                (select
                     api_id,
                     first_name,
                     last_name,
@@ -42,12 +41,11 @@ with DAG(
                 from "DWH_RATING".lecturer
                 ) as dwh
             join "ODS_RATING".lecturer as ods
-            on dwh.uuid = ods.uuid
-            and dwh.api_id = ods.api_id
+            on  dwh.api_id = ods.api_id
             and dwh.first_name = ods.first_name
             and dwh.last_name = ods.last_name
             and dwh.middle_name = ods.middle_name
-            and dwh.subject = ods.subject
+            and dwh.subject is not distinct from ods.subject
             and dwh.avatar_link = ods.avatar_link
             and dwh.timetable_id = ods.timetable_id
         );
@@ -60,9 +58,9 @@ with DAG(
             null
             from "ODS_RATING".lecturer as ods
             full outer join "DWH_RATING".lecturer as dwh
-              on ods.uuid = dwh.uuid
+              on ods.api_id = dwh.api_id
             where 
-              dwh.uuid is NULL
+              dwh.api_id is NULL
               or dwh.valid_to_dt='{{ ds }}'::Date
         LIMIT 1000000; -- чтобы не раздуло
         """),
