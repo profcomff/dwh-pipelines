@@ -19,6 +19,7 @@ with DAG(
         TRUNCATE "ODS_MARKETING".frontend_actions;
         INSERT INTO "ODS_MARKETING".frontend_actions            
         SELECT 
+    gen_random_uuid() as uuid,
     user_id,
     action,
     path_from,
@@ -49,6 +50,7 @@ with DAG(
         TRUNCATE "ODS_MARKETING".printer_actions;
         INSERT INTO "ODS_MARKETING".printer_actions    
         SELECT 
+    gen_random_uuid() as uuid,
     action,
     path_from,
     path_to,
@@ -76,7 +78,8 @@ with DAG(
         sql=dedent("""
         TRUNCATE "ODS_MARKETING".printer_bots_actions;
         INSERT INTO "ODS_MARKETING".printer_bots_actions    
-        SELECT 
+        SELECT
+    gen_random_uuid() as uuid,
     action,
     path_from,
     path_to,
@@ -111,6 +114,7 @@ with DAG(
         TRUNCATE "ODS_MARKETING".rating_actions;
         INSERT INTO "ODS_MARKETING".rating_actions    
         SELECT 
+    gen_random_uuid() as uuid,
     action,
     path_to,
     COALESCE(elem->>'response_status_code', NULL)::INT AS response_status_code,
