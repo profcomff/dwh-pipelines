@@ -6,16 +6,18 @@ from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 with DAG(
-    dag_id="ODS_MARKETING_from_STG_MARKETING",
+    dag_id="ODS_MARKETING_from_STG_MARKETING.actions_info",
     start_date=datetime(2025, 3, 1),
     schedule=[Dataset("ODS.group")],
     catchup=False,
-    tags=["marketing"],
+    tags=["ods", "core", "marketing", "frontend"],
     default_args={"owner": "zimovchik"},
 ):
     frontend_actions = PostgresOperator(
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
+        TRUNCATE "ods_marketing".frontend_actions;
+        INSERT INTO "ods_marketing".frontend_actions            
         SELECT 
     user_id,
     action,
@@ -38,12 +40,14 @@ with DAG(
     user_id > 0 
     and additional_data::text NOT ILIKE '%%bot%'
         """),
-        task_id="get_frontend_logs",
+        task_id="get_frontend_logs-ODS_MARKETING_fronted_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.frontend_actions")],
     )
     printer_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
+        TRUNCATE "ods_marketing".printer_actions;
+        INSERT INTO "ods_marketing".printer_actions    
         SELECT 
     action,
     path_from,
@@ -66,11 +70,13 @@ with DAG(
     user_id = -1
     and additional_data::text NOT ILIKE '%%bot%'
         """),
-        task_id="get_printer_terminal_logs",
+        task_id="get_printer_terminal_logs-ODS_MARKETING_printer_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.printer_actions")])
     printer_bots_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
+        TRUNCATE "ods_marketing".printer_bots_actions;
+        INSERT INTO "ods_marketing".printer_bots_actions    
         SELECT 
     action,
     path_from,
@@ -99,11 +105,13 @@ with DAG(
     user_id = -2
     and additional_data::text NOT ILIKE '%bot%'
         """),
-        task_id="get_printer_bots_interactions_logs",
+        task_id="get_printer_bots_interactions_logs-ODS_MARKETING_printer_bots_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.printer_bots_actions")])
     rating_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
+        TRUNCATE "ods_marketing".rating_actions;
+        INSERT INTO "ods_marketing".rating_actions    
         SELECT 
     action,
     path_to,
@@ -126,7 +134,7 @@ with DAG(
     user_id = -3
     and additional_data::text NOT ILIKE '%bot%'
         """),
-        task_id="get_rating_logs",
+        task_id="get_rating_logs-ODS_MARKETING_rating_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.rating_actions")])
     frontend_actions >> printer_actions >> printer_bots_actions >> rating_actions
