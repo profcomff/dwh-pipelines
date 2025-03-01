@@ -24,6 +24,7 @@ with DAG(
     path_from,
     path_to,
     COALESCE(elem->>'user_agent', NULL)::VARCHAR AS user_agent,
+    coalesce(additional_data ILIKE '%%bot%', FALSE) as is_bot,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
     "api_marketing".actions_info,
@@ -37,8 +38,7 @@ with DAG(
         )
     ) AS expanded
     WHERE 
-    user_id > 0 
-    and additional_data::text NOT ILIKE '%%bot%'
+    user_id > 0
         """),
         task_id="get_frontend_logs-ODS_MARKETING_fronted_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
@@ -68,7 +68,6 @@ with DAG(
     ) AS expanded
     WHERE 
     user_id = -1
-    and additional_data::text NOT ILIKE '%%bot%'
         """),
         task_id="get_printer_terminal_logs-ODS_MARKETING_printer_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
@@ -102,8 +101,7 @@ with DAG(
         )
     ) AS expanded
     WHERE 
-    user_id = -2
-    and additional_data::text NOT ILIKE '%bot%'
+    user_id = -2;
         """),
         task_id="get_printer_bots_interactions_logs-ODS_MARKETING_printer_bots_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
@@ -132,7 +130,6 @@ with DAG(
     ) AS expanded
     WHERE 
     user_id = -3
-    and additional_data::text NOT ILIKE '%bot%'
         """),
         task_id="get_rating_logs-ODS_MARKETING_rating_actions",
         inlets=[Dataset("STG_MARKETING.actions_info")],
