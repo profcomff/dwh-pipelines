@@ -16,8 +16,8 @@ with DAG(
     frontend_actions = PostgresOperator(
         postgres_conn_id="postgres_dwh",
         sql=dedent("""
-        TRUNCATE "ods_marketing".frontend_actions;
-        INSERT INTO "ods_marketing".frontend_actions            
+        TRUNCATE "ODS_MARKETING".frontend_actions;
+        INSERT INTO "ODS_MARKETING".frontend_actions            
         SELECT 
     user_id,
     action,
@@ -27,7 +27,7 @@ with DAG(
     coalesce(additional_data ILIKE '%%bot%', FALSE) as is_bot,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
-    "api_marketing".actions_info,
+    "STG_MARKETING".actions_info,
     LATERAL (
         SELECT value AS elem
         FROM jsonb_array_elements(
@@ -46,8 +46,8 @@ with DAG(
     )
     printer_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
-        TRUNCATE "ods_marketing".printer_actions;
-        INSERT INTO "ods_marketing".printer_actions    
+        TRUNCATE "ODS_MARKETING".printer_actions;
+        INSERT INTO "ODS_MARKETING".printer_actions    
         SELECT 
     action,
     path_from,
@@ -56,7 +56,7 @@ with DAG(
     COALESCE(elem->>'app_version', NULL)::VARCHAR AS app_version,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
-    "api_marketing".actions_info,
+    "STG_MARKETING".actions_info,
     LATERAL (
         SELECT value AS elem
         FROM jsonb_array_elements(
@@ -74,8 +74,8 @@ with DAG(
         outlets=[Dataset("ODS_MARKETING.printer_actions")])
     printer_bots_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
-        TRUNCATE "ods_marketing".printer_bots_actions;
-        INSERT INTO "ods_marketing".printer_bots_actions    
+        TRUNCATE "ODS_MARKETING".printer_bots_actions;
+        INSERT INTO "ODS_MARKETING".printer_bots_actions    
         SELECT 
     action,
     path_from,
@@ -90,7 +90,7 @@ with DAG(
     COALESCE(elem->>'description', NULL)::VARCHAR AS description,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
-    "api_marketing".actions_info,
+    "STG_MARKETING".actions_info,
     LATERAL (
         SELECT value AS elem
         FROM jsonb_array_elements(
@@ -108,8 +108,8 @@ with DAG(
         outlets=[Dataset("ODS_MARKETING.printer_bots_actions")])
     rating_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
-        TRUNCATE "ods_marketing".rating_actions;
-        INSERT INTO "ods_marketing".rating_actions    
+        TRUNCATE "ODS_MARKETING".rating_actions;
+        INSERT INTO "ODS_MARKETING".rating_actions    
         SELECT 
     action,
     path_to,
@@ -118,7 +118,7 @@ with DAG(
     COALESCE(elem->>'query', NULL)::VARCHAR AS query,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
-    "api_marketing".actions_info,
+    "STG_MARKETING".actions_info,
     LATERAL (
         SELECT value AS elem
         FROM jsonb_array_elements(
