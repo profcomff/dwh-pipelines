@@ -97,5 +97,5 @@ with DAG(
             Dataset("DWH_USER_INFO.info"),
             Dataset("STG_UNION_MEMBER.union_member"),
         ],
-        outlets=[Dataset("DM_USER.union_member_card")],
+        outlets=[Dataset("DM_USER.union_member_card_join")],
     )
