@@ -33,6 +33,7 @@ with DAG(
         SELECT value AS elem
         FROM jsonb_array_elements(
             CASE 
+                WHEN additional_data = '' THEN jsonb_build_array('{}'::jsonb)
                 WHEN jsonb_typeof(additional_data::jsonb) = 'array' THEN additional_data::jsonb
                 ELSE jsonb_build_array(additional_data::jsonb)
             END
@@ -63,6 +64,7 @@ with DAG(
         SELECT value AS elem
         FROM jsonb_array_elements(
             CASE 
+                WHEN additional_data = '' THEN jsonb_build_array('{}'::jsonb)
                 WHEN jsonb_typeof(additional_data::jsonb) = 'array' THEN additional_data::jsonb
                 ELSE jsonb_build_array(additional_data::jsonb)
             END
@@ -78,7 +80,6 @@ with DAG(
         sql=dedent("""
         TRUNCATE "ODS_MARKETING".printer_bots_actions;
         INSERT INTO "ODS_MARKETING".printer_bots_actions    
-        SELECT
     gen_random_uuid() as uuid,
     action,
     path_from,
@@ -98,6 +99,7 @@ with DAG(
         SELECT value AS elem
         FROM jsonb_array_elements(
             CASE 
+                WHEN additional_data = '' THEN jsonb_build_array('{}'::jsonb)
                 WHEN jsonb_typeof(additional_data::jsonb) = 'array' THEN additional_data::jsonb
                 ELSE jsonb_build_array(additional_data::jsonb)
             END
@@ -127,6 +129,7 @@ with DAG(
         SELECT value AS elem
         FROM jsonb_array_elements(
             CASE 
+                WHEN additional_data = '' THEN jsonb_build_array('{}'::jsonb)
                 WHEN jsonb_typeof(additional_data::jsonb) = 'array' THEN additional_data::jsonb
                 ELSE jsonb_build_array(additional_data::jsonb)
             END
