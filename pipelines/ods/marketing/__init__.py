@@ -89,8 +89,8 @@ with DAG(
     COALESCE(elem->>'app_version', '')::VARCHAR AS app_version,
     COALESCE(elem->>'user_id', '0')::INT AS user_id,
     COALESCE(elem->>'surname', '')::VARCHAR AS surname,
-    COALESCE(elem->>'number', 0)::INT AS number,
-    COALESCE(elem->>'pin', 0)::INT AS pin,
+    COALESCE(elem->>'number', '0')::INT AS number,
+    COALESCE(elem->>'pin', '0')::INT AS pin,
     COALESCE(elem->>'status_code', NULL)::INT AS status_code,
     COALESCE(elem->>'description', NULL)::VARCHAR AS description,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
