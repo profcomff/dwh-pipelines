@@ -79,7 +79,8 @@ with DAG(
     printer_bots_actions = PostgresOperator(postgres_conn_id="postgres_dwh",
         sql=dedent("""
         TRUNCATE "ODS_MARKETING".printer_bots_actions;
-        INSERT INTO "ODS_MARKETING".printer_bots_actions    
+        INSERT INTO "ODS_MARKETING".printer_bots_actions  
+    SELECT 
     gen_random_uuid() as uuid,
     action,
     path_from,
