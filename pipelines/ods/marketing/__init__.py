@@ -87,7 +87,7 @@ with DAG(
     path_to,
     COALESCE(elem->>'status', '')::VARCHAR AS status,
     COALESCE(elem->>'app_version', '')::VARCHAR AS app_version,
-    COALESCE(elem->>'user_id', 0)::INT AS user_id,
+    COALESCE(elem->>'user_id', '0')::INT AS user_id,
     COALESCE(elem->>'surname', '')::VARCHAR AS surname,
     COALESCE(elem->>'number', 0)::INT AS number,
     COALESCE(elem->>'pin', 0)::INT AS pin,
