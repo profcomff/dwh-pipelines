@@ -8,7 +8,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 with DAG(
     dag_id="ODS_MARKETING_from_STG_MARKETING.actions_info",
     start_date=datetime(2025, 3, 1),
-    schedule=[Dataset("ODS.group")],
+    schedule=[Dataset("STG_MARKETING.actions_info")],
     catchup=False,
     tags=["ods", "core", "marketing", "frontend"],
     default_args={"owner": "zimovchik"},
@@ -55,8 +55,8 @@ with DAG(
     action,
     path_from,
     path_to,
-    COALESCE(elem->>'status', NULL)::VARCHAR AS status,
-    COALESCE(elem->>'app_version', NULL)::VARCHAR AS app_version,
+    COALESCE(elem->>'status', '')::VARCHAR AS status,
+    COALESCE(elem->>'app_version', '')::VARCHAR AS app_version,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
     "STG_MARKETING".actions_info,
@@ -84,12 +84,12 @@ with DAG(
     action,
     path_from,
     path_to,
-    COALESCE(elem->>'status', NULL)::VARCHAR AS status,
-    COALESCE(elem->>'app_version', NULL)::VARCHAR AS app_version,
-    COALESCE(elem->>'user_id', NULL)::INT AS user_id,
-    COALESCE(elem->>'surname', NULL)::VARCHAR AS surname,
-    COALESCE(elem->>'number', NULL)::INT AS number,
-    COALESCE(elem->>'pin', NULL)::INT AS pin,
+    COALESCE(elem->>'status', '')::VARCHAR AS status,
+    COALESCE(elem->>'app_version', '')::VARCHAR AS app_version,
+    COALESCE(elem->>'user_id', 0)::INT AS user_id,
+    COALESCE(elem->>'surname', '')::VARCHAR AS surname,
+    COALESCE(elem->>'number', 0)::INT AS number,
+    COALESCE(elem->>'pin', 0)::INT AS pin,
     COALESCE(elem->>'status_code', NULL)::INT AS status_code,
     COALESCE(elem->>'description', NULL)::VARCHAR AS description,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
@@ -119,9 +119,9 @@ with DAG(
     gen_random_uuid() as uuid,
     action,
     path_to,
-    COALESCE(elem->>'response_status_code', NULL)::INT AS response_status_code,
-    COALESCE(elem->>'auth_user_id', NULL)::VARCHAR AS user_id,
-    COALESCE(elem->>'query', NULL)::VARCHAR AS query,
+    COALESCE(elem->>'response_status_code', 0)::INT AS response_status_code,
+    COALESCE(elem->>'auth_user_id', 0)::VARCHAR AS user_id,
+    COALESCE(elem->>'query', '')::VARCHAR AS query,
     create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
     FROM 
     "STG_MARKETING".actions_info,
