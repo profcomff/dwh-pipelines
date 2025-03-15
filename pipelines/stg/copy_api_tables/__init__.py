@@ -528,3 +528,35 @@ with DAG(
             prev >> curr
         prev = curr
         prev >> tg_task
+
+
+with DAG(
+    dag_id="upload_api_redirector",
+    start_date=datetime(2024, 1, 1),
+    schedule="@daily",
+    catchup=False,
+    tags=["dwh", "stg", "redirect"],
+    default_args={
+        "owner": "dyakovri",
+        "retries": 2,
+        "retry_delay": timedelta(minutes=3)
+    },
+):
+    tables = ("link", "redirect_fact")
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
+    prev = None
+    for table in tables:
+        curr = copy_table_to_dwh.override(
+            task_id=f"copy-{table}",
+            outlets=[Dataset(f"STG_PRINT.{table}")],
+        )(
+            "api_redirector",
+            table,
+            "STG_REDIRECTOR",
+            table,
+        )
+        # Выставляем копирование по порядку
+        if prev:
+            prev >> curr
+        prev = curr
+        prev >> tg_task
