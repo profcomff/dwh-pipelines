@@ -1,0 +1,26 @@
+name: DAG tests
+
+on:
+  pull_request:
+
+
+jobs:
+  test-dags:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m ensurepip
+          python -m pip install --upgrade pip
+          pip install --upgrade -r requirements.txt
+      - name: Run tests
+        run: |
+          python -m pytest tests/
