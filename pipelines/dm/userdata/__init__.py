@@ -78,7 +78,7 @@ with DAG(
         postgres_conn_id="postgres_dwh",
         sql=dedent(
             """
-            DELETE FROM "DM_USER".union_member_card
+            DELETE FROM "DM_USER".union_member_card;
             INSERT INTO "DM_USER".union_member_card
             select 
             userdata.user_id as userdata_user_id,
