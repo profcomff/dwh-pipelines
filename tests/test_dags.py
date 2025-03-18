@@ -1,6 +1,7 @@
+import os
+
 import pytest
 from airflow.models import DagBag
-import os
 
 @pytest.fixture
 def dag_bag():
