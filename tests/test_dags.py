@@ -31,3 +31,4 @@ def test_dag_has_no_cycles(dag_bag):
     # Проверка, что DAG не содержит циклов (как должно быть по определению)
     for dag_id, dag in dag_bag.dags.items():
         assert dag.test_cycle() is None, f"Cycle detected in DAG {dag_id}"
+        
