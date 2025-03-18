@@ -1,0 +1,59 @@
+name: DAG tests
+
+on:
+  pull_request:
+
+
+jobs:
+  if: '!contains(github.event.head_commit.message, "skip-ci")'
+  test-dags:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m ensurepip
+          python -m pip install --upgrade pip
+          pip install --upgrade -r requirements.txt
+
+      - name: Get changed files
+        # id нужен для обращения к результату
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          separator: " "
+
+      # запуск тестов
+      - name: Run tests
+        run: |
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}" python -m pytest tests/.
+
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+      - uses: isort/isort-action@master
+        with:
+          requirementsFiles: "requirements.txt"
+      - uses: psf/black@stable
+      - name: Comment if linting failed
+        if: failure()
+        id: comment
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            :poop: Code linting failed, use `black` and `isort` to fix it.
+      - name: Fail
+        if: steps.comment.conclusion != 'failure' && steps.comment.conclusion != 'skipped'
+        run: exit 1
