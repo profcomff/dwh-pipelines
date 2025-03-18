@@ -36,6 +36,7 @@ jobs:
           CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}" python -m pytest tests/.
 
   linting:
+    if: "!contains(github.event.head_commit.message, 'skip test')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
