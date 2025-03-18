@@ -56,4 +56,3 @@ jobs:
       - name: Fail
         if: steps.comment.conclusion != 'failure' && steps.comment.conclusion != 'skipped'
         run: exit 1
-        
