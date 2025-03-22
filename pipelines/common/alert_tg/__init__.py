@@ -11,12 +11,12 @@ from airflow.models import Variable
 @task(task_id="send_alert_pending_comments", retries=3)
 def send_alert_pending_comments():
     token_bot = str(Variable.get("TGBOT_TOKEN"))
-    token_auth = str(Variable.get(""))
+    token_auth = str(Variable.get("TOKEN_ROBOT_TIMETABLE"))
 
     API_URLS = {  # Список Адресов
         "development": "http://localhost:8000/comment",
-        "testing": "...",
-        "production": "...",
+        "test": "https://api.test.profcomff.com/rating/comment",
+        "prod": "https://api.profcomff.com/rating/comment",
     }
     API_URL: str = API_URLS.get(
         str(Variable.get("_ENVIRONMENT")),
