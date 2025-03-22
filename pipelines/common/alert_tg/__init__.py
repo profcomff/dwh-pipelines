@@ -45,9 +45,9 @@ def send_alert_pending_comments():
         comments_ans = [
             {
                 "comment_uuid": comment["uuid"],
-                "user_id": f"👤 Автор_id: {comment["user_id"]}",
-                "subject": f'💬 Текст: "{comment["subject"]}"',
-                "url": f"🔗 {API_URL}/{comment["uuid"]}",
+                "user_id": f"👤 Автор_id: {comment['user_id']}",
+                "subject": f"💬 Текст: \"{comment['subject']}\"",
+                "url": f"🔗 {API_URL}/{comment['uuid']}",
             }
             for comment in comments
         ]
