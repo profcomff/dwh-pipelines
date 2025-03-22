@@ -2,7 +2,6 @@ import json
 import logging
 from urllib.parse import quote
 
-from sqlalchemy import create_engine
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
@@ -10,7 +9,7 @@ from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Connection, Variable
-
+from sqlalchemy import create_engine
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 MAX_ROWS_PER_REQUEST = 10_000

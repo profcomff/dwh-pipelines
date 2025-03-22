@@ -5,7 +5,6 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-
 with DAG(
     dag_id="ODS_TIMETABLE.ods_link_timetable_lesson",
     start_date=datetime(2024, 12, 7),
@@ -16,7 +15,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             -- truncate old state
             delete from "ODS_TIMETABLE".ods_link_timetable_lesson;
 
@@ -50,8 +50,12 @@ with DAG(
                     ) as dim_event
                 )
             where rn = 1
-        """),
+        """
+        ),
         task_id="execute_query",
-        inlets=[Dataset("ODS_TIMETABLE.ods_timetable_act"), Dataset("DM_TIMETABLE.dim_event_act")],
+        inlets=[
+            Dataset("ODS_TIMETABLE.ods_timetable_act"),
+            Dataset("DM_TIMETABLE.dim_event_act"),
+        ],
         outlets=[Dataset("ODS_TIMETABLE.ods_link_timetable_lesson")],
     )

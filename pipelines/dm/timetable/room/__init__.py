@@ -15,7 +15,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             -- truncate old state
             delete from "DM_TIMETABLE".dim_room_act
             where source_name = 'profcomff_timetable_api';
@@ -39,7 +40,8 @@ with DAG(
             where not is_deleted
             group by name, building, direction
             order by room_api_id
-        """),
+        """
+        ),
         task_id="execute_merge_statement",
         inlets=[Dataset("STG_TIMETABLE.room")],
         outlets=[Dataset("DM_TIMETABLE.dim_room_act")],
