@@ -5,18 +5,18 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-
 with DAG(
     dag_id="ODS_RATING.lecturer_user_comment",
     schedule=[Dataset("STG_RATING.lecturer_user_comment")],
-    start_date = datetime(2024, 11, 3),
+    start_date=datetime(2024, 11, 3),
     catchup=False,
     tags=["ods", "core", "rating", "lecturer_user_comment"],
     default_args={"owner": "mixx3"},
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             -- truncate old state
             delete from "ODS_RATING".lecturer_user_comment;
 
@@ -37,7 +37,8 @@ with DAG(
                 update_ts at time zone 'utc' at time zone 'Europe/Moscow' as update_ts
             from "STG_RATING".lecturer_user_comment
             limit 1000001;
-        """),
+        """
+        ),
         task_id="execute_query",
         inlets=[Dataset("STG_RATING.lecturer_user_comment")],
         outlets=[Dataset("ODS_RATING.lecturer_user_comment")],

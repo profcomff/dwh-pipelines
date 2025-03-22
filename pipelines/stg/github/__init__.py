@@ -124,7 +124,9 @@ def fetch_gh_repos():
         curr_df = get_all_gh_data(url, Variable.get("GITHUB_TOKEN"))
         curr_df["repo_id"] = repo_id
         commits_df = pd.concat([commits_df, curr_df])
-    commits_df['parents'] = commits_df['parents'].apply(lambda x: ', '.join(i['sha'] for i in x))
+    commits_df["parents"] = commits_df["parents"].apply(
+        lambda x: ", ".join(i["sha"] for i in x)
+    )
     upload_df(commits_df, "profcomff_commit")
 
     # Получаем ишьюсы
@@ -141,8 +143,12 @@ def fetch_gh_repos():
         },
         inplace=True,
     )
-    issues_df['labels'] = issues_df['labels'].apply(lambda x: ', '.join(i['name'] for i in x))
-    issues_df['assignees'] = issues_df['assignees'].apply(lambda x: ', '.join(i['login'] for i in x))
+    issues_df["labels"] = issues_df["labels"].apply(
+        lambda x: ", ".join(i["name"] for i in x)
+    )
+    issues_df["assignees"] = issues_df["assignees"].apply(
+        lambda x: ", ".join(i["login"] for i in x)
+    )
     upload_df(issues_df, "profcomff_issue")
 
 

@@ -1,22 +1,25 @@
-import logging
-from profcomff_parse_lib import (parse_timetable, parse_all, parse_name,
-                                 multiple_lessons, flatten, all_to_array,
-                                 completion, check_date, delete_lesson,
-                                 calc_date, post_event)
-import pandas as pd
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 import datetime
+import logging
 
 import pandas as pd
 import sqlalchemy as sa
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
-from profcomff_parse_lib import (all_to_array, calc_date, check_date,
-                                 completion, delete_lesson, dict_substitutions,
-                                 flatten, multiple_lessons, parse_all,
-                                 parse_name, parse_timetable, post_event)
+from profcomff_parse_lib import (
+    all_to_array,
+    calc_date,
+    check_date,
+    completion,
+    delete_lesson,
+    dict_substitutions,
+    flatten,
+    multiple_lessons,
+    parse_all,
+    parse_name,
+    parse_timetable,
+    post_event,
+)
 from sqlalchemy.dialects import postgresql
 
 DB_URI = (
@@ -33,7 +36,6 @@ import logging
 import sys
 
 import requests
-
 from profcomff_parse_lib.utilities import urls_api
 
 _logger = logging.getLogger(__name__)
@@ -53,11 +55,11 @@ def get_url_room(mode_, base):
     if mode_ == "get":
         return url + "/timetable/room/?limit=0&offset=0"
     if mode_ == "delete":
-        return url + '/timetable/room/'
+        return url + "/timetable/room/"
     if mode_ == "post":
-        return url + '/timetable/room/'
+        return url + "/timetable/room/"
     if mode_ == "patch":
-        return url + '/timetable/room/'
+        return url + "/timetable/room/"
 
 
 def get_url_group(mode_, base):
@@ -67,11 +69,11 @@ def get_url_group(mode_, base):
     if mode_ == "get":
         return url + "/timetable/group/?limit=0&offset=0"
     if mode_ == "delete":
-        return url + '/timetable/group/'
+        return url + "/timetable/group/"
     if mode_ == "post":
-        return url + '/timetable/group/'
+        return url + "/timetable/group/"
     if mode_ == "patch":
-        return url + '/timetable/group/'
+        return url + "/timetable/group/"
 
 
 def get_url_lecturer(mode_, base):
@@ -81,11 +83,11 @@ def get_url_lecturer(mode_, base):
     if mode_ == "get":
         return url + "/timetable/lecturer/?limit=0&offset=0"
     if mode_ == "delete":
-        return url + '/timetable/lecturer/'
+        return url + "/timetable/lecturer/"
     if mode_ == "post":
-        return url + '/timetable/lecturer/'
+        return url + "/timetable/lecturer/"
     if mode_ == "patch":
-        return url + '/timetable/lecturer/'
+        return url + "/timetable/lecturer/"
 
 
 def get_url_event(mode_, base):
@@ -95,11 +97,11 @@ def get_url_event(mode_, base):
     if mode_ == "get":
         return url + "/timetable/event/"
     if mode_ == "delete":
-        return url + '/timetable/event/'
+        return url + "/timetable/event/"
     if mode_ == "post":
-        return url+ '/timetable/event/'
+        return url + "/timetable/event/"
     if mode_ == "patch":
-        return url + '/timetable/event/'
+        return url + "/timetable/event/"
 
 
 def room_to_id(lessons, headers, base):
@@ -127,7 +129,9 @@ def room_to_id(lessons, headers, base):
                 # @mixx3 мы согласны на потери данных в таком случае
                 # _logger.critical("Ошибка, аудитория '{aud}' не найдена. Завершение работы".format(aud=row['place']))
                 # sys.exit()
-                _logger.info("Ошибка, аудитория '{aud}' не найдена. ".format(aud=row['place']))
+                _logger.info(
+                    "Ошибка, аудитория '{aud}' не найдена. ".format(aud=row["place"])
+                )
                 place[i][k] = -100  # чтобы не было ошибок в связях
     lessons["place"] = place
     return lessons
@@ -142,7 +146,6 @@ def group_to_id(lessons, headers, base):
     if base == "prod":
         url = "https://api.profcomff.com"
 
-
     response = requests.get(url + "/timetable/group/?limit=0&offset=0", headers=headers)
     groups = response.json()["items"]
 
@@ -156,13 +159,18 @@ def group_to_id(lessons, headers, base):
                     b = True
                     break
             if not b:
-                body = {"name": f"Группа # {row['group'][j]}", 'number': row['group'][j]}
-                response = requests.post(url + '/timetable/group/', headers=headers, json=body)
+                body = {
+                    "name": f"Группа # {row['group'][j]}",
+                    "number": row["group"][j],
+                }
+                response = requests.post(
+                    url + "/timetable/group/", headers=headers, json=body
+                )
                 if response.status_code == 200:
                     new_groups[i][j] = response.json()["id"]
-                    _logger.info(f'Новая группа: {response}')
+                    _logger.info(f"Новая группа: {response}")
                 else:
-                    _logger.info(f'error {response.text=}')
+                    _logger.info(f"error {response.text=}")
     lessons["group"] = new_groups
 
     return lessons
@@ -177,8 +185,9 @@ def teacher_to_id(lessons, headers, base):
     if base == "prod":
         url = "https://api.profcomff.com"
 
-
-    response = requests.get(url + "/timetable/lecturer/?limit=0&offset=0", headers=headers)
+    response = requests.get(
+        url + "/timetable/lecturer/?limit=0&offset=0", headers=headers
+    )
     teachers = response.json()["items"]
 
     new_teacher = lessons["teacher"].tolist()
@@ -187,20 +196,26 @@ def teacher_to_id(lessons, headers, base):
             b = False
             for teacher in teachers:
                 item = item_.split()
-                b1 = item[0] == teacher['last_name']
-                b2 = item[1][0] == teacher['first_name'][0]
-                b3 = item[2][0] == teacher['middle_name'][0]
+                b1 = item[0] == teacher["last_name"]
+                b2 = item[1][0] == teacher["first_name"][0]
+                b3 = item[2][0] == teacher["middle_name"][0]
                 b = b1 and b2 and b3
                 if b:
                     new_teacher[i][j] = teacher["id"]
                     break
             if not b:
                 item = item_.split()
-                body = {"first_name": item[1][0], "middle_name": item[2][0], "last_name": item[0], "description": "Преподаватель физического факультета" }
-                response = requests.post(url + '/timetable/lecturer/', headers=headers,
-                                            json=body)
+                body = {
+                    "first_name": item[1][0],
+                    "middle_name": item[2][0],
+                    "last_name": item[0],
+                    "description": "Преподаватель физического факультета",
+                }
+                response = requests.post(
+                    url + "/timetable/lecturer/", headers=headers, json=body
+                )
                 new_teacher[i][j] = response.json()["id"]
-                _logger.info(f'Новый преподаватель: {response}')
+                _logger.info(f"Новый преподаватель: {response}")
     lessons["teacher"] = new_teacher
 
     return lessons
@@ -400,7 +415,7 @@ def update():
     )
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
-        #event_id = post_event(headers, row, environment)
+        # event_id = post_event(headers, row, environment)
         event_id = []
         query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}]::integer[] WHERE id={new_id}'
         engine.execute(query)

@@ -1,30 +1,29 @@
 import logging
+from datetime import datetime
+from textwrap import dedent
+
+from airflow import DAG
+from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.datasets import Dataset
-
-from textwrap import dedent
-from datetime import datetime
-from airflow import DAG
-
-
 
 with DAG(
-    dag_id = 'DWH_RATING.comment',
+    dag_id="DWH_RATING.comment",
     schedule=[Dataset("ODS_RATING.comment")],
     tags=["dwh", "core", "rating", "comment"],
-    start_date = datetime(2024, 11, 3),
+    start_date=datetime(2024, 11, 3),
     catchup=False,
-    description='scd2_comment_hist',
-    default_args = {
-        'retries': 1,
-        'owner':'mixx3',
+    description="scd2_comment_hist",
+    default_args={
+        "retries": 1,
+        "owner": "mixx3",
     },
 ):
     PostgresOperator(
-        task_id='comment_hist',
+        task_id="comment_hist",
         postgres_conn_id="postgres_dwh",
-        sql=dedent("""
+        sql=dedent(
+            """
         -- close records
         update "DWH_RATING".comment as comment
         set valid_to_dt = '{{ ds }}'::Date
@@ -69,7 +68,8 @@ with DAG(
               dwh.api_uuid is NULL
               or dwh.valid_to_dt='{{ ds }}'::Date
         LIMIT 10000000; -- чтобы не раздуло
-        """),
-        inlets = [Dataset("ODS_RATING.comment")],
-        outlets = [Dataset("DWH_RATING.comment")],
+        """
+        ),
+        inlets=[Dataset("ODS_RATING.comment")],
+        outlets=[Dataset("DWH_RATING.comment")],
     )

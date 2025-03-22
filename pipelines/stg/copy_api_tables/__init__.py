@@ -3,7 +3,6 @@ import logging
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 
-from sqlalchemy import create_engine
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
@@ -11,7 +10,7 @@ from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Connection, Variable
-
+from sqlalchemy import create_engine
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 MAX_ROWS_PER_REQUEST = 10_000
@@ -159,7 +158,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = "achievement", "achievement_reciever"
@@ -230,7 +229,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = "actions_info", "user"
@@ -262,7 +261,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = "file", "print_fact", "union_member"
@@ -294,7 +293,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = "button", "category", "scope"
@@ -326,7 +325,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = (
@@ -366,7 +365,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = (
@@ -475,7 +474,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = ("tg_user",)
@@ -507,7 +506,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = ("vk_user",)
@@ -539,7 +538,7 @@ with DAG(
     default_args={
         "owner": "dyakovri",
         "retries": 2,
-        "retry_delay": timedelta(minutes=3)
+        "retry_delay": timedelta(minutes=3),
     },
 ):
     tables = ("link", "redirect_fact")

@@ -5,17 +5,18 @@
 
 import logging
 import uuid
-from typing import Any, List, Dict
 from datetime import datetime, timedelta
+from typing import Any, Dict, List
+
 import pandas as pd
-import sqlalchemy as sa
 import requests
-from bs4 import BeautifulSoup
+import sqlalchemy as sa
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
-from airflow.models import Connection, Variable
 from airflow.exceptions import AirflowException
+from airflow.models import Connection, Variable
+from bs4 import BeautifulSoup
 
 _logger = logging.getLogger(__name__)
 
@@ -316,7 +317,7 @@ def raw_timetable_parse():
             result.append(group_result)
     result = pd.concat(result, ignore_index=True)
     logging.info(result.info(verbose=True))
-    result['id'] = [uuid.uuid4() for _ in range(len(result.index))]
+    result["id"] = [uuid.uuid4() for _ in range(len(result.index))]
     result.to_sql(
         "ods_timetable_act",
         schema="ODS_TIMETABLE",

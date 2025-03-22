@@ -1,15 +1,15 @@
 import logging
 from datetime import datetime, timedelta
+from json import dumps
+
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
-from airflow.models import Connection, Variable
 from airflow.exceptions import AirflowException
-from json import dumps
-
+from airflow.models import Connection, Variable
 
 # [[курс, поток, количество групп], ...]
 SOURCES = [

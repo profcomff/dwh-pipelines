@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from textwrap import dedent
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+
 from airflow import DAG
 from airflow.datasets import Dataset
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 with DAG(
     dag_id="DM_USER.unionmembers_join_with_users",
