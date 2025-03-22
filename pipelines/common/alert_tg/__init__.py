@@ -42,22 +42,29 @@ def send_alert_pending_comments():
             logging.info("No pending comments")
             break
 
-        comments_ans = [
-            {
-                "comment_uuid": comment["uuid"],
-                "user_id": f"👤 Автор_id: {comment['user_id']}",
-                "subject": f"💬 Текст: \"{comment['subject']}\"",
-                "url": f"🔗 {API_URL}/{comment['uuid']}",
-            }
+        comments_ans = "\n\n".join(
+            f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Текст: \"{comment['subject']}\" \n 🔗 {API_URL}/{comment['uuid']}"
             for comment in comments
-        ]
+        )
+        # comments_ans = [
+        #     {
+        #         "comment_uuid": comment["uuid"],
+        #         "user_id": f"👤 Автор_id: {comment['user_id']}",
+        #         "subject": f"💬 Текст: \"{comment['subject']}\"",
+        #         "url": f"🔗 {API_URL}/{comment['uuid']}",
+        #     }
+        #     for comment in comments
+        # ]
 
-        message_json = json.dumps(comments_ans)
-        logging.info(message_json)
+        # message_json = json.dumps(comments_ans)
+        # logging.info(message_json)
 
         req = requests.post(
             f"https://api.telegram.org/bot{token_bot}/sendMessage",
-            json=message_json,
+            json={
+                "chat_id": int(Variable.get("TG_CHAT_MANAGERS")),
+                "text": comments_ans,
+            },
         )
         logging.info("Bot send message status %d (%s)", req.status_code, req.text)
         req.raise_for_status()
