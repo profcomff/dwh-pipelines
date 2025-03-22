@@ -107,3 +107,27 @@ with DAG(
         inlets = [Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
         outlets = [Dataset("DWH_USER_INFO.info")],
     )
+
+sql_sorting_for_DWH = """
+select * from "fail".dag
+"""
+
+with DAG(
+    dag_id = 'DWH_USER_INFO.failed',
+    start_date = datetime(2024, 10, 1),
+    catchup=False,
+    tags=["dwh", "core", "user_info"],
+    description='failed',
+    default_args = {
+        'retries': 1,
+        'owner':'redstoneenjoyer',
+        "on_failure_callback": lambda: send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS"))),
+    },
+):
+    PostgresOperator(
+        task_id='execute_sql_for_data_corr',
+        postgres_conn_id="postgres_dwh",
+        sql=dedent(sql_sorting_for_DWH),
+        inlets = [Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
+        outlets = [Dataset("DWH_USER_INFO.info")],
+    )
