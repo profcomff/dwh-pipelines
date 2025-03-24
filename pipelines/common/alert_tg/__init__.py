@@ -51,9 +51,11 @@ def send_alert_pending_comments():
     if str(Variable.get("_ENVIRONMENT")) == "test":
         count_comments = 0
         while True:
-            count_comments += len(fetch_comments())
+            comments = fetch_comments()
             if not comments:
                 break
+
+            count_comments += len(comments)
             payload["offset"] += batch_size
 
         # Отправка в бота
