@@ -58,8 +58,8 @@ def send_alert_pending_comments():
 
         # Отправка в бота
         send_comments(API_TG_URL, 
-                      text=f'TEST: {count_comments} новых комметариев')  
-
+                      text=f'TEST: {count_comments} новых комметариев')
+    
     elif str(Variable.get("_ENVIRONMENT")) == "prod":
         while True:
             comments = fetch_comments()
