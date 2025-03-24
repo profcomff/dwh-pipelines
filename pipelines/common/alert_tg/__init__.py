@@ -49,9 +49,16 @@ def send_alert_pending_comments():
 
 
     if str(Variable.get("_ENVIRONMENT")) == "test":
+        count_comments = 0
+        while True:
+            count_comments += len(fetch_comments())
+            if not comments:
+                break
+            payload["offset"] += batch_size
+
         # Отправка в бота
         send_comments(API_TG_URL, 
-                      text=f'TEST: {len(fetch_comments())} новых комметариев')  
+                      text=f'TEST: {count_comments} новых комметариев')  
 
     elif str(Variable.get("_ENVIRONMENT")) == "prod":
         while True:
