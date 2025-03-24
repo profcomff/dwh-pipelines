@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import datetime
 
@@ -13,52 +12,63 @@ def send_alert_pending_comments():
     token_bot = str(Variable.get("TGBOT_TOKEN"))
     token_auth = str(Variable.get("TOKEN_ROBOT_TIMETABLE"))
 
-    API_URLS = {  # Список Адресов
+    API_APP_URLS = {  # Список Адресов
         "development": "http://localhost:8000/comment",
         "test": "https://api.test.profcomff.com/rating/comment",
         "prod": "https://api.profcomff.com/rating/comment",
     }
-    API_URL: str = API_URLS.get(
+    API_APP_URL: str = API_APP_URLS.get(
         str(Variable.get("_ENVIRONMENT")),
-        API_URLS["development"],  # Получаем url через переменную в окружении
+        API_APP_URLS["development"],  # Получаем url через переменную в окружении
     )
+    API_TG_URL = f"https://api.telegram.org/bot{token_bot}/sendMessage"
 
-    batch_size = 3  # Количество строк в одном батче
+    batch_size = 5  # Количество строк в одном батче
     payload = {"limit": batch_size, "offset": 0, "unreviewed": True}
     headers = {"Authorization": token_auth, "accept": "application/json"}
 
     def fetch_comments():
         """Запрашивает комментарии и возвращает их в виде списка кортежей (uuid, user_id, subject)."""
-        response = requests.get(API_URL, params=payload, headers=headers)
+        response = requests.get(API_APP_URL, params=payload, headers=headers)
         if response.status_code != 200:
             logging.error("Ошибка запроса: %s", response.text)
             return []
 
         return response.json().get("comments", [])
 
-    while True:
-        comments = fetch_comments()
-        if not comments:
-            logging.info("No pending comments")
-            break
-
-        comments_ans = "\n\n".join(
-            f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Текст: \"{comment['subject']}\" \n 🔗 {API_URL}/{comment['uuid']}"
-            for comment in comments
-        )
-        
+    def send_comments(url: str, text: str) -> None:
         req = requests.post(
-            f"https://api.telegram.org/bot{token_bot}/sendMessage",
+            url=url,
             json={
-                # "chat_id": int(Variable.get("TG_CHAT_MANAGERS")),
-                "chat_id": 4631087944,
-                "text": comments_ans,
+                "chat_id": int(Variable.get("TG_CHAT_PENDING_COMMENTS")),   # "chat_id": -4631087944 OR -1004631087944
+                "text": text,
             },
         )
-        logging.info("Bot send message status %d (%s)", req.status_code, req.text)
         req.raise_for_status()
+        logging.info("Bot send message status %d (%s)", req.status_code, req.text)
 
-        payload["offset"] += batch_size
+
+    if str(Variable.get("_ENVIRONMENT")) == "test":
+        # Отправка в бота
+        send_comments(API_TG_URL, 
+                      text=f'TEST: {len(fetch_comments())} новых комметариев')  
+
+    elif str(Variable.get("_ENVIRONMENT")) == "prod":
+        while True:
+            comments = fetch_comments()
+            if not comments:
+                logging.info("No pending comments")
+                break
+
+            comments_ans = "\n\n".join(
+                f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Текст: \"{comment['subject']}\" \n 🔗 {API_APP_URL.replace('api', 'app', 1)}/{comment['uuid']}"
+                for comment in comments
+            )
+
+            send_comments(API_TG_URL, comments_ans)  # Отправка в бота
+            payload["offset"] += batch_size
+    else:
+        pass  # Хз че тут написать, какую логику, Если запускать локально
 
 
 with DAG(
