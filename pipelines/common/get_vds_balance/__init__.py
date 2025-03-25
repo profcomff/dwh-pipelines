@@ -8,8 +8,9 @@ from airflow.models import Variable
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
-def send_message_on_failure(chat_id):
+def send_message_on_failure(context):
     token = str(Variable.get("TGBOT_TOKEN"))
+    chat_id = int(Variable.get("TG_CHAT_MANAGERS"))
     # Параметры сообщения
     dag_id = context['dag'].dag_id
     owner = context['dag'].owner
@@ -87,8 +88,7 @@ with DAG(
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": lambda: send_message_on_failure(int(Variable.get("TG_CHAT_MANAGERS")))
-
+        "on_failure_callback": send_message_on_failure,
     },
 ) as dag:
     balance = get_balance()
