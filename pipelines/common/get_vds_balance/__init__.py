@@ -10,7 +10,7 @@ ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
 def send_message_on_failure(context):
     token = str(Variable.get("TGBOT_TOKEN"))
-    chat_id = int(Variable.get("TG_CHAT_MANAGERS"))
+    chat_id = int(Variable.get("TG_CHAT_DWH"))
     # Параметры сообщения
     dag_id = context['dag'].dag_id
     owner = context['dag'].owner
@@ -29,16 +29,15 @@ def send_message_on_failure(context):
         "text": message,
         "parse_mode": "MarkdownV2",
     }
-    logging.info(msg) # Логирование
+    logging.info(msg)
     # Отправлка сообщения через api телеграма
     try:
         req = r.post(tg_api_url, json=msg, timeout=10)
         req.raise_for_status()
     except Exception as e:
-        logging.error(f"Telegram API error: {str(e)}") # Логирование при ошибке
+        logging.error(f"Telegram API error: {str(e)}")
 
-    logging.info("Bot send message status %d (%s)", req.status_code, req.text) # Логирование
-    req.raise_for_status()
+    logging.info("Bot send message status %d (%s)", req.status_code, req.text)
 
 @task(task_id="send_telegram_message", retries=3)
 def send_telegram_message_or_print(chat_id, balance):
