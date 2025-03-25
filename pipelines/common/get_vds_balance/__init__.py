@@ -6,6 +6,38 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
 
+ENVIRONMENT = Variable.get("_ENVIRONMENT")
+
+def send_message_on_failure(chat_id):
+    token = str(Variable.get("TGBOT_TOKEN"))
+    # Параметры сообщения
+    dag_id = context['dag'].dag_id
+    owner = context['dag'].owner
+    
+    message = f"🚨 DAG Failed 🚨\n\nDAG ID {dag_url}: {dag_id}\nOwner: {owner}"
+    tg_api_url = f"https://api.telegram.org/bot{token}/sendMessage"
+
+    if ENVIRONMENT == "prod":
+        dag_url = f"https://airflow.profcomff.com/dags/{dag_id}/grid"
+    else:
+        dag_url = f"https://airflow.test.profcomff.com/dags/{dag_id}/grid" 
+
+
+    msg = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "MarkdownV2",
+    }
+    logging.info(msg) # Логирование
+    # Отправлка сообщения через api телеграма
+    try:
+        req = r.post(tg_api_url, json=msg, timeout=10)
+        req.raise_for_status()
+    except Exception as e:
+        logging.error(f"Telegram API error: {str(e)}") # Логирование при ошибке
+
+    logging.info("Bot send message status %d (%s)", req.status_code, req.text) # Логирование
+    req.raise_for_status()
 
 @task(task_id="send_telegram_message", retries=3)
 def send_telegram_message_or_print(chat_id, balance):
@@ -55,6 +87,8 @@ with DAG(
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
+        "on_failure_callback": lambda: send_message_on_failure(int(Variable.get("TG_CHAT_MANAGERS")))
+
     },
 ) as dag:
     balance = get_balance()
