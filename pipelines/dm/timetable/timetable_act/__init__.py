@@ -4,7 +4,6 @@ from textwrap import dedent
 from airflow import DAG, Dataset
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-
 with DAG(
     dag_id="DM_TIMETABLE.dm_timetable_act",
     start_date=datetime(2024, 12, 15),
@@ -20,7 +19,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             -- truncate old state
             delete from "DM_TIMETABLE".dm_timetable_act;
 
@@ -99,7 +99,8 @@ with DAG(
                 where source_name = 'profcomff_timetable_api'
             ) as dim_lecturer
             on link_teacher.teacher_id = dim_lecturer.id;
-        """),
+        """
+        ),
         task_id="execute_merge_statement",
         inlets=[
             Dataset("ODS_TIMETABLE.ods_link_timetable_room"),

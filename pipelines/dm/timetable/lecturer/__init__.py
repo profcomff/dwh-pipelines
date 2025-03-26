@@ -5,7 +5,6 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-
 with DAG(
     dag_id="DM_TIMETABLE.dim_lecturer_act__from_api",
     start_date=datetime(2024, 11, 1),
@@ -16,7 +15,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             -- truncate old state
             delete from "DM_TIMETABLE".dim_lecturer_act
             where source_name = 'profcomff_timetable_api';
@@ -44,7 +44,8 @@ with DAG(
             where not is_deleted
             group by first_name, middle_name, last_name
             order by lecturer_api_id
-        """),
+        """
+        ),
         task_id="execute_merge_statement",
         inlets=[Dataset("STG_TIMETABLE.lecturer")],
         outlets=[Dataset("DM_TIMETABLE.dim_lecturer_act")],
@@ -60,7 +61,8 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(r"""
+        sql=dedent(
+            r"""
             -- truncate old state
             delete from "DM_TIMETABLE".dim_lecturer_act
             where source_name = 'dubinushka_manual';
@@ -84,7 +86,8 @@ with DAG(
                     STRING_TO_ARRAY(surname, ' ') as s 
                     FROM "STG_DUBINUSHKA_MANUAL".lecturer
                 )
-        """),
+        """
+        ),
         task_id="execute_merge_statement",
         inlets=[Dataset("STG_DUBINUSHKA_MANUAL.lecturer")],
         outlets=[Dataset("DM_TIMETABLE.dim_lecturer_act")],

@@ -1,11 +1,11 @@
 import logging
+from datetime import datetime
+from textwrap import dedent
+
+from airflow import DAG
+from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.datasets import Dataset
-
-from textwrap import dedent
-from datetime import datetime
-from airflow import DAG
 
 sql_sorting_for_DWH = """
 insert into "DWH_USER_INFO".info (
@@ -89,21 +89,21 @@ on conflict (user_id) do update set
 """
 
 with DAG(
-    dag_id = 'DWH_USER_INFO.info',
-    start_date = datetime(2024, 10, 1),
+    dag_id="DWH_USER_INFO.info",
+    start_date=datetime(2024, 10, 1),
     schedule=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
     catchup=False,
     tags=["dwh", "core", "user_info"],
-    description='union_members_data_format_correction',
-    default_args = {
-        'retries': 1,
-        'owner':'redstoneenjoyer',
+    description="union_members_data_format_correction",
+    default_args={
+        "retries": 1,
+        "owner": "redstoneenjoyer",
     },
 ):
     PostgresOperator(
-        task_id='execute_sql_for_data_corr',
+        task_id="execute_sql_for_data_corr",
         postgres_conn_id="postgres_dwh",
         sql=dedent(sql_sorting_for_DWH),
-        inlets = [Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
-        outlets = [Dataset("DWH_USER_INFO.info")],
+        inlets=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
+        outlets=[Dataset("DWH_USER_INFO.info")],
     )
