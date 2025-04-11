@@ -7,7 +7,7 @@ from textwrap import dedent
 with DAG(
         dag_id="DM_MARKETING.frontend_actions_services",
         start_date=datetime(2025, 4, 10),
-        schedule="@once",
+        schedule=[Dataset("ODS_MARKETING.frontend_actions")],
         catchup=False,
         tags=["dm", "marketing"],
         default_args={
