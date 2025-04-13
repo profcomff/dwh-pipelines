@@ -26,7 +26,7 @@ with DAG(
     PostgresOperator(
         task_id="merginng_and_inserting_into_ODS_INFO",
         postgres_conn_id="postgres_dwh",
-        sql='merging.sql',
+        sql='info.sql',
         inlets=[
             Dataset("DWH_USER_INFO.info"),
             Dataset("ODS_AUTH.auth_method"),
