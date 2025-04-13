@@ -157,8 +157,10 @@ with DAG(
     tags=["dwh", "stg", "achievement"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = "achievement", "achievement_reciever"
@@ -228,8 +230,10 @@ with DAG(
     tags=["dwh", "stg", "marketing"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = "actions_info", "user"
@@ -260,8 +264,10 @@ with DAG(
     tags=["dwh", "stg", "print"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = "file", "print_fact", "union_member"
@@ -292,8 +298,10 @@ with DAG(
     tags=["dwh", "stg", "service"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = "button", "category", "scope"
@@ -324,8 +332,10 @@ with DAG(
     tags=["dwh", "stg", "social"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = (
@@ -364,8 +374,10 @@ with DAG(
     tags=["dwh", "stg", "timetable"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = (
@@ -473,8 +485,10 @@ with DAG(
     tags=["dwh", "stg", "print"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = ("tg_user",)
@@ -505,8 +519,10 @@ with DAG(
     tags=["dwh", "stg", "print"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = ("vk_user",)
@@ -537,8 +553,10 @@ with DAG(
     tags=["dwh", "stg", "redirect"],
     default_args={
         "owner": "dyakovri",
-        "retries": 2,
+        "retries": 5,
         "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+
     },
 ):
     tables = ("link", "redirect_fact")
