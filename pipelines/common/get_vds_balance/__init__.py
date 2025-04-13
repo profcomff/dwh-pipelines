@@ -8,21 +8,21 @@ from airflow.models import Variable
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
+
 def send_message_on_failure(context):
     token = str(Variable.get("TGBOT_TOKEN"))
     chat_id = int(Variable.get("TG_CHAT_DWH"))
     # Параметры сообщения
-    dag_id = context['dag'].dag_id
-    owner = context['dag'].owner
-    
+    dag_id = context["dag"].dag_id
+    owner = context["dag"].owner
+
     message = f"🚨 DAG Failed 🚨\n\nDAG ID {dag_url}: {dag_id}\nOwner: {owner}"
     tg_api_url = f"https://api.telegram.org/bot{token}/sendMessage"
 
     if ENVIRONMENT == "prod":
         dag_url = f"https://airflow.profcomff.com/dags/{dag_id}/grid"
     else:
-        dag_url = f"https://airflow.test.profcomff.com/dags/{dag_id}/grid" 
-
+        dag_url = f"https://airflow.test.profcomff.com/dags/{dag_id}/grid"
 
     msg = {
         "chat_id": chat_id,
@@ -38,6 +38,7 @@ def send_message_on_failure(context):
         logging.error(f"Telegram API error: {str(e)}")
 
     logging.info("Bot send message status %d (%s)", req.status_code, req.text)
+
 
 @task(task_id="send_telegram_message", retries=3)
 def send_telegram_message_or_print(chat_id, balance):
