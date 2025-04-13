@@ -47,7 +47,7 @@ LESSONS_ROUTE = API_URL + "public_content/lessons"
 )
 def flatten_timetable():
     sql_engine = sa.create_engine(DB_DSN)
-    with open(timetable.sql, 'r') as f:
+    with open(timetable.sql, "r") as f:
         sql_schema = f.read()
     sql_engine.execute(sql_schema)
     return Dataset("ODS_MYMSUAPI.ods_timetable_api_flattened")

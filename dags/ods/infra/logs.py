@@ -14,7 +14,7 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql='logs.sql',
+        sql="logs.sql",
         task_id="execute_insert_statement",
         inlets=[Dataset("STG_INFRA.container_log")],
         outlets=[Dataset("ODS_INFRA_LOGS.container_log")],

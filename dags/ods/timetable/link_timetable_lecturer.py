@@ -15,7 +15,7 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql='link_timetable_lecturer.sql',
+        sql="link_timetable_lecturer.sql",
         task_id="execute_query",
         inlets=[
             Dataset("ODS_TIMETABLE.ods_timetable_act"),

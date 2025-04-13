@@ -22,7 +22,7 @@ with DAG(
     PostgresOperator(
         task_id="lecturer_hist",
         postgres_conn_id="postgres_dwh",
-        sql='lecturer.sql',
+        sql="lecturer.sql",
         inlets=[Dataset("ODS_RATING.lecturer")],
         outlets=[Dataset("DWH_RATING.lecturer")],
     )
