@@ -1,7 +1,8 @@
+delete from "ODS_SOCIAL".lecturer;
+INSERT INTO "ODS_SOCIAL".lecturer
 SELECT 
-	-- message::jsonb->'message'->'chat'->>'title'as chat_title,
+    gen_random_uuid() as uuid,
 	message::jsonb->'message'->'reply_to_message'->>'message_thread_id' as thread_id,
-	-- any_value(message::jsonb->'message'->>'text') as txt,
 	coalesce(
 		case
 			when message::jsonb->'message'->'reply_to_message'->>'message_thread_id' = '22151' then 'Frontend'

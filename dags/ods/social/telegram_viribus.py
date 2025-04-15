@@ -6,7 +6,7 @@ from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 with DAG(
-    dag_id="ODS_SOCIAL.viribus_chat",
+    dag_id="ODS_SOCIAL.lecturer",
     schedule=[Dataset("TG_SOCIAL.webhook_storage")],
     start_date=datetime(2024, 11, 3),
     catchup=False,
@@ -18,5 +18,5 @@ with DAG(
         sql="telegram_viribus.sql",
         task_id="execute_query",
         inlets=[Dataset("STG_SOCIAL.webhook_storage")],
-        outlets=[Dataset("ODS_SOCIAL.viribus_chat")],
+        outlets=[Dataset("ODS_SOCIAL.lecturer")],
     )
