@@ -1,7 +1,7 @@
+delete from "ODS_SOCIAL".viribus_chat;
+INSERT INTO "ODS_SOCIAL".viribus_chat
 SELECT 
-	-- message::jsonb->'message'->'chat'->>'title'as chat_title,
-	message::jsonb->'message'->'reply_to_message'->>'message_thread_id' as thread_id,
-	-- any_value(message::jsonb->'message'->>'text') as txt,
+    gen_random_uuid() as uuid,
 	coalesce(
 		case
 			when message::jsonb->'message'->'reply_to_message'->>'message_thread_id' = '22151' then 'Frontend'
@@ -39,5 +39,4 @@ where
 	1=1
 	and system = 'TELEGRAM'
 	and message::jsonb->'message'->'chat'->>'title' = 'Viribus Unitis'
-	and event_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' between '2025-04-01'::Date and '2025-04-15'::Date
-
+	and event_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' between '2025-04-01'::Date and '2025-04-15'::Date;
