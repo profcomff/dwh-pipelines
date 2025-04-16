@@ -1,4 +1,9 @@
-from copy_api_tables import *
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.datasets import Dataset
+from airflow.models import Variable
+
+from copy_api_tables import send_telegram_message, copy_table_to_dwh
 
 with DAG(
     dag_id="upload_api_achievement",
