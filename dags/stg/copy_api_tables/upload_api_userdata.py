@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.datasets import Dataset
+from airflow.decorators import task
 from airflow.models import Variable
 
 from plugins.api_utils import send_telegram_message as send_msg, copy_table_to_dwh as copy_tbl
@@ -14,29 +15,29 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     return copy_tbl(from_schema, from_table, to_schema, to_table)
 
 with DAG(
-    dag_id="upload_api_achievement",
+    dag_id="upload_api_userdata",
     start_date=datetime(2024, 1, 1),
     schedule="@daily",
     catchup=False,
-    tags=["dwh", "stg", "achievement"],
-    default_args={
-        "owner": "dyakovri",
-        "retries": 5,
-        "retry_delay": timedelta(minutes=3),
-        "retry_exponential_backoff": True,
-    },
+    tags=["dwh", "stg", "userdata"],
+    default_args={"owner": "dyakovri"},
 ):
-    tables = "achievement", "achievement_reciever"
+    tables = (
+        "category",
+        "info",
+        "param",
+        "source",
+    )
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
             task_id=f"copy-{table}",
-            outlets=[Dataset(f"STG_ACHIEVEMENT.{table}")],
+            outlets=[Dataset(f"STG_USERDATA.{table}")],
         )(
-            "api_achievement",
+            "api_userdata",
             table,
-            "STG_ACHIEVEMENT",
+            "STG_USERDATA",
             table,
         )
         # Выставляем копирование по порядку
