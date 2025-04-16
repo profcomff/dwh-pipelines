@@ -14,7 +14,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     return copy_tbl(from_schema, from_table, to_schema, to_table)
 
 with DAG(
-    dag_id="upload_api_achievement",
+    dag_id="upload_api_achievement_reworked",
     start_date=datetime(2024, 1, 1),
     schedule="@daily",
     catchup=False,
