@@ -1,7 +1,7 @@
 from copy_api_tables import *
 
 with DAG(
-    dag_id="upload_api_achievement",
+    dag_id="upload_api_achievement_reworked",
     start_date=datetime(2024, 1, 1),
     schedule="@daily",
     catchup=False,
