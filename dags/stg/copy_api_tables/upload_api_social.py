@@ -53,3 +53,4 @@ with DAG(
             prev >> curr
         prev = curr
         prev >> tg_task
+    
