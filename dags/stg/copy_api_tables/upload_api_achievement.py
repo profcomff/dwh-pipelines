@@ -3,7 +3,7 @@ from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.models import Variable
 
-from copy_api_tables import send_telegram_message, copy_table_to_dwh
+from plugins.api_utils import send_telegram_message, copy_table_to_dwh
 
 with DAG(
     dag_id="upload_api_achievement",

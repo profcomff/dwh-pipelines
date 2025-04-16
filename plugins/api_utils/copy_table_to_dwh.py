@@ -1,18 +1,12 @@
 import json
 import logging
-from datetime import UTC, datetime, timedelta
-from urllib.parse import quote
+from typing import Set, Tuple
 
 import pandas as pd
-import requests as r
 import sqlalchemy as sa
-from airflow import DAG
-from airflow.datasets import Dataset
-from airflow.decorators import task
-from airflow.models import Connection, Variable
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from airflow.models import Connection
 
-ENVIRONMENT = Variable.get("_ENVIRONMENT")
 MAX_ROWS_PER_REQUEST = 10_000
 
 API_DB_DSN = (
@@ -29,46 +23,6 @@ DWH_DB_DSN = (
     .replace("?__extra__=%7B%7D", "")
 )
 
-
-def get_graph_link(context):
-    base_url = (
-        "https://airflow.profcomff.com"
-        if ENVIRONMENT == "prod"
-        else "https://airflow.test.profcomff.com"
-    )
-    dag_id = context["dag"].dag_id
-    dag_run_id = context["dag_run"].run_id
-    dag_run_id = quote(dag_run_id)
-    return f"{base_url}/dags/{dag_id}/grid?dag_run_id={dag_run_id}&tab=graph"
-
-
-@task(task_id="send_telegram_message", trigger_rule="one_failed")
-def send_telegram_message(chat_id, **context):
-    url = get_graph_link(context)
-    url = (
-        url.replace("=", "\\=")
-        .replace("-", "\\-")
-        .replace("+", "\\+")
-        .replace(".", "\\.")
-        .replace("_", "\\_")
-    )
-
-    token = str(Variable.get("TGBOT_TOKEN"))
-    msg = {
-        "chat_id": chat_id,
-        "text": f"Не все данные удалось скопировать в DWH из БД API\nГраф исполнения: {url}",
-        "parse_mode": "MarkdownV2",
-    }
-    logging.info(msg)
-    req = r.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        json=msg,
-    )
-    logging.info("Bot send message status %d (%s)", req.status_code, req.text)
-    req.raise_for_status()
-
-
-@task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0)
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     logging.info(
         f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}"
