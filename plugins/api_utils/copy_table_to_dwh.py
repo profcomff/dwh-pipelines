@@ -23,6 +23,7 @@ DWH_DB_DSN = (
     .replace("?__extra__=%7B%7D", "")
 )
 
+
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     logging.info(
         f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}"
