@@ -7,7 +7,7 @@ on:
 jobs:
   test-dags:
     name: Run DAG tests
-    if: '!contains(github.event.head_commit.message, skip-ci)'
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
 
     runs-on: ubuntu-latest
 
