@@ -6,8 +6,7 @@ on:
 jobs:
   test-dags:
     name: Run DAG tests
-    if: "!contains(github.event.head_commit.message, 'skip-ci')"
-
+    if: ${{ !contains(github.event.pull_request.title, 'skip-ci') && !contains(github.event.pull_request.body, 'skip-ci') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -26,26 +25,23 @@ jobs:
           pip install --upgrade -r requirements.txt
 
       - name: Get changed files
-        # id нужен для обращения к результату
         id: changed-files
         uses: tj-actions/changed-files@v35
         with:
           separator: " "
 
-      # запуск тестов
       - name: Run tests
         run: |
           CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}" python -m pytest tests/.
 
   linting:
     name: Linting checks
-    if: "!contains(github.event.head_commit.message, 'skip-ci')"
-
+    if: ${{ !contains(github.event.pull_request.title, 'skip-ci') && !contains(github.event.pull_request.body, 'skip-ci') }}
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
       - uses: isort/isort-action@master
