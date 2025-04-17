@@ -46,6 +46,7 @@ with DAG(
 				LEFT JOIN "STG_SERVICES".button AS b_from
 					ON SPLIT_PART(fa.path_from::text, '/', -1) = b_from.id::text
                 WHERE fa.path_to ILIKE '%apps%'
+                limit 1000000
             ) AS fa;
         """
         ),
