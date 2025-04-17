@@ -3,7 +3,6 @@ name: DAG tests
 on:
   pull_request:
 
-
 jobs:
   test-dags:
     name: Run DAG tests
@@ -40,7 +39,10 @@ jobs:
 
   linting:
     name: Linting checks
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v2
