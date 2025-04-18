@@ -3,14 +3,12 @@ from airflow import DAG
 from airflow.decorators import task
 from mymsuapi_timetable_task import get_timetable_for_semester_to_db
 
-from plugins.api_utils import get_timetable_for_semester_to_db as get_timetbl
+from plugins.api_utils import get_timetable_for_semester_to_db
 
-@task(
+get_timetable_for_semester_to_db = task(
     task_id="STG_MYMSUAPI.raw_timetable_apir",
-    outlets=Dataset("STG_MYMSUAPI.raw_timetable_api"),
-)
-def get_timetable_for_semester_to_db():
-    return get_timetbl()
+    outlets=Dataset("STG_MYMSUAPI.raw_timetable_api")
+)(get_timetable_for_semester_to_db)
 
 with DAG(
     dag_id="download_mymsuapi_timetable",
