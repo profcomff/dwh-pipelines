@@ -1,3 +1,4 @@
+import os
 import logging
 from datetime import datetime
 from textwrap import dedent
@@ -25,7 +26,7 @@ with DAG(
         task_id="execute_sql",
         postgres_conn_id="postgres_dwh",
         sql="info.sql",
-        doc_md=get_sql_code('info.sql'),
+        doc_md=get_sql_code('info.sql', os.path.dirname(os.path.abspath(__file__))),
         inlets=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
         outlets=[Dataset("DWH_USER_INFO.info")],
     )

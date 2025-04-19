@@ -4,6 +4,8 @@ import pandas as pd
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
+from .get import get_gh_data, get_all_gh_data
+
 @lru_cache()
 def get_conn():
     conn = (
