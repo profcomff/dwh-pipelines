@@ -1,19 +1,13 @@
 import logging
 from datetime import datetime
 from textwrap import dedent
-import os
 
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-def get_sql_code(filename):
-    directory = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(directory, 'info.sql')
-    with open(file_path, 'r') as f:
-        sql_code = f.read()
-    return f"```SQL\n{sql_code}\n```"
+from plugins.features import get_sql_code
 
 with DAG(
     dag_id="DWH_USER_INFO.info",
