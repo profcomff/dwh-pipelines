@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.decorators import task
-from mymsuapi_timetable_task import get_timetable_for_semester_to_db
 
 from plugins.api_utils import get_timetable_for_semester_to_db
 

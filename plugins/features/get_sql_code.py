@@ -1,7 +1,6 @@
 import os
 
-def get_sql_code(filename):
-    directory = os.path.dirname(os.path.abspath(__file__))
+def get_sql_code(filename, dir):
     file_path = os.path.join(directory, filename)
     with open(file_path, 'r') as f:
         sql_code = f.read()
