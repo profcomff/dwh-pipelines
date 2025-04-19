@@ -61,33 +61,7 @@ with DAG(
 ):
     PostgresOperator(
         postgres_conn_id="postgres_dwh",
-        sql=dedent(
-            r"""
-            -- truncate old state
-            delete from "DM_TIMETABLE".dim_lecturer_act
-            where source_name = 'dubinushka_manual';
-
-            insert into "DM_TIMETABLE".dim_lecturer_act (
-                lecturer_api_id,
-                lecturer_first_name,
-                lecturer_middle_name,
-                lecturer_last_name,
-                source_name
-            )
-            select 
-                id,
-                s[2] as lecturer_first_name,
-                s[0] as lecturer_middle_name,
-                s[1] as lecturer_last_name,
-                'dubinushka_maual' as source_name
-                from(
-                    SELECT 
-                    id,
-                    STRING_TO_ARRAY(surname, ' ') as s 
-                    FROM "STG_DUBINUSHKA_MANUAL".lecturer
-                )
-        """
-        ),
+        sql="lecturer.sql",
         task_id="execute_merge_statement",
         inlets=[Dataset("STG_DUBINUSHKA_MANUAL.lecturer")],
         outlets=[Dataset("DM_TIMETABLE.dim_lecturer_act")],

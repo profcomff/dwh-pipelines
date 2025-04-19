@@ -7,6 +7,8 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+from plugins.features import get_sql_code
+
 with DAG(
     dag_id="DWH_RATING.lecturer",
     schedule=[Dataset("ODS_RATING.lecturer")],
@@ -23,6 +25,7 @@ with DAG(
         task_id="lecturer_hist",
         postgres_conn_id="postgres_dwh",
         sql="lecturer.sql",
+        doc_md=get_sql_code('lecturer.sql'),
         inlets=[Dataset("ODS_RATING.lecturer")],
         outlets=[Dataset("DWH_RATING.lecturer")],
     )

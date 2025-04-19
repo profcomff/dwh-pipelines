@@ -7,6 +7,8 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+from plugins.features import get_sql_code
+
 with DAG(
     dag_id="DWH_AUTH_USER.info",
     start_date=datetime(2024, 10, 1),
@@ -27,6 +29,7 @@ with DAG(
         task_id="merginng_and_inserting_into_ODS_INFO",
         postgres_conn_id="postgres_dwh",
         sql="info.sql",
+        doc_md=get_sql_code('info.sql'),
         inlets=[
             Dataset("DWH_USER_INFO.info"),
             Dataset("ODS_AUTH.auth_method"),
