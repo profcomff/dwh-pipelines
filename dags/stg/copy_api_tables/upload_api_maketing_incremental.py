@@ -5,7 +5,7 @@ from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Variable
 
-from plugins.api_utils import send_telegram_message, copy_table_to_dwh, copy_table_to_dwh_incremental
+from plugins.api_utils import send_telegram_message, copy_table_to_dwh_incremental
 
 # декорированные функции
 send_telegram_message = task(
@@ -14,7 +14,7 @@ send_telegram_message = task(
 )(send_telegram_message)
 
 copy_table_to_dwh_incremental = task(
-    task_id="copy_table_to_dwh",
+    task_id="copy_table_to_dwh_incremental",
     params= {
         "from_ts": datetime.now - timedelta(days=1),
         "to_ts": datetime.now
@@ -40,8 +40,8 @@ with DAG(
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:
-        curr = copy_table_to_dwh.override(
-            task_id=f"copy-{table}",
+        curr = copy_table_to_dwh_incremental.override(
+            task_id=f"copy-{table}-incremental",
             outlets=[Dataset(f"STG_MARKETING.{table}")],
         )(
             "api_marketing",
