@@ -5,7 +5,7 @@ gen_random_uuid() as uuid,
 action,
 path_to,
 COALESCE(elem->>'response_status_code', '0')::int AS response_status_code,
-COALESCE(elem->>'auth_user_id', '0')::int AS user_id,
+(case when elem->>'auth_user_id' != 'Not auth' then elem->>'auth_user_id' else '0' end )::int AS user_id,
 COALESCE(elem->>'query', '')::VARCHAR AS query,
 create_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS create_ts
 FROM 
