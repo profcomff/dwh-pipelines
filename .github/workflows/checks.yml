@@ -10,7 +10,7 @@ jobs:
     if: ${{ 
       !contains(toLower(github.event.pull_request.title), 'skip-ci') &&
       !contains(toLower(github.event.pull_request.body), 'skip-ci') &&
-      !contains(toLower(github.event.head_commit.message), 'skip-ci') &&
+      !contains(toLower(github.event.head_commit.message), 'skip-ci')
     }}
     runs-on: ubuntu-latest
 
