@@ -3,8 +3,6 @@ from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.datasets import Dataset
 
-from textwrap import dedent
-from datetime import datetime
 from airflow import DAG
 
 from airflow.models import Variable
@@ -14,7 +12,7 @@ ENVIRONMENT = Variable.get("_ENVIRONMENT")
 TOKEN = str(Variable.get("TGBOT_TOKEN"))
 
 
-def alert_message(context, chat_id):
+def alert_message(context, chat_id: int):
     # Параметры сообщения
     dag_id = context['dag'].dag_id
     owner = context['dag'].owner

@@ -24,12 +24,6 @@ ALLOW_SELECT_USER_LIST = Variable.get("ALLOW_SELECT_USER_LIST").split(",")
 # TODO@mixx3 parse this data from auth.scopes, support it on backend
 ALLOW_ALL_USER_LIST = Variable.get("ALLOW_ALL_USER_LIST").split(",")
 
-fetch_gh_repos = task(
-    task_id="fetch_gh_repos",
-    outlets=Dataset("STG_GITHUB.profcomff_repo")
-)(fetch_gh_repos)
-
-
 
 def filter_groups(
     groups: tp.List[tp.List[str]], exclude_list: tp.List[str]
@@ -46,6 +40,7 @@ def filter_groups(
         else:
             res.append(group[0])
     return res, excluded
+
 
 def grant_groups():
     dwh_sql_engine = create_engine(DWH_DB_DSN)

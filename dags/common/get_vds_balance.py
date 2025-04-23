@@ -92,7 +92,7 @@ with DAG(
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        'on_failure_callback': partial(send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
+        "on_failure_callback": partial(send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ) as dag:
     balance = get_balance()
