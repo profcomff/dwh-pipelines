@@ -16,7 +16,7 @@ def alert_message(context, chat_id: int):
     # Параметры сообщения
     dag_id = context['dag'].dag_id
     owner = context['dag'].owner
-    if ENVIRONMENT == PROD:
+    if ENVIRONMENT == "prod":
         dag_url = f"https://airflow.profcomff.com/dags/{dag_id}/grid"
     else:
         dag_url = f"https://airflow.test.profcomff.com/dags/{dag_id}/grid"
