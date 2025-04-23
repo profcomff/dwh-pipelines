@@ -7,11 +7,11 @@ jobs:
   test-dags:
     name: Run DAG tests
 
-    if: ${{ 
-      !contains(github.event.pull_request.title, 'skip-ci') && 
-      !contains(github.event.pull_request.body, 'skip-ci') && 
-      !contains(github.event.head_commit.message, 'skip-ci') 
-    }}
+    if: >-
+      !contains((github.event.pull_request.title), 'skip-ci') &&
+      !contains((github.event.pull_request.body), 'skip-ci') &&
+      !contains((github.event.head_commit.message), 'skip-ci')
+
     runs-on: ubuntu-latest
 
     steps:
@@ -42,11 +42,11 @@ jobs:
   linting:
     name: Linting checks
     
-    if: ${{ 
-      !contains(github.event.pull_request.title, 'skip-ci') && 
-      !contains(github.event.pull_request.body, 'skip-ci') && 
-      !contains(github.event.head_commit.message, 'skip-ci') 
-    }}
+    if: >-
+      !contains((github.event.pull_request.title), 'skip-ci') &&
+      !contains((github.event.pull_request.body), 'skip-ci') &&
+      !contains((github.event.head_commit.message), 'skip-ci')
+    
     runs-on: ubuntu-latest
     
     steps:
