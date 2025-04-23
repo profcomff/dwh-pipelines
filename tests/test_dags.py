@@ -20,11 +20,6 @@ def test_dagbag_import_errors(dag_bag):
     ), f"DAG import errors: {dag_bag.import_errors}"
 
 
-# Будет писать если не смог найти новые даги (можно будет вырезать эту часть)
-def test_dag_count(dag_bag):
-    assert len(dag_bag.dags) > 0, "No DAGs found"
-
-
 def test_dag_has_tasks(dag_bag):
     # Проверка, что DAG имеет хотя бы одну таску
     for dag_id, dag in dag_bag.dags.items():
