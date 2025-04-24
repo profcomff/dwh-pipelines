@@ -4,8 +4,8 @@ from typing import Set, Tuple
 
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import create_engine, text
 from airflow.models import Connection
+from sqlalchemy import create_engine, text
 
 MAX_ROWS_PER_REQUEST = 10_000
 
@@ -22,6 +22,7 @@ DWH_DB_DSN = (
     .replace("postgres://", "postgresql://")
     .replace("?__extra__=%7B%7D", "")
 )
+
 
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     logging.info(

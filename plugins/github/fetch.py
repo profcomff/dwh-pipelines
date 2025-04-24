@@ -4,7 +4,8 @@ import pandas as pd
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
-from plugins.github import get_gh_data, get_all_gh_data
+from plugins.github import get_all_gh_data, get_gh_data
+
 
 @lru_cache()
 def get_conn():
@@ -17,15 +18,18 @@ def get_conn():
     engine = create_engine(conn)
     return engine
 
+
 def upload_df(df: pd.DataFrame, table_name):
     get_conn().execute(f'TRUNCATE TABLE "STG_GITHUB".{table_name};')
     df.to_sql(
         table_name, get_conn(), schema="STG_GITHUB", if_exists="append", index=False
     )
 
+
 def fetch_gh_org():
     df = get_organization("profcomff", Variable.get("GITHUB_TOKEN"))
     upload_df(df, "org_info")
+
 
 def fetch_gh_members():
     """Получить список участников организации"""
@@ -34,6 +38,7 @@ def fetch_gh_members():
     )
     upload_df(df, "profcomff_member")
 
+
 def fetch_gh_invations():
     """Получить список приглашений в организацию"""
     df = get_all_gh_data(
@@ -41,6 +46,7 @@ def fetch_gh_invations():
         Variable.get("GITHUB_TOKEN"),
     )
     upload_df(df, "profcomff_invation")
+
 
 def fetch_gh_repos():
     """Получить данные из репозиториев в организации"""
@@ -83,6 +89,7 @@ def fetch_gh_repos():
         lambda x: ", ".join(i["login"] for i in x)
     )
     upload_df(issues_df, "profcomff_issue")
+
 
 def fetch_gh_teams():
     """Получаем информацию об участниках внутри команд"""
