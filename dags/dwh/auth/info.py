@@ -30,7 +30,7 @@ with DAG(
         task_id="merginng_and_inserting_into_ODS_INFO",
         postgres_conn_id="postgres_dwh",
         sql="info.sql",
-        doc_md=get_sql_code('info.sql', os.path.dirname(os.path.abspath(__file__))),
+        doc_md=get_sql_code("info.sql", os.path.dirname(os.path.abspath(__file__))),
         inlets=[
             Dataset("DWH_USER_INFO.info"),
             Dataset("ODS_AUTH.auth_method"),

@@ -26,7 +26,7 @@ with DAG(
         task_id="comment_hist",
         postgres_conn_id="postgres_dwh",
         sql="comment.sql",
-        doc_md=get_sql_code('comment.sql', os.path.dirname(os.path.abspath(__file__))),
+        doc_md=get_sql_code("comment.sql", os.path.dirname(os.path.abspath(__file__))),
         inlets=[Dataset("ODS_RATING.comment")],
         outlets=[Dataset("DWH_RATING.comment")],
     )

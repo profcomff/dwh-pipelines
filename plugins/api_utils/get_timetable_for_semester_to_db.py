@@ -39,6 +39,7 @@ LESSONS_ROUTE = API_URL + "public_content/lessons"
 
 # функция для download_mymsuapi_timetable
 
+
 def get_timetable_for_semester_to_db():
     data = []
     for source in SOURCES:

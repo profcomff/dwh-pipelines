@@ -8,13 +8,11 @@ from plugins.api_utils import send_telegram_message, copy_table_to_dwh
 
 # декорированные функции
 send_telegram_message = task(
-    task_id="send_telegram_message", 
-    trigger_rule="one_failed"
+    task_id="send_telegram_message", trigger_rule="one_failed"
 )(send_telegram_message)
 
 copy_table_to_dwh = task(
-    task_id="copy_table_to_dwh",
-    trigger_rule="one_done", retries=0
+    task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0
 )(copy_table_to_dwh)
 
 
@@ -57,4 +55,3 @@ with DAG(
             prev >> curr
         prev = curr
         prev >> tg_task
-    

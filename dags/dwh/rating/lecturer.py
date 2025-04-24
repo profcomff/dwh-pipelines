@@ -26,7 +26,7 @@ with DAG(
         task_id="lecturer_hist",
         postgres_conn_id="postgres_dwh",
         sql="lecturer.sql",
-        doc_md=get_sql_code('lecturer.sql', os.path.dirname(os.path.abspath(__file__))),
+        doc_md=get_sql_code("lecturer.sql", os.path.dirname(os.path.abspath(__file__))),
         inlets=[Dataset("ODS_RATING.lecturer")],
         outlets=[Dataset("DWH_RATING.lecturer")],
     )
