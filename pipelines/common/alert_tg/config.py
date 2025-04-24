@@ -1,7 +1,11 @@
+import datetime
 from airflow.models import Variable
 
 batch_size = 5  # Количество строк в одном батче
 
+
+def set_env_variable(name: str, value=None):
+    Variable.set(name, value)
 
 def get_env_variable(name: str, default=None):
     return str(Variable.get(name, default))
@@ -13,11 +17,19 @@ API_APP_URLS = {
     "test": "https://api.test.profcomff.com/rating/comment",
     "prod": "https://api.profcomff.com/rating/comment",
 }
-
+APP_URLS = {
+    "development": "http://localhost:8000/comment",
+    "test": "https://app.test.profcomff.com/apps/44",
+    "prod": "https://app.profcomff.com/apps/62",
+}
 
 def get_api_url():
     environment = get_env_variable("_ENVIRONMENT", "development")
-    return API_APP_URLS.get(environment, API_APP_URLS["development"])
+    return APP_URLS.get(environment, APP_URLS["development"])
+
+def get_app_url():
+    environment = get_env_variable("_ENVIRONMENT", "development")
+    return APP_URLS.get(environment, APP_URLS["development"])
 
 
 def get_token_bot():
