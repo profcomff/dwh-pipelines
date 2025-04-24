@@ -1,9 +1,12 @@
 from airflow.models import Variable
 
+
 BATCH_SIZE = 5  # Количество строк в одном батче
+
 
 def set_env_variable(name: str, value=None):
     Variable.set(name, value)
+
 
 def get_env_variable(name: str, default=None):
     return str(Variable.get(name, default))
