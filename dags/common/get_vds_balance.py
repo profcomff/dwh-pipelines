@@ -6,6 +6,10 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
 
+from functools import partial
+
+from plugins.features import alert_message
+
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
 
@@ -88,7 +92,7 @@ with DAG(
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": send_message_on_failure,
+        "on_failure_callback": partial(send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ) as dag:
     balance = get_balance()
