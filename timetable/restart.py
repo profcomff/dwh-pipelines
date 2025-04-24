@@ -7,6 +7,7 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
+
 DB_URI = (
     Connection.get_connection_from_secrets("postgres_dwh")
     .get_uri()

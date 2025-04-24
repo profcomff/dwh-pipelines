@@ -7,6 +7,7 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="ODS_AUTH.user",
     start_date=datetime(2024, 11, 3),

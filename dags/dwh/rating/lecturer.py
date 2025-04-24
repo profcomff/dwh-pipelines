@@ -10,6 +10,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from plugins.features import get_sql_code
 
+
 with DAG(
     dag_id="DWH_RATING.lecturer",
     schedule=[Dataset("ODS_RATING.lecturer")],

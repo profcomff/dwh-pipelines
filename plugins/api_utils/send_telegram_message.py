@@ -4,15 +4,12 @@ from urllib.parse import quote
 import requests as r
 from airflow.models import Variable
 
+
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
 
 def get_graph_link(context):
-    base_url = (
-        "https://airflow.profcomff.com"
-        if ENVIRONMENT == "prod"
-        else "https://airflow.test.profcomff.com"
-    )
+    base_url = "https://airflow.profcomff.com" if ENVIRONMENT == "prod" else "https://airflow.test.profcomff.com"
     dag_id = context["dag"].dag_id
     dag_run_id = context["dag_run"].run_id
     dag_run_id = quote(dag_run_id)
@@ -21,13 +18,7 @@ def get_graph_link(context):
 
 def send_telegram_message(chat_id, **context):
     url = get_graph_link(context)
-    url = (
-        url.replace("=", "\\=")
-        .replace("-", "\\-")
-        .replace("+", "\\+")
-        .replace(".", "\\.")
-        .replace("_", "\\_")
-    )
+    url = url.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
 
     token = str(Variable.get("TGBOT_TOKEN"))
     msg = {

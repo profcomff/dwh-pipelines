@@ -7,6 +7,7 @@ from airflow.decorators import dag, task
 from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 TOKEN = str(Variable.get("TGBOT_TOKEN"))
 

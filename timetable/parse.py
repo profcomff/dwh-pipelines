@@ -18,6 +18,7 @@ from airflow.exceptions import AirflowException
 from airflow.models import Connection, Variable
 from bs4 import BeautifulSoup
 
+
 _logger = logging.getLogger(__name__)
 
 # [[курс, поток, количество групп], ...]
@@ -276,9 +277,7 @@ def parse_timetable():
             result = pd.concat(
                 [
                     result,
-                    parse_timetable_for_group(
-                        f"http://ras.phys.msu.ru/table/{source[0]}/{source[1]}/{group}.htm"
-                    ),
+                    parse_timetable_for_group(f"http://ras.phys.msu.ru/table/{source[0]}/{source[1]}/{group}.htm"),
                 ]
             )
     return result

@@ -79,9 +79,7 @@ def post_data(url, token):
     ],
 )
 def update_printer_user_list():
-    post_data(
-        "https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER"))
-    )
+    post_data("https://api.profcomff.com/print/", str(Variable.get("TOKEN_ROBOT_PRINTER")))
 
 
 update_printer_user_list()

@@ -9,6 +9,7 @@ from airflow.datasets import Dataset
 from airflow.exceptions import AirflowException
 from airflow.models import Connection
 
+
 # [[курс, поток, количество групп], ...]
 SOURCES = [
     [1, 1, 6],
@@ -77,12 +78,8 @@ def get_timetable_for_semester_to_db():
                                     f"{lesson['date']} {lesson['time_to']}",
                                     "%Y-%m-%d %H:%M",
                                 ),
-                                "teacher_users": dumps(
-                                    lesson["teacher_users"], ensure_ascii=False
-                                ),
-                                "study_groups": dumps(
-                                    lesson["study_groups"], ensure_ascii=False
-                                ),
+                                "teacher_users": dumps(lesson["teacher_users"], ensure_ascii=False),
+                                "study_groups": dumps(lesson["study_groups"], ensure_ascii=False),
                             }
                         )
                     except Exception as e:

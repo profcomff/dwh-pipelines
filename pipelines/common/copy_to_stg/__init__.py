@@ -11,6 +11,7 @@ from airflow.decorators import task
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
+
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 MAX_ROWS_PER_REQUEST = 10_000
 
@@ -30,11 +31,7 @@ DWH_DB_DSN = (
 
 
 def get_graph_link(context):
-    base_url = (
-        "https://airflow.profcomff.com"
-        if ENVIRONMENT == "prod"
-        else "https://airflow.test.profcomff.com"
-    )
+    base_url = "https://airflow.profcomff.com" if ENVIRONMENT == "prod" else "https://airflow.test.profcomff.com"
     dag_id = context["dag"].dag_id
     dag_run_id = context["dag_run"].run_id
     dag_run_id = quote(dag_run_id)
@@ -44,13 +41,7 @@ def get_graph_link(context):
 @task(task_id="send_telegram_message", trigger_rule="one_failed")
 def send_telegram_message(chat_id, **context):
     url = get_graph_link(context)
-    url = (
-        url.replace("=", "\\=")
-        .replace("-", "\\-")
-        .replace("+", "\\+")
-        .replace(".", "\\.")
-        .replace("_", "\\_")
-    )
+    url = url.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
 
     token = str(Variable.get("TGBOT_TOKEN"))
     msg = {
@@ -69,9 +60,7 @@ def send_telegram_message(chat_id, **context):
 
 @task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0)
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
-    logging.info(
-        f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}"
-    )
+    logging.info(f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}")
 
     api = create_engine(API_DB_DSN)
     dwh = create_engine(DWH_DB_DSN)
@@ -105,9 +94,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
             raise AttributeError("Не найдена колонка для сортировки")
         logging.info(f"Колонка для сортировки: {id_column}")
 
-        data_length = api_conn.execute(
-            sa.text(f'SELECT COUNT(*) FROM "{from_schema}"."{from_table}";')
-        ).scalar()
+        data_length = api_conn.execute(sa.text(f'SELECT COUNT(*) FROM "{from_schema}"."{from_table}";')).scalar()
         logging.info(f"Количество строк: {data_length}")
 
     with dwh.connect() as dwh_conn:
@@ -141,8 +128,6 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
                 # Делаем ручное приведение типов, где не сработало иное
                 # Заменяем JSON на строку
                 if dtype == "json":
-                    data[col] = data[col].apply(
-                        lambda x: json.dumps(x, ensure_ascii=False)
-                    )
+                    data[col] = data[col].apply(lambda x: json.dumps(x, ensure_ascii=False))
             data.to_sql(to_table, dwh, schema=to_schema, if_exists="append")
             logging.info("%d of %d rows copied", i + len(data), data_length)

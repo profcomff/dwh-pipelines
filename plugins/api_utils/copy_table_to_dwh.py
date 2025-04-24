@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from airflow.models import Connection
 from sqlalchemy import create_engine, text
 
+
 MAX_ROWS_PER_REQUEST = 10_000
 
 API_DB_DSN = (
@@ -25,9 +26,7 @@ DWH_DB_DSN = (
 
 
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
-    logging.info(
-        f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}"
-    )
+    logging.info(f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}")
 
     api = create_engine(API_DB_DSN)
     dwh = create_engine(DWH_DB_DSN)
@@ -61,9 +60,7 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
             raise AttributeError("Не найдена колонка для сортировки")
         logging.info(f"Колонка для сортировки: {id_column}")
 
-        data_length = api_conn.execute(
-            sa.text(f'SELECT COUNT(*) FROM "{from_schema}"."{from_table}";')
-        ).scalar()
+        data_length = api_conn.execute(sa.text(f'SELECT COUNT(*) FROM "{from_schema}"."{from_table}";')).scalar()
         logging.info(f"Количество строк: {data_length}")
 
     with dwh.connect() as dwh_conn:
@@ -97,8 +94,6 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
                 # Делаем ручное приведение типов, где не сработало иное
                 # Заменяем JSON на строку
                 if dtype == "json":
-                    data[col] = data[col].apply(
-                        lambda x: json.dumps(x, ensure_ascii=False)
-                    )
+                    data[col] = data[col].apply(lambda x: json.dumps(x, ensure_ascii=False))
             data.to_sql(to_table, dwh, schema=to_schema, if_exists="append")
             logging.info("%d of %d rows copied", i + len(data), data_length)

@@ -7,14 +7,11 @@ from airflow.models import Variable
 
 from plugins.api_utils import copy_table_to_dwh, send_telegram_message
 
-# декорированные функции
-send_telegram_message = task(
-    task_id="send_telegram_message", trigger_rule="one_failed"
-)(send_telegram_message)
 
-copy_table_to_dwh = task(
-    task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0
-)(copy_table_to_dwh)
+# декорированные функции
+send_telegram_message = task(task_id="send_telegram_message", trigger_rule="one_failed")(send_telegram_message)
+
+copy_table_to_dwh = task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0)(copy_table_to_dwh)
 
 
 with DAG(

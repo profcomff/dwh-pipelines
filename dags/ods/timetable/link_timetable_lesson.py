@@ -5,6 +5,7 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="ODS_TIMETABLE.ods_link_timetable_lesson",
     start_date=datetime(2024, 12, 7),

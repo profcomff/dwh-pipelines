@@ -9,6 +9,7 @@ from airflow.models import Variable
 
 from plugins.features import alert_message
 
+
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
 
@@ -67,14 +68,10 @@ def get_balance():
     with r.Session() as s:
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
-        resp = s.get(
-            f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}"
-        )
+        resp = s.get(f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}")
         auth_id = resp.json()["doc"]["auth"]["$id"]
 
-        resp = s.get(
-            f"https://my.vds.sh/manager?out=sjson&func=dashboard.info&auth={auth_id}"
-        )
+        resp = s.get(f"https://my.vds.sh/manager?out=sjson&func=dashboard.info&auth={auth_id}")
         balance = resp.json()["doc"]["elem"][0]["balance"][0]["$"]
         balance = float(balance.split()[0])
 
@@ -91,9 +88,7 @@ with DAG(
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": partial(
-            send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))
-        ),
+        "on_failure_callback": partial(send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ) as dag:
     balance = get_balance()

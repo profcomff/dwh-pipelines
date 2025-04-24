@@ -11,6 +11,7 @@ from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException
 from airflow.models import Connection, Variable
 
+
 # [[курс, поток, количество групп], ...]
 SOURCES = [
     [1, 1, 6],

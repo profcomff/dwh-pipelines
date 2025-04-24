@@ -5,6 +5,7 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="ODS_SOCIAL.viribus_chat",
     schedule=[Dataset("STG_SOCIAL.webhook_storage")],

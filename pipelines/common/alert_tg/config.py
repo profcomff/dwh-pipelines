@@ -1,5 +1,6 @@
 from airflow.models import Variable
 
+
 batch_size = 5  # Количество строк в одном батче
 
 

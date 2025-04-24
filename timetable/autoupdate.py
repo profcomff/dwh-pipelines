@@ -6,11 +6,22 @@ import sqlalchemy as sa
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
-from profcomff_parse_lib import (all_to_array, calc_date, check_date,
-                                 completion, delete_lesson, dict_substitutions,
-                                 flatten, multiple_lessons, parse_all,
-                                 parse_name, parse_timetable, post_event)
+from profcomff_parse_lib import (
+    all_to_array,
+    calc_date,
+    check_date,
+    completion,
+    delete_lesson,
+    dict_substitutions,
+    flatten,
+    multiple_lessons,
+    parse_all,
+    parse_name,
+    parse_timetable,
+    post_event,
+)
 from sqlalchemy.dialects import postgresql
+
 
 DB_URI = (
     Connection.get_connection_from_secrets("postgres_dwh")
@@ -28,9 +39,11 @@ import sys
 import requests
 from profcomff_parse_lib.utilities import urls_api
 
+
 _logger = logging.getLogger(__name__)
 
 import enum
+
 
 # MODES = enum.Enum("Modes", "test prod")
 # mode = MODES.test
@@ -119,9 +132,7 @@ def room_to_id(lessons, headers, base):
                 # @mixx3 мы согласны на потери данных в таком случае
                 # _logger.critical("Ошибка, аудитория '{aud}' не найдена. Завершение работы".format(aud=row['place']))
                 # sys.exit()
-                _logger.info(
-                    "Ошибка, аудитория '{aud}' не найдена. ".format(aud=row["place"])
-                )
+                _logger.info("Ошибка, аудитория '{aud}' не найдена. ".format(aud=row["place"]))
                 place[i][k] = -100  # чтобы не было ошибок в связях
     lessons["place"] = place
     return lessons
@@ -153,9 +164,7 @@ def group_to_id(lessons, headers, base):
                     "name": f"Группа # {row['group'][j]}",
                     "number": row["group"][j],
                 }
-                response = requests.post(
-                    url + "/timetable/group/", headers=headers, json=body
-                )
+                response = requests.post(url + "/timetable/group/", headers=headers, json=body)
                 if response.status_code == 200:
                     new_groups[i][j] = response.json()["id"]
                     _logger.info(f"Новая группа: {response}")
@@ -175,9 +184,7 @@ def teacher_to_id(lessons, headers, base):
     if base == "prod":
         url = "https://api.profcomff.com"
 
-    response = requests.get(
-        url + "/timetable/lecturer/?limit=0&offset=0", headers=headers
-    )
+    response = requests.get(url + "/timetable/lecturer/?limit=0&offset=0", headers=headers)
     teachers = response.json()["items"]
 
     new_teacher = lessons["teacher"].tolist()
@@ -201,9 +208,7 @@ def teacher_to_id(lessons, headers, base):
                     "last_name": item[0],
                     "description": "Преподаватель физического факультета",
                 }
-                response = requests.post(
-                    url + "/timetable/lecturer/", headers=headers, json=body
-                )
+                response = requests.post(url + "/timetable/lecturer/", headers=headers, json=body)
                 new_teacher[i][j] = response.json()["id"]
                 _logger.info(f"Новый преподаватель: {response}")
     lessons["teacher"] = new_teacher
@@ -226,9 +231,7 @@ def to_id(lessons, headers, base):
 def parsing():
     engine = sa.create_engine(DB_URI)
     timetables = pd.read_sql_query('select * from "STG_RASPHYSMSU".raw_html', engine)
-    logging.info(
-        f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}"
-    )
+    logging.info(f"timetables, columns: {len(list(timetables))} len: {timetables.shape[0]}")
     results = pd.DataFrame()
     for i, row in timetables.iterrows():
         results = pd.concat([results, parse_timetable(row["raw_html"])])
@@ -392,22 +395,20 @@ def update():
     begin = begin.strftime("%m/%d/%Y")
     end = Variable.get("SEMESTER_END")
     semester_start = Variable.get("SEMESTER_START")
-    logging.info(
-        f"Начало семестра: {semester_start}, дата начала загрузки пар: {begin}, дата конца семестра: {end}."
-    )
+    logging.info(f"Начало семестра: {semester_start}, дата начала загрузки пар: {begin}, дата конца семестра: {end}.")
     for i, row in lessons_for_deleting.iterrows():
         for id in row["events_id"]:
             if check_date(id, environment, begin):
                 delete_lesson(headers, id, environment)
     lessons_new = calc_date(lessons_for_creating, begin, end, semester_start)
-    logging.info(
-        f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий."
-    )
+    logging.info(f"Из {lessons_for_creating.shape[0]} пар получилось {lessons_new.shape[0]} событий.")
     for i, row in lessons_new.iterrows():
         new_id = row["id"]
         # event_id = post_event(headers, row, environment)
         event_id = []
-        query = f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}]::integer[] WHERE id={new_id}'
+        query = (
+            f'UPDATE "STG_RASPHYSMSU"."new" set events_id = events_id || array[{event_id}]::integer[] WHERE id={new_id}'
+        )
         engine.execute(query)
     query = """
     UPDATE "STG_RASPHYSMSU"."new" as ch
