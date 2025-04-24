@@ -12,14 +12,11 @@ ENVIRONMENT = Variable.get("_ENVIRONMENT")
 TOKEN = str(Variable.get("TGBOT_TOKEN"))
 
 
-def alert_message(context, chat_id: int):
+def alert_message(context, chat_id):
     # Параметры сообщения
     dag_id = context['dag'].dag_id
     owner = context['dag'].owner
-    if ENVIRONMENT == "prod":
-        dag_url = f"https://airflow.profcomff.com/dags/{dag_id}/grid"
-    else:
-        dag_url = f"https://airflow.test.profcomff.com/dags/{dag_id}/grid"
+    dag_url = f"https://airflow.{'test' if not ENVIRONMENT == 'prod' else ''}profcomff.com/dags/{dag_id}/grid"
 
     # Дебильные эмодзи чтобы раздражать людей
     message = f"🚨 *DAG Failed* 🚨 🗣🗣🗣\n\n*DAG ID*: {dag_id}\n*Owner*: {owner}\n*Dag URL*: {dag_url}" 
