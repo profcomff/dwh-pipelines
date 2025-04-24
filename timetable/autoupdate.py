@@ -6,10 +6,20 @@ import sqlalchemy as sa
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
-from profcomff_parse_lib import (all_to_array, calc_date, check_date,
-                                 completion, delete_lesson, dict_substitutions,
-                                 flatten, multiple_lessons, parse_all,
-                                 parse_name, parse_timetable, post_event)
+from profcomff_parse_lib import (
+    all_to_array,
+    calc_date,
+    check_date,
+    completion,
+    delete_lesson,
+    dict_substitutions,
+    flatten,
+    multiple_lessons,
+    parse_all,
+    parse_name,
+    parse_timetable,
+    post_event,
+)
 from sqlalchemy.dialects import postgresql
 
 DB_URI = (

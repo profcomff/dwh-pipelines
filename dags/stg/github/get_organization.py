@@ -10,10 +10,19 @@ from airflow.decorators import task
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
-from plugins.github import (fetch_gh_invations, fetch_gh_members, fetch_gh_org,
-                            fetch_gh_repos, fetch_gh_teams, flatten,
-                            get_all_gh_data, get_conn, get_gh_data,
-                            get_organization, upload_df)
+from plugins.github import (
+    fetch_gh_invations,
+    fetch_gh_members,
+    fetch_gh_org,
+    fetch_gh_repos,
+    fetch_gh_teams,
+    flatten,
+    get_all_gh_data,
+    get_conn,
+    get_gh_data,
+    get_organization,
+    upload_df,
+)
 
 fetch_gh_org = task(task_id="fetch_gh_org", outlets=Dataset("STG_GITHUB.org_info"))(
     fetch_gh_org
