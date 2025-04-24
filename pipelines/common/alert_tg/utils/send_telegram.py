@@ -2,7 +2,8 @@ import logging
 
 import requests
 
-from pipelines.common.alert_tg.config import get_telegram_chat_id, get_token_bot
+from pipelines.common.alert_tg.config import (get_telegram_chat_id,
+                                              get_token_bot)
 
 
 def send_comments(text: str) -> None:

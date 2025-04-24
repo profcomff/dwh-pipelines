@@ -5,9 +5,9 @@ from json import dumps
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
-from airflow.models import Connection
-from airflow.exceptions import AirflowException
 from airflow.datasets import Dataset
+from airflow.exceptions import AirflowException
+from airflow.models import Connection
 
 # [[курс, поток, количество групп], ...]
 SOURCES = [

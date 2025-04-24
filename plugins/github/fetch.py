@@ -4,7 +4,7 @@ import pandas as pd
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
-from plugins.github import get_gh_data, get_all_gh_data
+from plugins.github import get_all_gh_data, get_gh_data
 
 
 @lru_cache()

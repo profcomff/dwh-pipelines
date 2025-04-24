@@ -4,8 +4,8 @@ from typing import Set, Tuple
 
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import create_engine, text
 from airflow.models import Connection
+from sqlalchemy import create_engine, text
 
 MAX_ROWS_PER_REQUEST = 10_000
 
