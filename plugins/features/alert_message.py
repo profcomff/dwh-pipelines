@@ -17,7 +17,9 @@ def alert_message(context, chat_id: int | str):
     dag_id = context["dag"].dag_id
     owner = context["dag"].owner
     dag_url = f"https://airflow.{'test' if not ENVIRONMENT == 'prod' else ''}.profcomff.com/dags/{dag_id}/grid"
-    dag_url = dag_url.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
+    dag_url = (
+        dag_url.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
+    )
 
     # Дебильные эмодзи чтобы раздражать людей
     message = f"*DAG Failed*\n\n*DAG ID*: {dag_id}\n*Owner*: {owner}\n*Dag URL*: {dag_url}"
