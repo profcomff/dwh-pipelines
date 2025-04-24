@@ -12,7 +12,7 @@ ENVIRONMENT = Variable.get("_ENVIRONMENT")
 TOKEN = str(Variable.get("TGBOT_TOKEN"))
 
 
-def alert_message(context, chat_id):
+def alert_message(context, chat_id: int | str):
     # Параметры сообщения
     dag_id = context['dag'].dag_id
     owner = context['dag'].owner
@@ -30,7 +30,7 @@ def alert_message(context, chat_id):
     logging.debug(msg)
     # Отправлка сообщения через api телеграма
     try:
-        req = r.post(url=tg_api_url, json=msg, timeout=10)
+        req : requests.Response = r.post(url=tg_api_url, json=msg, timeout=10)
         req.raise_for_status()
     except Exception as e:
         logging.error(f"Telegram API error: {str(e)}")
