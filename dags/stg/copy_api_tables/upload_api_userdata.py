@@ -45,3 +45,30 @@ with DAG(
             prev >> curr
         prev = curr
         prev >> tg_task
+
+
+with DAG(
+    dag_id="upload_api_userdata_encrypted",
+    start_date=datetime(2025, 4, 24),
+    schedule="@daily",
+    catchup=False,
+    tags=["dwh", "stg", "userdata", "encryption"],
+    default_args={
+        "owner": "dyakovri",
+        "retries": 5,
+        "retry_delay": timedelta(minutes=3),
+        "retry_exponential_backoff": True,
+    },
+):
+    # [ struct (table_name: str, encrypt_columns: [str], owner_column: [str]) ]
+    tables = (("info", ["value"], "owner_id"),)
+    tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
+    prev = None
+    for table, encrypt_columns, key_owner in tables:
+        curr = copy_table_to_dwh.override(  # what the fuck is wrong with black's formatting here...
+            task_id=f"copy-encrypted-{table}", outlets=[Dataset(f"STG_USERDATA.encrypted_{table}")]
+        )("api_userdata", table, "STG_USERDATA", f"encrypted_{table}", encrypt_columns, key_owner)
+        if prev:
+            prev >> curr
+        prev = curr
+        prev >> tg_task
