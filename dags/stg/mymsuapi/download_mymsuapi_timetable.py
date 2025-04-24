@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 
 from plugins.api_utils import get_timetable_for_semester_to_db
 
+
 get_timetable_for_semester_to_db = task(
     task_id="STG_MYMSUAPI.raw_timetable_apir",
-    outlets=Dataset("STG_MYMSUAPI.raw_timetable_api")
+    outlets=Dataset("STG_MYMSUAPI.raw_timetable_api"),
 )(get_timetable_for_semester_to_db)
 
 with DAG(

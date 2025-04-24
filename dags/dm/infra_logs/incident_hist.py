@@ -4,6 +4,7 @@ from textwrap import dedent
 from airflow import DAG, Dataset
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="incident_logs_from_ods_to_dm",
     start_date=datetime(2024, 1, 1),

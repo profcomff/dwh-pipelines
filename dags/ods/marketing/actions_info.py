@@ -5,6 +5,7 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="ODS_MARKETING.actions_info",
     start_date=datetime(2025, 3, 1),
@@ -41,4 +42,4 @@ with DAG(
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.rating_actions")],
     )
-    frontend_actions >> rating_actions>> printer_actions >> printer_bots_actions
+    frontend_actions >> rating_actions >> printer_actions >> printer_bots_actions

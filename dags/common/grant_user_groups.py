@@ -11,10 +11,8 @@ from sqlalchemy import create_engine
 
 from plugins.api_utils import filter_groups, grant_groups
 
-grant_groups = task(
-    task_id="grant_groups",
-    retries=3
-)(grant_groups)
+
+grant_groups = task(task_id="grant_groups", retries=3)(grant_groups)
 
 with DAG(
     dag_id="grant_user_groups",

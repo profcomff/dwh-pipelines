@@ -4,6 +4,7 @@ from collections.abc import MutableMapping
 import pandas as pd
 import requests as r
 
+
 def flatten(dictionary, parent_key="", separator="_"):
     items = []
     for key, value in dictionary.items():
@@ -13,6 +14,7 @@ def flatten(dictionary, parent_key="", separator="_"):
         else:
             items.append((new_key, value))
     return dict(items)
+
 
 def get_gh_data(url, token, page, per_page):
     params = {"per_page": per_page, "page": page}
@@ -29,6 +31,7 @@ def get_gh_data(url, token, page, per_page):
     df = pd.DataFrame(flatten(i) for i in resp.json())
     return df
 
+
 def get_all_gh_data(url, token):
     page = 1
     per_page = 50
@@ -37,6 +40,7 @@ def get_all_gh_data(url, token):
         page += 1
         df = pd.concat([df, get_gh_data(url, token, page, per_page)])
     return df
+
 
 def get_organization(org, token):
     resp = r.get(
