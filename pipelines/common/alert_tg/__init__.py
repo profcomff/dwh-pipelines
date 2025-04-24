@@ -12,6 +12,7 @@ from airflow.models import Connection, Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from sqlalchemy import create_engine
 
+
 DWH_DB_DSN = (
     Connection.get_connection_from_secrets("postgres_dwh")
     .get_uri()
@@ -43,9 +44,7 @@ def send_alert_pending_comments():
                 "comments": [],
             }
 
-            comments = result.fetchmany(
-                batch_size
-            )  # Получаем `batch_size` строк за раз
+            comments = result.fetchmany(batch_size)  # Получаем `batch_size` строк за раз
             if not comments:
                 logging.info("No pending comments")
                 break

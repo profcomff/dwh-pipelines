@@ -8,6 +8,7 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
 
+
 # [[курс, поток, количество групп], ...]
 SOURCES = [
     [1, 1, 9],
@@ -69,9 +70,7 @@ def download_pages_to_db():
     sql_engine.execute('TRUNCATE TABLE "STG_RASPHYSMSU".raw_html;')
     logging.info("raw_html is empty")
 
-    data.to_sql(
-        "raw_html", sql_engine, schema="STG_RASPHYSMSU", if_exists="append", index=False
-    )
+    data.to_sql("raw_html", sql_engine, schema="STG_RASPHYSMSU", if_exists="append", index=False)
     logging.info("raw_html is full")
 
     return Dataset("STG_RASPHYSMSU.raw_html")
@@ -105,9 +104,7 @@ def compare_pages():
                 f"({len(changed_urls)} из {number_of_groups}):\n{changed_urls_formated}",
             },
         )
-        logging.info(
-            "Bot send message status %d (%s)", response.status_code, response.text
-        )
+        logging.info("Bot send message status %d (%s)", response.status_code, response.text)
 
     return changed_urls
 

@@ -5,6 +5,7 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="ODS_RATING.lecturer_user_comment",
     schedule=[Dataset("STG_RATING.lecturer_user_comment")],

@@ -39,9 +39,7 @@ def send_alert_pending_comments():
             payload["offset"] += batch_size
 
         if str(get_env_variable("_ENVIRONMENT")) == "test":
-            send_comments(
-                f"TEST: {count_comments} новых комметариев"
-            )  # Отправка в бота
+            send_comments(f"TEST: {count_comments} новых комметариев")  # Отправка в бота
         else:  # Логика для локального запуска или разработки
             logging.info("Running in local environment")
             print(f"INFO: {count_comments} новых комметариев")

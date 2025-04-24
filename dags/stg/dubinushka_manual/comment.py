@@ -5,6 +5,7 @@ from airflow import DAG, Dataset
 from airflow.decorators import task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 CUR_DIR = os.path.abspath(os.path.dirname(__file__))
 
 with DAG(
