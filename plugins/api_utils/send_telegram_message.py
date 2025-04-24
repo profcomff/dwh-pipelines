@@ -6,6 +6,7 @@ from airflow.models import Variable
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 
+
 def get_graph_link(context):
     base_url = (
         "https://airflow.profcomff.com"

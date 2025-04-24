@@ -1,8 +1,8 @@
-from datetime import timedelta, datetime
-from airflow import DAG, Dataset
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from datetime import datetime, timedelta
 from textwrap import dedent
 
+from airflow import DAG, Dataset
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 with DAG(
     dag_id="DM_MARKETING.frontend_actions_services",

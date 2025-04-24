@@ -5,9 +5,9 @@ from json import dumps
 import pandas as pd
 import requests as r
 import sqlalchemy as sa
-from airflow.models import Connection
-from airflow.exceptions import AirflowException
 from airflow.datasets import Dataset
+from airflow.exceptions import AirflowException
+from airflow.models import Connection
 
 # [[курс, поток, количество групп], ...]
 SOURCES = [
@@ -38,6 +38,7 @@ API_URL = "https://api.test.my.msu.ru/gateway/public/api/v1/"
 LESSONS_ROUTE = API_URL + "public_content/lessons"
 
 # функция для download_mymsuapi_timetable
+
 
 def get_timetable_for_semester_to_db():
     data = []

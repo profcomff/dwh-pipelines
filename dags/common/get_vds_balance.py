@@ -1,12 +1,11 @@
 import logging
 from datetime import datetime, timedelta
+from functools import partial
 
 import requests as r
 from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
-
-from functools import partial
 
 from plugins.features import alert_message
 
@@ -92,7 +91,9 @@ with DAG(
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": partial(send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
+        "on_failure_callback": partial(
+            send_telegram_message, chat_id=int(Variable.get("TG_CHAT_DWH"))
+        ),
     },
 ) as dag:
     balance = get_balance()

@@ -41,4 +41,4 @@ with DAG(
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.rating_actions")],
     )
-    frontend_actions >> rating_actions>> printer_actions >> printer_bots_actions
+    frontend_actions >> rating_actions >> printer_actions >> printer_bots_actions
