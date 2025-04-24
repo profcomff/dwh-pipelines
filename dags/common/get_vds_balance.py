@@ -55,7 +55,7 @@ with DAG(
     tags=["infra"],
     default_args={
         "owner": "dyakovri",
-        # "retries": 3, потом вернуть ретраи. Нужно убрать для тестирования алертов
+        "retries": 3,
         "retry_delay": timedelta(minutes=5),
         "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },

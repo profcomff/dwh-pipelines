@@ -16,7 +16,7 @@ def alert_message(context, chat_id: int | str):
     # Параметры сообщения
     dag_id = context["dag"].dag_id
     owner = context["dag"].owner
-    dag_url = f"https://airflow.{'test' if not ENVIRONMENT == 'prod' else ''}.profcomff.com/dags/{dag_id}/grid"
+    dag_url = f"https://airflow.{'test.' if not ENVIRONMENT == 'prod' else ''}profcomff.com/dags/{dag_id}/grid"
     dag_url = (
         dag_url.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
     )
