@@ -17,9 +17,10 @@ def alert_message(context, chat_id: int | str):
     dag_id = context["dag"].dag_id
     owner = context["dag"].owner
     dag_url = f"https://airflow.{'test' if not ENVIRONMENT == 'prod' else ''}.profcomff.com/dags/{dag_id}/grid"
+    dag_url = dag_url.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
 
     # Дебильные эмодзи чтобы раздражать людей
-    message = f"🚨 *DAG Failed* 🚨 🗣🗣🗣\n\n*DAG ID*: {dag_id}\n*Owner*: {owner}\n*Dag URL*: {dag_url}"
+    message = f"*DAG Failed*\n\n*DAG ID*: {dag_id}\n*Owner*: {owner}\n*Dag URL*: {dag_url}"
     tg_api_url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
     msg = {
@@ -30,7 +31,7 @@ def alert_message(context, chat_id: int | str):
     logging.debug(msg)
     # Отправлка сообщения через api телеграма
     try:
-        req: requests.Response = r.post(url=tg_api_url, json=msg, timeout=10)
+        req = r.post(url=tg_api_url, json=msg, timeout=10)
         req.raise_for_status()
     except Exception as e:
         logging.error(f"Telegram API error: {str(e)}")
