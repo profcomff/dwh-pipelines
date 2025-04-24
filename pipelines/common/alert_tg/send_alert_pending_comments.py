@@ -4,7 +4,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
 
-from pipelines.common.alert_tg.config import batch_size, get_env_variable
+from pipelines.common.alert_tg.config import batch_size, get_api_url, get_env_variable
 from pipelines.common.alert_tg.utils.fetch_comments import fetch_comments
 from pipelines.common.alert_tg.utils.send_telegram import send_comments
 
@@ -21,7 +21,7 @@ def send_alert_pending_comments():
                 break
 
             comments_ans = "\n\n".join(
-                f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Текст: \"{comment['subject']}\" \n 🔗 {config.get_api_url().replace('api', 'app', 1)}/{comment['uuid']}"
+                f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Текст: \"{comment['subject']}\" \n 🔗 {get_api_url()}/{comment['uuid']}"
                 for comment in comments
             )
 
