@@ -15,14 +15,10 @@ TOKEN = str(Variable.get("TGBOT_TOKEN"))
 def alert_message(context, chat_id: int | str):
     # Параметры сообщения
     dag_id = context["dag"].dag_id
-    dag_id = (
-        dag_id.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
-    )
+    dag_id = dag_id.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
 
     owner = context["dag"].owner
-    owner = (
-        owner.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
-    )
+    owner = owner.replace("=", "\\=").replace("-", "\\-").replace("+", "\\+").replace(".", "\\.").replace("_", "\\_")
 
     dag_url = f"https://airflow.{'test.' if not ENVIRONMENT == 'prod' else ''}profcomff.com/dags/{dag_id}/grid"
     dag_url = (
