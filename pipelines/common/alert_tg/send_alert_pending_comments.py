@@ -4,7 +4,7 @@ import datetime
 from airflow import DAG
 from airflow.decorators import task
 
-from pipelines.common.alert_tg.config import batch_size, get_api_url, get_app_url, get_env_variable, set_env_variable
+from pipelines.common.alert_tg.config import batch_size, get_app_url, get_env_variable, set_env_variable
 from pipelines.common.alert_tg.utils.fetch_comments import fetch_comments
 from pipelines.common.alert_tg.utils.send_telegram import send_comments
 
