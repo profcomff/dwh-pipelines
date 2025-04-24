@@ -1,12 +1,11 @@
 import logging
 from datetime import datetime, timedelta
+from functools import partial
 
 import requests as r
 from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
-
-from functools import partial
 
 from plugins.features import alert_message
 

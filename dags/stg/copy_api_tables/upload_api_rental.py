@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Variable
-from plugins.api_utils import (
-    send_telegram_message as send_msg,
-    copy_table_to_dwh as copy_tbl,
-)
+
+from plugins.api_utils import copy_table_to_dwh as copy_tbl
+from plugins.api_utils import send_telegram_message as send_msg
 
 
 @task(task_id="send_telegram_message", trigger_rule="one_failed")

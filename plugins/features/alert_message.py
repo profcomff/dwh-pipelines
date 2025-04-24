@@ -1,12 +1,11 @@
 import logging
-from airflow.decorators import dag, task
-from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.datasets import Dataset
 
-from airflow import DAG
-
-from airflow.models import Variable
 import requests as r
+from airflow import DAG
+from airflow.datasets import Dataset
+from airflow.decorators import dag, task
+from airflow.models import Variable
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 TOKEN = str(Variable.get("TGBOT_TOKEN"))
