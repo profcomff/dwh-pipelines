@@ -22,7 +22,7 @@ def alert_message(context, chat_id: int | str):
     )
 
     # Дебильные эмодзи чтобы раздражать людей
-    message = f"*DAG Failed*\n\n*DAG ID*: {dag_id}\n*Owner*: {owner}\n*Dag URL*: {dag_url}"
+    message = f"*DAG Failed*\n\n*DAG ID*: {dag_id}\n*Owner*: {owner}\n[*Dag URL*]({dag_url})"
     tg_api_url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
     msg = {
