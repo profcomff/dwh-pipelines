@@ -1,3 +1,4 @@
 from .copy_table_to_dwh import copy_table_to_dwh
 from .get_timetable_for_semester_to_db import get_timetable_for_semester_to_db
 from .send_telegram_message import send_telegram_message
+from .grant_groups import filter_groups

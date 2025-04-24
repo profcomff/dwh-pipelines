@@ -1,11 +1,7 @@
 import logging
 import typing as tp
-from datetime import datetime, timedelta
 
 import sqlalchemy as sa
-from airflow import DAG
-from airflow.datasets import Dataset
-from airflow.decorators import task
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
@@ -46,7 +42,6 @@ def filter_groups(
     return res, excluded
 
 
-@task(task_id="grant_groups", retries=3)
 def grant_groups():
     dwh_sql_engine = create_engine(DWH_DB_DSN)
     with dwh_sql_engine.connect() as dwh_conn:
@@ -107,14 +102,3 @@ def grant_groups():
                     )
                     logging.error(str(e))
         # TODO@mixx3 add scope to dev users
-
-
-with DAG(
-    dag_id="grant_user_groups",
-    start_date=datetime(2024, 11, 30),
-    schedule="*/5 * * * *",
-    catchup=False,
-    tags=["dwh", "infra", "common"],
-    default_args={"owner": "mixx3"},
-) as dag:
-    grant_groups()
