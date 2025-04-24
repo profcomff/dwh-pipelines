@@ -30,3 +30,5 @@ with DAG(
         inlets=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
         outlets=[Dataset("DWH_USER_INFO.info")],
     )
+
+# посхалко
