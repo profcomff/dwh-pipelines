@@ -24,8 +24,12 @@ DWH_DB_DSN = (
     .replace("?__extra__=%7B%7D", "")
 )
 
+__COPY_CTX_ENCRYPT_COLS = set()
 
-def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
+__COPY_CTX_KEY_TABLE = "STG_USERDATA.keys"
+
+
+def copy_table_to_dwh(from_schema, from_table, to_schema, to_table, encrypt_cols=None, key_table="STG_USERDATA.keys"):
     logging.info(f"Копирование таблицы {from_schema}.{from_table} в {to_schema}.{to_table}")
 
     api = create_engine(API_DB_DSN)
@@ -95,5 +99,32 @@ def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
                 # Заменяем JSON на строку
                 if dtype == "json":
                     data[col] = data[col].apply(lambda x: json.dumps(x, ensure_ascii=False))
-            data.to_sql(to_table, dwh, schema=to_schema, if_exists="append")
+            if encrypt_cols is None:
+                data.to_sql(to_table, dwh, schema=to_schema, if_exists="append")
+            else:
+                __COPY_CTX_ENCRYPT_COLS = set(encrypt_cols)
+                __COPY_CTX_KEY_TABLE = key_table
+                data.to_sql(to_table, dwh, schema=to_schema, if_exists="append", method=__custom_execute)
             logging.info("%d of %d rows copied", i + len(data), data_length)
+
+
+# нужна чисто как callback в pandas.DataFrame.to_sql. Т.к. разрабы pandas решили не париться с тем,
+# чтобы в callback можно было передать доп. аргументы, они передаются через глобальные переменные
+# __COPY_CTX_*
+def __custom_execute(pd_table, conn, keys, data_iter):
+    data_iter = [{key: val for key, val in zip(keys, data)} for data in data_iter]
+    collist = [
+        (
+            f":{key}"
+            if key not in __COPY_CTX_ENCRYPT_COLS
+            else f"pgp_sym_encrypt(:{key}, {__COPY_CTX_KEY_TABLE}.key::text)"
+        )
+        for key in keys
+    ]
+    sql = text(
+        f"INSERT INTO {pd_table.name}({','.join(keys)}) "
+        f"SELECT {','.join(collist)} FROM {__COPY_CTX_KEY_TABLE} "
+        f"WHERE {__COPY_CTX_KEY_TABLE}.id = :id "
+        "ON CONFLICT (id) DO NOTHING;"
+    )
+    conn.execute(sql, data_iter)
