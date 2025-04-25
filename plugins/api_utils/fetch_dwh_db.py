@@ -1,11 +1,7 @@
 import logging
-from datetime import datetime, timedelta
 
 import requests as r
 import sqlalchemy as sa
-from airflow import DAG
-from airflow.datasets import Dataset
-from airflow.decorators import task
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
