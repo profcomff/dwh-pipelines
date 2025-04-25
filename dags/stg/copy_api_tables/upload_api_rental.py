@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from functools import partial
 
 from airflow import DAG
 from airflow.datasets import Dataset
@@ -7,6 +8,7 @@ from airflow.models import Variable
 
 from plugins.api_utils import copy_table_to_dwh as copy_tbl
 from plugins.api_utils import send_telegram_message as send_msg
+from plugins.features import alert_message
 
 
 @task(task_id="send_telegram_message", trigger_rule="one_failed")
@@ -25,7 +27,10 @@ with DAG(
     schedule="@daily",
     catchup=False,
     tags=["dwh", "stg", "rental"],
-    default_args={"owner": "VladislavVoskoboinik"},
+    default_args={
+        "owner": "VladislavVoskoboinik",
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
+    },
 ):
     tables = ("event", "item", "item_type", "rental_sessions", "strike")
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
