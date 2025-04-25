@@ -53,7 +53,6 @@ def prettify_diff(text: str, diff_obj: set):
     return text
 
 
-@task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def fetch_dwh_db(**context):
     dag_run = context.get("dag_run")
     log_link = dag_run.get_task_instance(context["task_instance"].task_id).log_url
