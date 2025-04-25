@@ -1,11 +1,7 @@
 import logging
-from datetime import datetime, timedelta
 
 import requests as r
 import sqlalchemy as sa
-from airflow import DAG
-from airflow.datasets import Dataset
-from airflow.decorators import task
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
 
@@ -57,25 +53,6 @@ def prettify_diff(text: str, diff_obj: set):
     return text
 
 
-@task(task_id="send_telegram_message", retries=3)
-def send_telegram_message(chat_id, diff):
-    diff_l, diff_r, url = diff
-    url = url.replace("=", "\\=").replace("-", "\\-").replace(".", "\\.").replace("_", "\\_")
-    if len(diff_l) == 0 and len(diff_r) == 0:
-        return
-    token = str(Variable.get("TGBOT_TOKEN"))
-    req = r.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        json={
-            "chat_id": chat_id,
-            "text": f"Таблицы DWH не соответствуют таблицам API\nЛог отчета: {url}",
-            "parse_mode": "MarkdownV2",
-        },
-    )
-    logging.info("Bot send message status %d (%s)", req.status_code, req.text)
-    req.raise_for_status()
-
-
 @task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def fetch_dwh_db(**context):
     dag_run = context.get("dag_run")
@@ -119,16 +96,3 @@ def fetch_dwh_db(**context):
 
     logging.info(text)
     return schemas_diff_api, schemas_diff_dwh, log_link
-
-
-with DAG(
-    dag_id="dwh_integrity_check",
-    start_date=datetime(2022, 1, 1),
-    schedule="@daily",
-    catchup=False,
-    tags=["dwh", "infra"],
-    default_args={"owner": "roslavtsevsv"},
-) as dag:
-    result = fetch_dwh_db()
-    send_telegram_message(int(Variable.get("TG_CHAT_DWH")), result)
-    send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS")), result)
