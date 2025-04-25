@@ -1,11 +1,13 @@
 import logging
 import os
 from datetime import datetime
+from functools import partial
 from textwrap import dedent
 
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
+from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from plugins.features import get_sql_code

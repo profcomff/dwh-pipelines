@@ -1,4 +1,5 @@
 from .copy_table_to_dwh import copy_table_to_dwh
+from .fetch_dwh_db import fetch_dwh_db, prettify_diff
 from .get_timetable_for_semester_to_db import get_timetable_for_semester_to_db
-from .grant_groups import filter_groups
+from .grant_groups import filter_groups, grant_groups
 from .send_telegram_message import send_telegram_message

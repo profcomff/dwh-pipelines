@@ -2,7 +2,7 @@ import logging
 
 import requests
 
-from pipelines.common.alert_tg.config import get_api_url, get_token_auth
+from dags.common.alert_tg.config import get_api_url, get_token_auth
 
 
 def fetch_comments(payload):

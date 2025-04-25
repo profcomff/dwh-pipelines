@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from functools import partial
 
 from airflow import DAG
 from airflow.datasets import Dataset
@@ -6,6 +7,7 @@ from airflow.decorators import task
 from airflow.models import Variable
 
 from plugins.api_utils import copy_table_to_dwh, send_telegram_message
+from plugins.features import alert_message
 
 
 # декорированные функции
@@ -25,6 +27,7 @@ with DAG(
         "retries": 5,
         "retry_delay": timedelta(minutes=3),
         "retry_exponential_backoff": True,
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ):
     tables = "actions_info", "user"

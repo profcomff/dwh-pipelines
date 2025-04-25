@@ -1,14 +1,16 @@
 import logging
 import os
 from datetime import datetime
+from functools import partial
 from textwrap import dedent
 
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
+from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-from plugins.features import get_sql_code
+from plugins.features import alert_message, get_sql_code
 
 
 with DAG(
@@ -21,6 +23,7 @@ with DAG(
     default_args={
         "retries": 1,
         "owner": "mixx3",
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ):
     PostgresOperator(
