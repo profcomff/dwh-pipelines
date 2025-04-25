@@ -4,20 +4,25 @@ import logging
 from airflow import DAG
 from airflow.decorators import task
 
-from pipelines.common.alert_tg.config import (BATCH_SIZE, get_app_url,
-                                              get_env_variable,
-                                              set_env_variable)
+from pipelines.common.alert_tg.config import (
+    BATCH_SIZE,
+    get_app_url,
+    get_env_variable,
+    set_env_variable,
+)
 from pipelines.common.alert_tg.utils.fetch_comments import fetch_comments
 from pipelines.common.alert_tg.utils.send_telegram import send_comments
 
 
 @task(task_id="send_alert_pending_comments", retries=3)
 def send_alert_pending_comments():
-    last_run_ts = datetime.datetime.fromisoformat(
-        str(get_env_variable("last_run_ts_alert_tg"))
-    )  # Получаем время последнего запуска
+    try:
+        raw_ts = get_env_variable("last_run_ts_alert_tg", default="2022-01-01T00:00:00")
+        last_run_ts = datetime.datetime.fromisoformat(raw_ts)
+    except ValueError:
+        last_run_ts = datetime.datetime(2022, 1, 1)
     set_env_variable(
-        "last_run_ts_alert_tg", str(datetime.datetime.today())
+        "last_run_ts_alert_tg", datetime.datetime.now().isoformat()
     )  # Устанавливаем время запуска последней проверки
 
     payload = {"limit": BATCH_SIZE, "offset": 0, "review_mode": "pending"}
