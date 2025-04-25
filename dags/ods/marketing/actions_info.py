@@ -4,6 +4,7 @@ from textwrap import dedent
 
 from airflow import DAG, Dataset
 from airflow.decorators import task
+from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from plugins.features import alert_message
