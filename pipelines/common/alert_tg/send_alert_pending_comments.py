@@ -32,41 +32,37 @@ def send_alert_pending_comments():
 
     total_today = 0
 
-    if str(get_env_variable("_ENVIRONMENT")) == "prod":
-        while True:
-            comments, total_unreviewed = fetch_comments(payload)
-            if not comments:
-                logging.info("No pending comments")
-                break
+    while True:
+        comments, total_unreviewed = fetch_comments(payload)
+        if not comments:
+            logging.info("No pending comments")
+            break
 
-            if is_monday:
-                break  # Выходим и возвращаем только кол-во
-
-            comments_ans = []
-            for comment in comments:
-                if (
-                    not is_monday
-                    and datetime.datetime.fromisoformat(comment["update_ts"])
-                    >= last_run_ts
-                ):  # Смотрим новые комментраии(инкрементальная проверка)
-                    # if (not is_monday and yesterday <= datetime.datetime.fromisoformat(comment['update_ts']) <= now):
-                    comments_ans += [
-                        f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Предмет: \"{comment['subject']}\""
-                    ]
-                    total_today += 1
-            if comments_ans:
-                send_comments("\n\n".join(comments_ans))  # Отправка в бота
-            payload["offset"] += BATCH_SIZE
-
-        result_message = ""
-        if not is_monday and total_today:
-            result_message += f"Сегодня не проверено: {total_unreviewed} шт."
         if is_monday:
-            result_message += (
-                f"\nВсего непроверенных комментариев: {total_unreviewed} шт."
-            )
-        result_message += f"\n🔗 {get_app_url()}"
-        send_comments(result_message)
+            break  # Выходим и возвращаем только кол-во
+
+        comments_ans = []
+        for comment in comments:
+            if (
+                not is_monday
+                and datetime.datetime.fromisoformat(comment["update_ts"]) >= last_run_ts
+            ):  # Смотрим новые комментраии(инкрементальная проверка)
+                # if (not is_monday and yesterday <= datetime.datetime.fromisoformat(comment['update_ts']) <= now):
+                comments_ans += [
+                    f"UUID: {comment['uuid']} \n 👤 Автор_id: {comment['user_id']} \n 💬 Предмет: \"{comment['subject']}\""
+                ]
+                total_today += 1
+        if comments_ans:
+            send_comments("\n\n".join(comments_ans))  # Отправка в бота
+        payload["offset"] += BATCH_SIZE
+
+    result_message = ""
+    if not is_monday and total_today:
+        result_message += f"Сегодня не проверено: {total_unreviewed} шт."
+    if is_monday:
+        result_message += f"\nВсего непроверенных комментариев: {total_unreviewed} шт."
+    result_message += f"\n🔗 {get_app_url()}"
+    send_comments(result_message)
 
 
 with DAG(
