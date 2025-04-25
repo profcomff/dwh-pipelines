@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+from functools import partial
 from textwrap import dedent
 
 from airflow import DAG
