@@ -4,12 +4,9 @@ import logging
 from airflow import DAG
 from airflow.decorators import task
 
-from pipelines.common.alert_tg.config import (
-    BATCH_SIZE,
-    get_app_url,
-    get_env_variable,
-    set_env_variable,
-)
+from pipelines.common.alert_tg.config import (BATCH_SIZE, get_app_url,
+                                              get_env_variable,
+                                              set_env_variable)
 from pipelines.common.alert_tg.utils.fetch_comments import fetch_comments
 from pipelines.common.alert_tg.utils.send_telegram import send_comments
 
@@ -25,15 +22,15 @@ def send_alert_pending_comments():
         "last_run_ts_alert_tg", datetime.datetime.now().isoformat()
     )  # Устанавливаем время запуска последней проверки
 
-    payload = {"limit": BATCH_SIZE, "offset": 0, "review_mode": "pending"}
+    payload = {"limit": BATCH_SIZE, "offset": 0, "unreviewed": True}
     is_monday = datetime.datetime.today().weekday() == 0
     # now = datetime.datetime.now()
     # yesterday = now - datetime.timedelta(days=1)
 
-    total_today = 0
+    total_today = total_unreviewed = 0
 
     while True:
-        comments, total_unreviewed = fetch_comments(payload)
+        comments = fetch_comments(payload)
         if not comments:
             logging.info("No pending comments")
             break
@@ -43,6 +40,7 @@ def send_alert_pending_comments():
 
         comments_ans = []
         for comment in comments:
+            total_unreviewed += 1
             if (
                 not is_monday
                 and datetime.datetime.fromisoformat(comment["update_ts"]) >= last_run_ts
@@ -58,7 +56,7 @@ def send_alert_pending_comments():
 
     result_message = ""
     if not is_monday and total_today:
-        result_message += f"Сегодня не проверено: {total_unreviewed} шт."
+        result_message += f"Сегодня не проверено: {total_today} шт."
     if is_monday:
         result_message += f"\nВсего непроверенных комментариев: {total_unreviewed} шт."
     result_message += f"\n🔗 {get_app_url()}"
