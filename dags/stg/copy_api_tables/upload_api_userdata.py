@@ -54,7 +54,7 @@ with DAG(
     catchup=False,
     tags=["dwh", "stg", "userdata", "encryption"],
     default_args={
-        "owner": "dyakovri",
+        "owner": "sotov",
         "retries": 5,
         "retry_delay": timedelta(minutes=3),
         "retry_exponential_backoff": True,
