@@ -1,7 +1,6 @@
 import logging
 
 import requests
-
 from pipelines.common.alert_tg.config import get_api_url, get_token_auth
 
 
