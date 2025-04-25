@@ -26,7 +26,7 @@ DWH_DB_DSN = (
 
 __COPY_CTX_ENCRYPT_COLS = None
 
-__COPY_CTX_KEY_TABLE = "STG_USERDATA.keys"
+__COPY_CTX_KEY_TABLE = "STG_USERDATA.info_keys"
 
 __COPT_CTX_KEY_OWNER_COL = None
 
@@ -125,6 +125,7 @@ def copy_table_to_dwh(
 # __COPY_CTX_*
 def __custom_execute(pd_table, conn, keys, data_iter):
     data_iter = [{key: val for key, val in zip(keys, data)} for data in data_iter]
+    # генерирует запросы для SELECT'a, в который будут вставляться шаблонные параметры для INSERT
     collist = [
         (
             f":{key}"
@@ -135,6 +136,7 @@ def __custom_execute(pd_table, conn, keys, data_iter):
     ]
     # TODO: проверить, что у KEY_TABLE.id = data_iter[__COPY_CTX_KEY_OWNER_COL][i] РОВНО 1 СОВПАДЕНИЕ
     # если оно не 1, то закричать о помощи
+    # Добавляет в табличку N-ое количество строк со столбцами keys, значения передаёт как шаблоныне параметры
     sql = text(
         f"INSERT INTO {pd_table.name}({','.join(keys)}) "
         f"SELECT {','.join(collist)} FROM {__COPY_CTX_KEY_TABLE} "
