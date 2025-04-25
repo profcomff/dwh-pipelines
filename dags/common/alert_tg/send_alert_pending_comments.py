@@ -3,9 +3,10 @@ import logging
 
 from airflow import DAG
 from airflow.decorators import task
-from pipelines.common.alert_tg.config import BATCH_SIZE, get_app_url, get_env_variable, set_env_variable
-from pipelines.common.alert_tg.utils.fetch_comments import fetch_comments
-from pipelines.common.alert_tg.utils.send_telegram import send_comments
+
+from dags.common.alert_tg.config import BATCH_SIZE, get_app_url, get_env_variable, set_env_variable
+from dags.common.alert_tg.utils.fetch_comments import fetch_comments
+from dags.common.alert_tg.utils.send_telegram import send_comments
 
 
 @task(task_id="send_alert_pending_comments", retries=3)
