@@ -4,6 +4,7 @@ from textwrap import dedent
 from airflow import DAG, Dataset
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="DM_TIMETABLE.dm_timetable_act",
     start_date=datetime(2024, 12, 15),

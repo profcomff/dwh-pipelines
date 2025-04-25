@@ -7,6 +7,7 @@ from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
+
 with DAG(
     dag_id="DM_MONITORING.db_monitoring_snp",
     start_date=datetime(2024, 11, 10),

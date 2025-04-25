@@ -1,7 +1,6 @@
 import logging
 
 import requests
-
 from pipelines.common.alert_tg.config import get_api_url, get_token_auth
 
 
@@ -15,4 +14,4 @@ def fetch_comments(payload):
         logging.error("Ошибка запроса: %s", response.text)
         return []
 
-    return response.json().get("comments", [])
+    return response.json().get("comments", []), response.json().get("total", 0)

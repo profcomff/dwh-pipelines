@@ -1,21 +1,19 @@
 from datetime import datetime, timedelta
+from functools import partial
+
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Variable
 
-from plugins.api_utils import send_telegram_message, copy_table_to_dwh
+from plugins.api_utils import copy_table_to_dwh, send_telegram_message
+from plugins.features import alert_message
+
 
 # декорированные функции
-send_telegram_message = task(
-    task_id="send_telegram_message", 
-    trigger_rule="one_failed"
-)(send_telegram_message)
+send_telegram_message = task(task_id="send_telegram_message", trigger_rule="one_failed")(send_telegram_message)
 
-copy_table_to_dwh = task(
-    task_id="copy_table_to_dwh",
-    trigger_rule="one_done", retries=0
-)(copy_table_to_dwh)
+copy_table_to_dwh = task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0)(copy_table_to_dwh)
 
 
 with DAG(
@@ -29,6 +27,7 @@ with DAG(
         "retries": 5,
         "retry_delay": timedelta(minutes=3),
         "retry_exponential_backoff": True,
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ):
     tables = "actions_info", "user"

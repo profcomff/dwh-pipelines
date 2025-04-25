@@ -1,13 +1,10 @@
 import logging
-from datetime import datetime, timedelta
 
 import requests as r
 import sqlalchemy as sa
-from airflow import DAG
-from airflow.datasets import Dataset
-from airflow.decorators import task
 from airflow.models import Connection, Variable
 from sqlalchemy import create_engine
+
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
 SCHEMAS = {
@@ -39,11 +36,7 @@ DWH_DB_DSN = (
 
 
 def get_base_url():
-    return (
-        "https://airflow.profcomff.com"
-        if ENVIRONMENT == "prod"
-        else "https://airflow.test.profcomff.com"
-    )
+    return "https://airflow.profcomff.com" if ENVIRONMENT == "prod" else "https://airflow.test.profcomff.com"
 
 
 def prettify_diff(text: str, diff_obj: set):
@@ -53,40 +46,13 @@ def prettify_diff(text: str, diff_obj: set):
             text += f"\n{schema}\n"
         for table in tables_diff:
             text += f"\t{table}\n"
-            cols_diff = [
-                obj[2] for obj in diff_obj if obj[0] == schema and obj[1] == table
-            ]
+            cols_diff = [obj[2] for obj in diff_obj if obj[0] == schema and obj[1] == table]
             for col in cols_diff:
                 text += f"\t\t{col}\n"
         text += "\n"
     return text
 
 
-@task(task_id="send_telegram_message", retries=3)
-def send_telegram_message(chat_id, diff):
-    diff_l, diff_r, url = diff
-    url = (
-        url.replace("=", "\\=")
-        .replace("-", "\\-")
-        .replace(".", "\\.")
-        .replace("_", "\\_")
-    )
-    if len(diff_l) == 0 and len(diff_r) == 0:
-        return
-    token = str(Variable.get("TGBOT_TOKEN"))
-    req = r.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        json={
-            "chat_id": chat_id,
-            "text": f"Таблицы DWH не соответствуют таблицам API\nЛог отчета: {url}",
-            "parse_mode": "MarkdownV2",
-        },
-    )
-    logging.info("Bot send message status %d (%s)", req.status_code, req.text)
-    req.raise_for_status()
-
-
-@task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def fetch_dwh_db(**context):
     dag_run = context.get("dag_run")
     log_link = dag_run.get_task_instance(context["task_instance"].task_id).log_url
@@ -113,40 +79,19 @@ def fetch_dwh_db(**context):
             )
         )
 
-        api_cols = set(
-            (SCHEMAS[i.table_schema], i.table_name, i.column_name) for i in api_cols
-        )
+        api_cols = set((SCHEMAS[i.table_schema], i.table_name, i.column_name) for i in api_cols)
         dwh_cols = set((i.table_schema, i.table_name, i.column_name) for i in dwh_cols)
 
         diff_with_api = api_cols - dwh_cols
         diff_with_dwh = dwh_cols - api_cols
 
-    schemas_diff_api = set(
-        [obj[0] for obj in diff_with_api if obj[1] != "alembic_version"]
-    )
+    schemas_diff_api = set([obj[0] for obj in diff_with_api if obj[1] != "alembic_version"])
     if len(schemas_diff_api) > 0:
         text += prettify_diff(text="\nДолжны быть в DWH но нет", diff_obj=diff_with_api)
 
-    schemas_diff_dwh = set(
-        [obj[0] for obj in diff_with_dwh if obj[1] != "alembic_version"]
-    )
+    schemas_diff_dwh = set([obj[0] for obj in diff_with_dwh if obj[1] != "alembic_version"])
     if len(schemas_diff_dwh) > 0:
-        text += prettify_diff(
-            text="\nНе должны быть в DWH но есть", diff_obj=diff_with_dwh
-        )
+        text += prettify_diff(text="\nНе должны быть в DWH но есть", diff_obj=diff_with_dwh)
 
     logging.info(text)
     return schemas_diff_api, schemas_diff_dwh, log_link
-
-
-with DAG(
-    dag_id="dwh_integrity_check",
-    start_date=datetime(2022, 1, 1),
-    schedule="@daily",
-    catchup=False,
-    tags=["dwh", "infra"],
-    default_args={"owner": "roslavtsevsv"},
-) as dag:
-    result = fetch_dwh_db()
-    send_telegram_message(int(Variable.get("TG_CHAT_DWH")), result)
-    send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS")), result)

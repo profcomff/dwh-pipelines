@@ -1,9 +1,14 @@
 from datetime import datetime
+from functools import partial
 from textwrap import dedent
 
 from airflow import DAG, Dataset
 from airflow.decorators import task
+from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+
+from plugins.features import alert_message
+
 
 with DAG(
     dag_id="ODS_MARKETING.actions_info",
@@ -11,7 +16,10 @@ with DAG(
     schedule=[Dataset("STG_MARKETING.actions_info")],
     catchup=False,
     tags=["ods", "core", "marketing", "frontend"],
-    default_args={"owner": "zimovchik"},
+    default_args={
+        "owner": "zimovchik",
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
+    },
 ):
     frontend_actions = PostgresOperator(
         postgres_conn_id="postgres_dwh",
@@ -41,4 +49,4 @@ with DAG(
         inlets=[Dataset("STG_MARKETING.actions_info")],
         outlets=[Dataset("ODS_MARKETING.rating_actions")],
     )
-    frontend_actions >> rating_actions>> printer_actions >> printer_bots_actions
+    frontend_actions >> rating_actions >> printer_actions >> printer_bots_actions

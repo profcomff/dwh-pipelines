@@ -1,17 +1,25 @@
 from datetime import datetime, timedelta
+from functools import partial
+
 from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import task
 from airflow.models import Variable
-from plugins.api_utils import send_telegram_message as send_msg, copy_table_to_dwh as copy_tbl
+
+from plugins.api_utils import copy_table_to_dwh as copy_tbl
+from plugins.api_utils import send_telegram_message as send_msg
+from plugins.features import alert_message
+
 
 @task(task_id="send_telegram_message", trigger_rule="one_failed")
 def send_telegram_message(chat_id, **context):
     return send_msg(chat_id, **context)
 
+
 @task(task_id="copy_table_to_dwh", trigger_rule="one_done", retries=0)
 def copy_table_to_dwh(from_schema, from_table, to_schema, to_table):
     return copy_tbl(from_schema, from_table, to_schema, to_table)
+
 
 with DAG(
     dag_id="upload_api_rental",
@@ -19,15 +27,12 @@ with DAG(
     schedule="@daily",
     catchup=False,
     tags=["dwh", "stg", "rental"],
-    default_args={"owner": "VladislavVoskoboinik"},
+    default_args={
+        "owner": "VladislavVoskoboinik",
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
+    },
 ):
-    tables = (
-        "event",
-        "item",
-        "item_type",
-        "rental_sessions",
-        "strike"
-    )
+    tables = ("event", "item", "item_type", "rental_sessions", "strike")
     tg_task = send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     prev = None
     for table in tables:

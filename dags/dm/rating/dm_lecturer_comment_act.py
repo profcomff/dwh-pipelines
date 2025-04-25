@@ -1,9 +1,14 @@
 from datetime import datetime, timedelta
+from functools import partial
 from textwrap import dedent
 
 from airflow import DAG
 from airflow.datasets import Dataset
+from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+
+from plugins.features import alert_message
+
 
 with DAG(
     dag_id="DM_RATING.dm_lecturer_comment_act",
@@ -18,6 +23,7 @@ with DAG(
         "owner": "mixx3",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
+        "on_failure_callback": partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
     },
 ) as dag:
     PostgresOperator(
