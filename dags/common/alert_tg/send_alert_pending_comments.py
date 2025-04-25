@@ -1,5 +1,6 @@
 import datetime
 import logging
+from functools import partial
 
 from airflow import DAG
 from airflow.decorators import task
@@ -7,6 +8,7 @@ from airflow.decorators import task
 from dags.common.alert_tg.config import BATCH_SIZE, get_app_url, get_env_variable, set_env_variable
 from dags.common.alert_tg.utils.fetch_comments import fetch_comments
 from dags.common.alert_tg.utils.send_telegram import send_comments
+from plugins.features import alert_message
 
 
 @task(task_id="send_alert_pending_comments", retries=3)
@@ -66,6 +68,9 @@ with DAG(
     schedule_interval="0 10 * * *",  # каждый день в 10:00
     catchup=False,
     tags=["dwh", "comments"],
-    default_args={"owner": "DROPDATABASE"},
+    default_args={
+        "owner": "DROPDATABASE",
+        "on_failure_callback": partial(alert_message, chat_id=int(get_env_variable("TG_CHAT_DWH"))),
+    },
 ) as dag:
     send_alert_pending_comments()
