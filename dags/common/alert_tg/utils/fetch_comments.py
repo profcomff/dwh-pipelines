@@ -14,6 +14,8 @@ def fetch_comments(payload):
     if response.status_code != 200:
         logging.error("Ошибка запроса: %s", response.text)
         return []
+    
+    logging.error(response, response.text)
 
     if not response.text.strip():
         logging.error("Пустой ответ от сервера при статусе 200")
@@ -22,6 +24,5 @@ def fetch_comments(payload):
     try:
         return response.json().get("comments", [])
     except ValueError as e:
-        logging.info(response, response.text)
         logging.error("Ошибка парсинга JSON: %s", e)
         return []
