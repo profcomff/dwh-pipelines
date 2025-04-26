@@ -11,6 +11,7 @@ def fetch_comments(payload):
     headers = {"Authorization": get_token_auth(), "accept": "application/json"}
 
     response = requests.get(api_url, params=payload, headers=headers)
+    logging.error(response, response.text)
     if response.status_code != 200:
         logging.error("Ошибка запроса: %s", response.text)
         return []
@@ -22,6 +23,5 @@ def fetch_comments(payload):
     try:
         return response.json().get("comments", [])
     except ValueError as e:
-        logging.info(response, response.text)
         logging.error("Ошибка парсинга JSON: %s", e)
         return []
