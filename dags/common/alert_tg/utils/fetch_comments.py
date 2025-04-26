@@ -11,14 +11,14 @@ def fetch_comments(payload):
     headers = {"Authorization": get_token_auth(), "accept": "application/json"}
 
     response = requests.get(api_url, params=payload, headers=headers)
-    
+
     logging.info(response.text)
     logging.warning(response.text)
     logging.error(response.text)
     logging.info(response.json())
     logging.warning(response.json())
     logging.error(response.json())
-
+    
     if response.status_code != 200:
         logging.error("Ошибка запроса: %s", response.text)
         return []
