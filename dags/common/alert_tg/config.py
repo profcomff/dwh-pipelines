@@ -25,7 +25,7 @@ APP_URLS = {
 
 def get_api_url():
     environment = get_env_variable("_ENVIRONMENT", "test")
-    return APP_URLS.get(environment, APP_URLS["test"])
+    return API_APP_URLS.get(environment, APP_URLS["test"])
 
 
 def get_app_url():
