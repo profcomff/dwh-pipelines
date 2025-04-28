@@ -18,9 +18,9 @@ with DAG(
         postgres_conn_id="postgres_dwh",
         sql=dedent(
             r"""
-            -- 128 bit entropy for keys
+            -- 128 bit entropy for keys --
             INSERT INTO "STG_USERDATA".info_keys 
-            SELECT id, encode(gen_random_bytes(16), 'base64') 
+            SELECT id, encode(public.gen_random_bytes(16), 'base64') 
             FROM "STG_AUTH".user ON CONFLICT DO NOTHING;"""
         ),
         task_id="generate_keys",

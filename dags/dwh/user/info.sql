@@ -1,4 +1,4 @@
-insert into "DWH_USER_INFO".info (
+insert into "DWH_USER_INFO".{{ params.tablename }} (
   user_id,
   email,
   phone_number,
@@ -49,7 +49,7 @@ select -- полная таблица
   string_agg(distinct case when p.name = 'Пол' then value end, ', ') as sex,
   string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as job,
   string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as work_location
-from "STG_USERDATA".info i
+from "STG_USERDATA".{{ params.tablename }} i
 left join "STG_USERDATA".param p on i.param_id = p.id 
 group by owner_id
 on conflict (user_id) do update set
