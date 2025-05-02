@@ -22,10 +22,10 @@ with DAG(
     default_args={
         "owner": "VladislavVoskoboinik",
     },
-    on_failure_callback= partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
+    on_failure_callback=partial(alert_message, chat_id=int(Variable.get("TG_CHAT_DWH"))),
 ):
     tables = ("event", "item", "item_type", "rental_sessions", "strike")
-    prev=None
+    prev = None
     for table in tables:
         curr = copy_table_to_dwh.override(
             task_id=f"copy-{table}",
@@ -38,4 +38,4 @@ with DAG(
         )
         if prev:
             prev >> curr
-        prev=curr
+        prev = curr
