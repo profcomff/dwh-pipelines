@@ -38,8 +38,11 @@ def get_token_bot():
 
 
 def get_token_auth():
-    return get_env_variable("TOKEN_ROBOT_TIMETABLE")
+    token = get_env_variable("TOKEN_RATING_TEST")  # По умолчанию test
+    if get_env_variable("_ENVIRONMENT", "test") == 'prod':
+        token = get_env_variable("TOKEN_RATING_PROD")
 
+    return token
 
 def get_telegram_chat_id():
     return get_env_variable("TG_CHAT_PENDING_COMMENTS")
