@@ -44,5 +44,6 @@ def get_token_auth():
 
     return token
 
+
 def get_telegram_chat_id():
     return get_env_variable("TG_CHAT_PENDING_COMMENTS")
