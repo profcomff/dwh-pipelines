@@ -18,4 +18,4 @@ select
     reason,
     stg_strike.create_ts at time zone 'utc' at time zone 'Europe/Moscow' as create_ts
 from "STG_RENTAL".strike as stg_strike
-limit 1000001;
+limit 100000;
