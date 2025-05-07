@@ -21,4 +21,4 @@ select
     stg_event.create_ts at time zone 'utc' at time zone 'Europe/Moscow' as create_ts,
     id
 from "STG_RENTAL".event as stg_event
-limit 1000001;
+limit 100000;
