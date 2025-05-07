@@ -27,4 +27,4 @@ select
     actual_return_ts at time zone 'utc' at time zone 'Europe/Moscow' as actual_return_ts,
     status
 from "STG_RENTAL".rental_session
-limit 10000001;
+limit 100000;
