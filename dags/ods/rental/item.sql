@@ -13,4 +13,4 @@ select
     type_id,
     is_available
 from "STG_RENTAL".item
-limit 1000001;
+limit 100000;
