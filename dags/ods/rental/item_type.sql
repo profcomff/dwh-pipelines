@@ -15,4 +15,4 @@ select
     description,
     id
 from "STG_RENTAL".item_type
-limit 1000001;
+limit 100000;
