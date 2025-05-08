@@ -40,8 +40,8 @@ def get_balance():
         resp = s.get(f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}")
         auth_id = resp.json()["doc"]["auth"]["$id"]
 
-        resp = s.get(f"https://my.vds.sh/manager?out=sjson")
-        balance = resp.json()["user"]["$balance"]
+        resp = s.get("https://my.vds.sh/manager?out=sjson&func=dashboard.info&auth=[auth_id]")
+        balance = resp.json()["doc"]["elem"][0]["balance"][0]["$"]
         balance = float(balance.split()[0])
 
     return balance
