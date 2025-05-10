@@ -42,7 +42,7 @@ def process_comments(last_run_ts, is_monday):
         if comments_to_send:
             send_comments("\n\n".join(comments_to_send))
             logging.info(f"Sent {len(comments_to_send)} new comments.")
-            
+
         payload["offset"] += BATCH_SIZE
 
     return total_today, total_unreviewed
