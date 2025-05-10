@@ -37,12 +37,15 @@ def get_balance():
     with r.Session() as s:
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
-        resp = s.get(f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}")
-        auth_id = resp.json()["doc"]["auth"]["$id"]
-
-        resp = s.get(f"https://my.vds.sh/manager?out=sjson&func=dashboard.info&auth={auth_id}")
-        balance = resp.json()["doc"]["elem"][0]["balance"][0]["$"]
-        balance = float(balance.split()[0])
+        resp = s.get(
+            f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}",
+            verify="my.vds.crt",
+        )
+        response_cookies = resp.cookies
+        resp = s.get(f"https://my.vds.sh/manager?out=sjson", cookies=response_cookies, verify="my.vds.crt")
+        logging.info(resp.json())
+        balance = resp.json()["doc"]["user"]["$balance"]
+        balance = float(balance)
 
     return balance
 
