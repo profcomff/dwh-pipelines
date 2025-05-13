@@ -33,18 +33,25 @@ def send_telegram_message_or_print(chat_id, balance):
 @task(task_id="fetch_users", retries=3)
 def get_balance():
     """Скачать данные из ЛК ОПК"""
-    
 
     with r.Session() as s:
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
+<<<<<<< HEAD
         resp = s.get(f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}", verify="my.vds.crt")
         response_cookies=resp.cookies
+=======
+        resp = s.get(
+            f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}",
+            verify="my.vds.crt",
+        )
+        response_cookies = resp.cookies
+>>>>>>> fd672dd84bf16154e758536b777e28a3cc046a03
         resp = s.get(f"https://my.vds.sh/manager?out=sjson", cookies=response_cookies, verify="my.vds.crt")
         logging.info(resp.json())
         balance = resp.json()["doc"]["user"]["$balance"]
         balance = float(balance)
-        
+
     return balance
 
 

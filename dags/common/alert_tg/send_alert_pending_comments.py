@@ -15,9 +15,9 @@ def process_comments(last_run_ts, is_monday):
     payload = {"limit": BATCH_SIZE, "offset": 0, "unreviewed": True}
     total_today = 0
     total_unreviewed = 0
-    comments_to_send = []
 
     while True:
+        comments_to_send = []
         comments = fetch_comments(payload)
         if not comments:
             logging.info("No pending comments in current batch.")
@@ -39,9 +39,13 @@ def process_comments(last_run_ts, is_monday):
                 )
                 total_today += 1
 
+        if comments_to_send:
+            send_comments("\n\n".join(comments_to_send))
+            logging.info(f"Sent {len(comments_to_send)} new comments.")
+            
         payload["offset"] += BATCH_SIZE
 
-    return comments_to_send, total_today, total_unreviewed
+    return total_today, total_unreviewed
 
 
 @task(task_id="send_alert_pending_comments", retries=3)
@@ -57,11 +61,7 @@ def send_alert_pending_comments():
 
     is_monday = datetime.datetime.today().weekday() == 0
 
-    comments_ans, total_today, total_unreviewed = process_comments(last_run_ts, is_monday)
-
-    if comments_ans:
-        send_comments("\n\n".join(comments_ans))
-        logging.info(f"Sent {len(comments_ans)} new comments.")
+    total_today, total_unreviewed = process_comments(last_run_ts, is_monday)
 
     result_message = ""
     if not is_monday and total_today:

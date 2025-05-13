@@ -38,7 +38,7 @@ def get_token_bot():
 
 
 def get_token_auth():
-    return get_env_variable("TOKEN_ROBOT_TIMETABLE")
+    return get_env_variable("TOKEN_ROBOT_RATING")
 
 
 def get_telegram_chat_id():
