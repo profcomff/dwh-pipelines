@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from functools import partial
 
 import requests as r
+import certifi
 from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
@@ -39,10 +40,10 @@ def get_balance():
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
         resp = s.get(
             f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}",
-            verify="my.vds.crt",
+            certifi.where(),
         )
         response_cookies = resp.cookies
-        resp = s.get(f"https://my.vds.sh/manager?out=sjson", cookies=response_cookies, verify="my.vds.crt")
+        resp = s.get(f"https://my.vds.sh/manager?out=sjson", cookies=response_cookies, verify=certifi.where())
         logging.info(resp.json())
         balance = resp.json()["doc"]["user"]["$balance"]
         balance = float(balance)
