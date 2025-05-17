@@ -35,23 +35,19 @@ def send_telegram_message_or_print(chat_id, balance):
 def get_balance():
     """Скачать данные из ЛК VDS.sh"""
     urllib3.disable_warnings()
-    
+
     with r.Session() as session:
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
-        
+
         url = "https://my.vds.sh/manager/billmgr"
         session.get(url, verify=False)
 
-        login_data = {
-            'func': 'auth',
-            'username': username,
-            'password': password
-        }
-        
+        login_data = {'func': 'auth', 'username': username, 'password': password}
+
         auth_response = session.post(url, data=login_data, verify=False)
         logging.info(f"Auth response status: {auth_response.status_code}")
-        
+
         try:
             auth_json = auth_response.json()
             if 'doc' in auth_json and '$func' in auth_json['doc'] and auth_json['doc']['$func'] == 'logon':
@@ -59,18 +55,14 @@ def get_balance():
                 return None
         except Exception as e:
             logging.info(f"Не удалось распарсить JSON ответа авторизации: {e}")
-        
-        balance_params = {
-            'func': 'desktop',
-            'startform': 'vds',
-            'out': 'xjson'
-        }
-        
+
+        balance_params = {'func': 'desktop', 'startform': 'vds', 'out': 'xjson'}
+
         balance_response = session.get(url, params=balance_params, verify=False)
         logging.info(f"Balance response status: {balance_response.status_code}")
         balance_data = balance_response.json()
         balance = float(balance_data['doc']['user']['$balance'])
-        
+
         return balance
 
 
