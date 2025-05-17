@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timedelta
 from functools import partial
 
-import certifi
 import requests as r
 import urllib3
 from airflow import DAG
@@ -34,25 +33,45 @@ def send_telegram_message_or_print(chat_id, balance):
 
 @task(task_id="fetch_users", retries=3)
 def get_balance():
-    """Скачать данные из ЛК ОПК"""
-    urllib3.disable_warnings()  # Отключает warning об отсутствии проверки сертификатов
-    with r.Session() as s:
+    """Скачать данные из ЛК VDS.sh"""
+    urllib3.disable_warnings()
+    
+    with r.Session() as session:
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
-        resp = s.get(
-            f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}",
-            verify=False,
-        )
-        response_cookies = resp.cookies.get_dict()  # Не вернет кукисы тк они с тегом http only в vds
-        params = {
+        
+        url = "https://my.vds.sh/manager/billmgr"
+        session.get(url, verify=False)
+
+        login_data = {
+            'func': 'auth',
+            'username': username,
+            'password': password
+        }
+        
+        auth_response = session.post(url, data=login_data, verify=False)
+        logging.info(f"Auth response status: {auth_response.status_code}")
+        
+        try:
+            auth_json = auth_response.json()
+            if 'doc' in auth_json and '$func' in auth_json['doc'] and auth_json['doc']['$func'] == 'logon':
+                logging.error("Авторизация не удалась, все еще на странице входа")
+                return None
+        except Exception as e:
+            logging.info(f"Не удалось распарсить JSON ответа авторизации: {e}")
+        
+        balance_params = {
             'func': 'desktop',
             'startform': 'vds',
-            'out': 'xjson',
+            'out': 'xjson'
         }
-        resp = s.get(f"http://my.vds.sh/manager/billmgr", params=params, cookies=response_cookies, verify=False)
-        balance = float(resp.json()["doc"]["user"]["$balance"])
-
-    return balance
+        
+        balance_response = session.get(url, params=balance_params, verify=False)
+        logging.info(f"Balance response status: {balance_response.status_code}")
+        balance_data = balance_response.json()
+        balance = float(balance_data['doc']['user']['$balance'])
+        
+        return balance
 
 
 with DAG(
