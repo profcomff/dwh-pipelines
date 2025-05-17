@@ -1,10 +1,10 @@
 import logging
-import urllib3
 from datetime import datetime, timedelta
 from functools import partial
 
-import requests as r
 import certifi
+import requests as r
+import urllib3
 from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
@@ -35,7 +35,7 @@ def send_telegram_message_or_print(chat_id, balance):
 @task(task_id="fetch_users", retries=3)
 def get_balance():
     """Скачать данные из ЛК ОПК"""
-    urllib3.disable_warnings() #Отключает warning об отсутствии проверки сертификатов
+    urllib3.disable_warnings()  # Отключает warning об отсутствии проверки сертификатов
     with r.Session() as s:
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
@@ -43,12 +43,12 @@ def get_balance():
             f"https://my.vds.sh/manager?out=sjson&func=auth&username={username}&password={password}",
             verify=False,
         )
-        response_cookies = resp.cookies.get_dict() #Не вернет кукисы тк они с тегом http only в vds
+        response_cookies = resp.cookies.get_dict()  # Не вернет кукисы тк они с тегом http only в vds
         params = {
             'func': 'desktop',
             'startform': 'vds',
             'out': 'xjson',
-        }   
+        }
         resp = s.get(f"http://my.vds.sh/manager/billmgr", params=params, cookies=response_cookies, verify=False)
         balance = float(resp.json()["doc"]["user"]["$balance"])
 
