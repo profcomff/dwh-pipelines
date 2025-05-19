@@ -12,6 +12,7 @@ from plugins.features import alert_message
 
 
 ENVIRONMENT = Variable.get("_ENVIRONMENT")
+url = "https://my.vds.sh/manager/billmgr"
 
 
 @task(task_id="send_telegram_message", retries=3)
@@ -40,7 +41,6 @@ def get_balance():
         username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
         password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
 
-        url = "https://my.vds.sh/manager/billmgr"
         session.get(url, verify=False)
 
         login_data = {'func': 'auth', 'username': username, 'password': password}
@@ -50,7 +50,7 @@ def get_balance():
 
         try:
             auth_json = auth_response.json()
-            if 'doc' in auth_json and '$func' in auth_json['doc'] and auth_json['doc']['$func'] == 'logon':
+            if auth_json['doc']['$func'] == 'logon':
                 logging.error("Авторизация не удалась, все еще на странице входа")
                 return None
         except Exception as e:
@@ -61,7 +61,10 @@ def get_balance():
         balance_response = session.get(url, params=balance_params, verify=False)
         logging.info(f"Balance response status: {balance_response.status_code}")
         balance_data = balance_response.json()
-        balance = float(balance_data['doc']['user']['$balance'])
+        balance = balance_data.get('doc', {}).get('user', {}).get('$balance', str())
+        if balance is None:
+            logging.info("Баланс не был получен")
+            raise ValueError
 
         return balance
 
