@@ -61,7 +61,6 @@ def get_balance():
         balance_response = session.get(url, params=balance_params, verify=False)
         logging.info(f"Balance response status: {balance_response.status_code}")
         balance_data = balance_response.json()
-        
         balance = float(balance_data.get('doc', {}).get('user', {}).get('$balance', str()))
 
         if balance is None:
