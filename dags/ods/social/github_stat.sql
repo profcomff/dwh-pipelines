@@ -1,7 +1,7 @@
 delete from "ODS_SOCIAL".git_hub;
 INSERT INTO "ODS_SOCIAL".git_hub
 SELECT
-    get_random_uuid() as uuid,
+    gen_random_uuid() as uuid,
     ws.message::jsonb->>'action' as status,
     ws.message::jsonb->'issue'->>'url' as issue_url,
     (ws.message::jsonb->'issue'->>'id')::bigint as issue_id,
