@@ -62,6 +62,7 @@ def get_balance():
         logging.info(f"Balance response status: {balance_response.status_code}")
         balance_data = balance_response.json()
         balance = float(balance_data.get('doc', {}).get('user', {}).get('$balance', str()))
+
         if balance is None:
             logging.info("Баланс не был получен")
             raise ValueError
