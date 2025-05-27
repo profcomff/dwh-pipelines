@@ -1,7 +1,7 @@
 delete from "ODS_SOCIAL".git_hub;
 INSERT INTO "ODS_SOCIAL".git_hub
 SELECT
-    get_random_uuid() as uuid,
+    gen_random_uuid() as uuid,
     ws.message::jsonb->>'action' as status,
     ws.message::jsonb->'issue'->>'url' as issue_url,
     (ws.message::jsonb->'issue'->>'id')::bigint as issue_id,
@@ -10,15 +10,15 @@ SELECT
     ws.message::jsonb->'issue'->>'title' as issue_title,
     (ws.message::jsonb->'repository'->>'id')::bigint as repository_id,
     (ws.message::jsonb->'issue'->'assignee'->>'id')::bigint as assignee_id,
-    ws.message::jsonb->'issue'->'assignee'->>'login' as assignee_login,
     (ws.message::jsonb->'issue'->>'created_at')::timestamptz as created_at,
     (ws.message::jsonb->'issue'->>'updated_at')::timestamptz as updated_at,
     (ws.message::jsonb->'issue'->>'closed_at')::timestamptz as closed_at,
     (ws.message::jsonb->'organization'->>'id')::bigint as organization_id,
     ws.message::jsonb->'organization'->>'login' as organization_login,
-    ws.event_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS event_ts
+    ws.event_ts AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow' AS event_ts,
+    ws.message::jsonb->'issue'->'assignee'->>'login' as assignee_login
 from "STG_SOCIAL".webhook_storage ws
-where true
+where 1=1
 		and system = 'GITHUB'
 		and ws.event_ts is not null
 		and (ws.message::jsonb->>'action') is not null
