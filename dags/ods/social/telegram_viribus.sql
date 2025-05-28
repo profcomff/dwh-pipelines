@@ -38,4 +38,4 @@ from "STG_SOCIAL".webhook_storage
 where 
 	1=1
 	and system = 'TELEGRAM'
-	and message::jsonb->'message'->'chat'->>'title' = 'Viribus Unitis';
+	and message::jsonb->'message'->'chat'->>'title' ilike '%Viribus Unitis%';
