@@ -17,7 +17,6 @@ SELECT
     (ws.message::jsonb->'repository'->>'id') as repository_id,
     (ws.message::jsonb->'issue'->'assignee'->>'id') as assignee_id,
     (ws.message::jsonb->'organization'->>'id') as organization_id
-
 from "STG_SOCIAL".webhook_storage ws
 where 1=1
 		and system = 'GITHUB'
