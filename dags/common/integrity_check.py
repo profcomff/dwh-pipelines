@@ -14,7 +14,7 @@ from plugins.api_utils import fetch_dwh_db, send_telegram_message
 
 send_telegram_message = task(task_id="send_telegram_message", retries=3)(send_telegram_message)
 
-fetch_db = task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))(fetch_db)
+fetch_dwh_db = task(task_id="fetch_db", outlets=Dataset("STG_UNION_MEMBER.union_member"))(fetch_db)
 
 with DAG(
     dag_id="dwh_integrity_check",
