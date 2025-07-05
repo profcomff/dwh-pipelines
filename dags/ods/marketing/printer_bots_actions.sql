@@ -6,9 +6,9 @@ SELECT
     path_from,
     path_to,
     COALESCE(elem->>'status', '')::VARCHAR AS status,
-    COALESCE(elem->>'user_id', ''):VARCHAR AS user_id,
+    COALESCE(elem->>'user_id', '')::VARCHAR AS user_id,
     COALESCE(elem->>'surname', '')::VARCHAR AS surname,
-    COALESCE(elem->>'number', ''):VARCHAR AS number,
+    COALESCE(elem->>'number', '')::VARCHAR AS number,
     CASE 
         WHEN (elem->>'pin') ~ '^[0-9]+$' THEN (elem->>'pin')::INT 
         ELSE 0 
