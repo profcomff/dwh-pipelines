@@ -17,7 +17,7 @@ with new_log as (
 merge into "DM_INFRA_LOGS".container_log_cube as clc
 using new_log as nl
     on nl.container_name = clc.container_name and nl.create_date = clc.create_date
-when matched and not (nl.container_name = 'all' and nl.create_date = 'all') then
+when matched and not (nl.container_name = 'all') and not(nl.create_date = 'all') then
     update set
         debug_cnt = greatest(clc.debug_cnt, nl.debug_cnt),
         warn_cnt = greatest(clc.warn_cnt, nl.warn_cnt),
