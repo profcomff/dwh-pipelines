@@ -39,6 +39,7 @@ def fetch_union_members():
         logging.info(resp)
         token = resp.json()["auth_token"]
 
+        # Первый эндпоинт - базовые поля -----------
         resp = s.get(
             "https://api-lk.msuprof.com/api/auth/users/",
             headers={
@@ -47,19 +48,49 @@ def fetch_union_members():
         )
         logging.info(resp)
 
-    try:
-        users_dict = resp.json()
-    except Exception as e:
-        logging.error("Failed to fetch data from lk.msuprof.com")
-        raise e
+        try:
+            users_dict = resp.json()
+        except Exception as e:
+            logging.error("Failed to fetch data from lk.msuprof.com")
+            raise e
+
+        # Второй эндпоинт - доп поля пользователей -----------
+        resp_additional = s.get(
+            "https://api-lk.msuprof.com/api/auth/users/",
+            headers={
+                "Authorization": f"token {token}",
+            },
+        )
+        logging.info(f"Additional fields response: {resp_additional}")
+
+        try:
+            additional_data = resp_additional.json()
+        except Exception as e:
+            logging.error("Failed to fetch additional data from lk.msuprof.com")
+            additional_data = []
+
+    # Объединяем данные из двух эндпоинтов
+    if additional_data and users_dict:
+        # Добавляем доп поля к основным данным
+        for user in users_dict:
+            user_id = user.get('id')
+            if user_id:
+                # Ищем соответствующего пользователя в доп данных
+                for additional_user in additional_data:
+                    if additional_user.get('id') == user_id:
+                        for key, value in additional_user.items():
+                            if key not in user:
+                                user[key] = value
+                        break
 
     if users_dict:
         all_keys = set()
         for user in users_dict:
             all_keys.update(user.keys())
 
-        logging.info(f"All fields from API: {sorted(all_keys)}")
+        logging.info(f"All fields from API (including additional): {sorted(all_keys)}")
 
+    # Разборка поля карт (там json который нужно развернуть)
     for i in users_dict:
         if "card" not in i:
             continue
@@ -72,6 +103,7 @@ def fetch_union_members():
         i["card_number"] = i["card"].get("number")
         i["card_user"] = i["card"].get("user")
         del i["card"]
+
     data = pd.DataFrame(users_dict)
     logging.info(f"DataFrame columns: {list(data.columns)}")
     data.to_sql(
