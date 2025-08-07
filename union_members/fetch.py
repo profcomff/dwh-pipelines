@@ -57,7 +57,7 @@ def fetch_union_members():
         all_keys = set()
         for user in users_dict:
             all_keys.update(user.keys())
-        
+
         logging.info(f"All fields from API: {sorted(all_keys)}")
 
     for i in users_dict:
