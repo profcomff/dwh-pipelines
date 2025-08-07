@@ -118,22 +118,22 @@ def get_api_fields():
         logging.info("=" * 50)
         logging.info("ADMIN USER DATA FROM /me/ ENDPOINT:")
         logging.info("=" * 50)
-        
+
         # Логируем все поля
         for key, value in admin_data.items():
             logging.info(f"{key}: {value}")
-        
+
         logging.info("=" * 50)
         logging.info(f"ALL AVAILABLE FIELDS: {sorted(admin_data.keys())}")
         logging.info("=" * 50)
         logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
         logging.info("=" * 50)
-        
+
     except Exception as e:
         logging.error("Failed to fetch data from lk.msuprof.com")
         logging.error(f"Response text: {resp.text}")
         raise e
-    
+
     logging.info("FUNCTION COMPLETED - CHECK LOGS ABOVE FOR ADMIN DATA")
     return 0
 
