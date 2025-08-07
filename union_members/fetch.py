@@ -27,7 +27,9 @@ def fetch_union_members():
     """Скачать данные из ЛК ОПК"""
 
     with r.Session() as s:
-        logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
+        logging.info(
+            "Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME")
+        )
 
         resp = s.post(
             "https://api-lk.msuprof.com/api/auth/token/login/",
@@ -63,6 +65,7 @@ def fetch_union_members():
         i["card_user"] = i["card"].get("user")
         del i["card"]
     data = pd.DataFrame(users_dict)
+    logging.info(list(data.columns))
     data.to_sql(
         "union_member",
         Connection.get_connection_from_secrets("postgres_dwh")
@@ -85,7 +88,9 @@ def fetch_union_members():
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
-        "on_failure_callback": lambda: send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS"))),
+        "on_failure_callback": lambda: send_telegram_message(
+            int(Variable.get("TG_CHAT_MANAGERS"))
+        ),
     },
 )
 def union_member_download():
