@@ -53,8 +53,18 @@ def fetch_union_members():
         logging.error("Failed to fetch data from lk.msuprof.com")
         raise e
 
+    if users_dict:
+        all_keys = set()
+        for user in users_dict:
+            all_keys.update(user.keys())
+        
+        logging.info(f"All fields from API: {sorted(all_keys)}")
+
     for i in users_dict:
-        if "card" not in i or i["card"] is None:
+        if "card" not in i:
+            continue
+        if i["card"] is None:
+            del i["card"]
             continue
         i["card_id"] = i["card"].get("id")
         i["card_status"] = i["card"].get("status")
@@ -63,7 +73,7 @@ def fetch_union_members():
         i["card_user"] = i["card"].get("user")
         del i["card"]
     data = pd.DataFrame(users_dict)
-    logging.info(list(data.columns))
+    logging.info(f"DataFrame columns: {list(data.columns)}")
     data.to_sql(
         "union_member",
         Connection.get_connection_from_secrets("postgres_dwh")
