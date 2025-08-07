@@ -30,7 +30,7 @@ def fetch_union_members():
         logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
 
         resp = s.post(
-            "https://api-lk.msuprof.com/api/auth/token/login/",
+            "https://api-lk.msuprof.com/api/auth/users/me",
             data={
                 "email": str(Variable.get("LK_MSUPROF_ADMIN_USERNAME")),
                 "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
