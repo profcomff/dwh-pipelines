@@ -40,7 +40,7 @@ def fetch_union_members():
         token = resp.json()["auth_token"]
 
         resp = s.get(
-            "https://api-lk.msuprof.com/api/auth/users/me/",
+            "https://api-lk.msuprof.com/api/auth/users/",
             headers={
                 "Authorization": f"token {token}",
             },
@@ -87,6 +87,57 @@ def fetch_union_members():
     return len(data)
 
 
+# ТАСКА ВЫВОДА ПОЛЕЙ ДЛЯ ENDPOINT /api/auth/users/me/
+@task(task_id="get_fields", outlets=Dataset("STG_UNION_MEMBER.union_member"))
+def get_api_fields():
+    """Скачать данные из ЛК ОПК - ТОЛЬКО ЛОГИРОВАНИЕ АДМИНА"""
+
+    with r.Session() as s:
+        logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
+
+        resp = s.post(
+            "https://api-lk.msuprof.com/api/auth/token/login/",
+            data={
+                "email": str(Variable.get("LK_MSUPROF_ADMIN_USERNAME")),
+                "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
+            },
+        )
+        logging.info(f"Login response status: {resp.status_code}")
+        token = resp.json()["auth_token"]
+
+        resp = s.get(
+            "https://api-lk.msuprof.com/api/auth/users/me/",
+            headers={
+                "Authorization": f"token {token}",
+            },
+        )
+        logging.info(f"Me endpoint response status: {resp.status_code}")
+
+    try:
+        admin_data = resp.json()
+        logging.info("=" * 50)
+        logging.info("ADMIN USER DATA FROM /me/ ENDPOINT:")
+        logging.info("=" * 50)
+        
+        # Логируем все поля
+        for key, value in admin_data.items():
+            logging.info(f"{key}: {value}")
+        
+        logging.info("=" * 50)
+        logging.info(f"ALL AVAILABLE FIELDS: {sorted(admin_data.keys())}")
+        logging.info("=" * 50)
+        logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
+        logging.info("=" * 50)
+        
+    except Exception as e:
+        logging.error("Failed to fetch data from lk.msuprof.com")
+        logging.error(f"Response text: {resp.text}")
+        raise e
+    
+    logging.info("FUNCTION COMPLETED - CHECK LOGS ABOVE FOR ADMIN DATA")
+    return 0
+
+
 @dag(
     schedule="0 0 */1 * *",
     start_date=datetime(2023, 1, 1, 2, 0, 0),
@@ -100,7 +151,8 @@ def fetch_union_members():
     },
 )
 def union_member_download():
-    union_members_result = fetch_union_members()
+    # union_members_result = fetch_union_members()
+    union_members_result = get_api_fields()
 
 
 union_member_sync = union_member_download()
