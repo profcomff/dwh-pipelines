@@ -63,6 +63,7 @@ def fetch_union_members():
         i["card_user"] = i["card"].get("user")
         del i["card"]
     data = pd.DataFrame(users_dict)
+    logging.info(list(data.columns))
     data.to_sql(
         "union_member",
         Connection.get_connection_from_secrets("postgres_dwh")
