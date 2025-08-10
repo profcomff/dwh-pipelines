@@ -123,10 +123,14 @@ def get_api_fields():
         for key, value in admin_data.items():
             logging.info(f"{key}: {value}")
 
+        keys_list = list(admin_data.keys())
+
         logging.info("=" * 50)
-        logging.info(f"ALL AVAILABLE FIELDS: {sorted(admin_data.keys())}")
+        logging.info(f"ALL AVAILABLE FIELDS: {sorted(keys_list)}")
         logging.info("=" * 50)
-        logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
+        logging.info(f"TOTAL FIELDS COUNT: {len(keys_list)}")
+        logging.info("=" * 50)
+        logging.info(f"DATAFRAME SHAPE: {pd.DataFrame(keys_list, columns=['fields']).shape}")
         logging.info("=" * 50)
 
     except Exception as e:
