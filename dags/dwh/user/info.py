@@ -23,11 +23,25 @@ with DAG(
         "owner": "redstoneenjoyer",
     },
 ) as dag:
-    run_sql = PostgresOperator(
+    run_sql_regular = PostgresOperator(
         task_id="execute_sql",
         postgres_conn_id="postgres_dwh",
         sql="info.sql",
         doc_md=get_sql_code("info.sql", os.path.dirname(os.path.abspath(__file__))),
+        # порядок датасетов здесь важен!
+        # см. info.sql и https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html#variables
         inlets=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param")],
         outlets=[Dataset("DWH_USER_INFO.info")],
+        params={"tablename": "info"},
+    )
+    run_sql_encrypted = PostgresOperator(
+        task_id="execute_sql_enctyped",
+        postgres_conn_id="postgres_dwh",
+        sql="info.sql",
+        doc_md=get_sql_code("info.sql", os.path.dirname(os.path.abspath(__file__))),
+        # порядок датасетов здесь важен!
+        # см. info.sql и https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html#variables
+        inlets=[Dataset("STG_USERDATA.encrypted_info"), Dataset("STG_USERDATA.param")],
+        outlets=[Dataset("DWH_USER_INFO.encrypted_info")],
+        params={"tablename": "encrypted_info"},
     )
