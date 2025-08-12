@@ -129,8 +129,8 @@ def get_api_fields():
         logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
         logging.info("=" * 50)
         if not user_dict:
-            data = pd.DataFrame(users_dict)
-            logging.info(f"DATAFRAME SHAPE: {data.shape}")
+            df = pd.DataFrame(admin_data)
+            logging.info(f"DATAFRAME SHAPE: {df.shape}")
             logging.info("=" * 50)
 
     except Exception as e:
