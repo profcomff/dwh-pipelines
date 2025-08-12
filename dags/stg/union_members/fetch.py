@@ -128,6 +128,10 @@ def get_api_fields():
         logging.info("=" * 50)
         logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
         logging.info("=" * 50)
+        if not user_dict:
+            data = pd.DataFrame(users_dict)
+            logging.info(f"DATAFRAME SHAPE: {data.shape}")
+            logging.info("=" * 50)
 
     except Exception as e:
         logging.error("Failed to fetch data from lk.msuprof.com")
