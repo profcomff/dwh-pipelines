@@ -26,4 +26,3 @@ with DAG(
         inlets=[Dataset("STG_RATING.lecturer")],
         outlets=[Dataset("ODS_RATING.lecturer")],
     )
-    
