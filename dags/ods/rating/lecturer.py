@@ -1,9 +1,7 @@
 from datetime import datetime
 from functools import partial
-from textwrap import dedent
 
 from airflow import DAG, Dataset
-from airflow.decorators import task
 from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
@@ -28,3 +26,4 @@ with DAG(
         inlets=[Dataset("STG_RATING.lecturer")],
         outlets=[Dataset("ODS_RATING.lecturer")],
     )
+    
