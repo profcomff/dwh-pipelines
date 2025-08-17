@@ -32,39 +32,3 @@ where lecturer.api_id NOT IN(
     and dwh.mark_freebie_weighted = ods.mark_freebie_weighted
 );
 
-
---evaluate increment
-insert into "DWH_RATING".lecturer
-select
-    gen_random_uuid(),
-    ods.api_id,
-    ods.first_name,
-    ods.last_name,
-    ods.middle_name,
-    ods.subject,
-    ods.avatar_link,
-    ods.timetable_id,
-    '{{ ds }}'::Date,
-    null,
-    '0',
-    ods.mark_weighted,
-    ods.mark_kindness_weighted,
-    ods.mark_clarity_weighted,
-    ods.mark_freebie_weighted
-    from "ODS_RATING".lecturer as ods
-    left join "DWH_RATING".lecturer as dwh
-    on ods.api_id = dwh.api_id
-    and dwh.valid_to_dt is null
-LIMIT 1000000; -- чтобы не раздуло
-
--- calculate rank
-with ranked as (
-    select api_id, ROW_NUMBER() OVER (ORDER BY mark_weighted DESC) as rank 
-    from "DWH_RATING".lecturer
-    where valid_to_dt is null
-)
-update "DWH_RATING".lecturer as l
-set rank = ranked.rank
-from ranked
-where l.api_id = ranked.api_id
-and l.valid_to_dt is null;

@@ -25,11 +25,29 @@ with DAG(
         "owner": "mixx3",
     },
 ):
-    PostgresOperator(
-        task_id="lecturer_hist",
+    close_records = PostgresOperator(
+        task_id="lecturer_close_records",
         postgres_conn_id="postgres_dwh",
-        sql="lecturer.sql",
-        doc_md=get_sql_code("lecturer.sql", os.path.dirname(os.path.abspath(__file__))),
+        sql="lecturer_close_records.sql",
+        doc_md=get_sql_code("lecturer_close_records.sql", os.path.dirname(os.path.abspath(__file__))),
         inlets=[Dataset("ODS_RATING.lecturer")],
         outlets=[Dataset("DWH_RATING.lecturer")],
     )
+    evaluate_increment = PostgresOperator(
+        task_id="lecturer_evaluate_increment",
+        postgres_conn_id="postgres_dwh",
+        sql="lecturer_evaluate_increment.sql",
+        doc_md=get_sql_code("lecturer_evaluate_increment.sql", os.path.dirname(os.path.abspath(__file__))),
+        inlets=[Dataset("ODS_RATING.lecturer")],
+        outlets=[Dataset("DWH_RATING.lecturer")],
+    )
+    calculate_rank = PostgresOperator(
+        task_id="lecturer_calculate_rank",
+        postgres_conn_id="postgres_dwh",
+        sql="lecturer_calculate_rank.sql",
+        doc_md=get_sql_code("lecturer_calculate_rank.sql", os.path.dirname(os.path.abspath(__file__))),
+        inlets=[Dataset("ODS_RATING.lecturer")],
+        outlets=[Dataset("DWH_RATING.lecturer")],
+    )
+    close_records >> evaluate_increment >> calculate_rank
+    
