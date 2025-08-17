@@ -50,4 +50,3 @@ with DAG(
         outlets=[Dataset("DWH_RATING.lecturer")],
     )
     close_records >> evaluate_increment >> calculate_rank
-    
