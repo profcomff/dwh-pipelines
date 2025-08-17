@@ -19,7 +19,9 @@ copy_table_to_dwh = task(task_id="copy_table_to_dwh", trigger_rule="one_done", r
 with DAG(
     dag_id="upload_api_rating",
     start_date=datetime(2024, 12, 14),
-    schedule="@daily",
+    schedule=Dataset("api_rating.lecturer")
+    | Dataset("api_rating.comment")
+    | Dataset("api_rating.lecturer_user_comment"),
     catchup=False,
     tags=["dwh", "stg", "rating"],
     default_args={
