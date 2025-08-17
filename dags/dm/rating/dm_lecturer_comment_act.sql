@@ -1,4 +1,4 @@
-delete from "DM_RATING".dm_lecturer_comment_act;
+truncate "DM_RATING".dm_lecturer_comment_act;
 
 insert into "DM_RATING".dm_lecturer_comment_act
 select 
@@ -22,7 +22,12 @@ select
     max(comment.review_status) as comment_review_status,
     max(link_user_comment.user_id) as user_id,
     max(user_info.full_name) as user_full_name,
-    max(user_info.email) as user_email
+    max(user_info.email) as user_email,
+    max(lecturer.mark_weighted) as mark_weighted,
+    max(lecturer.mark_kindness_weighted) as mark_kindness_weighted,
+    max(lecturer.mark_clarity_weighted) as mark_clarity_weighted,
+    max(lecturer.mark_freebie_weighted) as mark_freebie_weighted,
+    max(lecturer.rank) as rank
 from "DWH_RATING".comment as comment
     left join "DWH_RATING".lecturer as lecturer
     on comment.lecturer_id = lecturer.api_id
@@ -33,6 +38,11 @@ from "DWH_RATING".comment as comment
 where 1=1
     and lecturer.valid_to_dt is null
     and comment.valid_to_dt is null
+    and lecturer.valid_from_dt = (
+        select max(valid_from_dt) from "DWH_RATING".lecturer
+        where lecturer.api_id = comment.lecturer_id
+    )
 group by 
     comment.api_uuid,
-    lecturer.api_id;
+    lecturer.api_id,
+    lecturer.valid_from_dt;
