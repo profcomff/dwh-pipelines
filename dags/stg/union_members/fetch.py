@@ -128,18 +128,59 @@ def get_api_fields():
         logging.info("=" * 50)
         logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
         logging.info("=" * 50)
-        if admin_data:
-            df = pd.DataFrame(admin_data)
-            logging.info(f"DATAFRAME SHAPE: {df.shape}")
-            logging.info("=" * 50)
+        
+        # Подсчет общего количества "строк" в ответе API
+        def count_rows(data):
+            """Рекурсивно подсчитывает количество записей в данных"""
+            if isinstance(data, dict):
+                # Если это словарь, считаем как одну запись
+                return 1
+            elif isinstance(data, list):
+                # Если это список, считаем количество элементов
+                return len(data)
+            else:
+                # Для примитивных типов считаем как одну запись
+                return 1
+
+        total_rows = count_rows(admin_data)
+        logging.info(f"TOTAL ROWS IN API RESPONSE: {total_rows}")
+        
+        # Альтернативный подсчет - если нужно посчитать все вложенные элементы
+        def count_all_items(data):
+            """Рекурсивно подсчитывает все элементы во вложенных структурах"""
+            count = 0
+            if isinstance(data, dict):
+                count += 1  # сам словарь
+                for value in data.values():
+                    count += count_all_items(value)
+            elif isinstance(data, list):
+                count += len(data)  # все элементы списка
+                for item in data:
+                    count += count_all_items(item)
+            else:
+                count += 1  # примитивное значение
+            return count
+
+        total_items = count_all_items(admin_data)
+        logging.info(f"TOTAL ITEMS (INCLUDING NESTED): {total_items}")
+        
+        # Информация о структуре данных
+        logging.info(f"DATA TYPE: {type(admin_data).__name__}")
+        if isinstance(admin_data, dict):
+            logging.info("Response is a SINGLE OBJECT (dictionary)")
+        elif isinstance(admin_data, list):
+            logging.info(f"Response is a LIST with {len(admin_data)} items")
+        
+        logging.info("=" * 50)
 
     except Exception as e:
         logging.error("Failed to fetch data from lk.msuprof.com")
         logging.error(f"Response text: {resp.text}")
+        logging.error(f"Error: {str(e)}")
         raise e
 
     logging.info("FUNCTION COMPLETED - CHECK LOGS ABOVE FOR ADMIN DATA")
-    return 0
+    return total_rows
 
 
 @dag(
