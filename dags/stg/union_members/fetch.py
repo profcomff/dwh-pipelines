@@ -128,7 +128,7 @@ def get_api_fields():
         logging.info("=" * 50)
         logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
         logging.info("=" * 50)
-        
+
         # Подсчет общего количества "строк" в ответе API
         def count_rows(data):
             """Рекурсивно подсчитывает количество записей в данных"""
@@ -144,7 +144,7 @@ def get_api_fields():
 
         total_rows = count_rows(admin_data)
         logging.info(f"TOTAL ROWS IN API RESPONSE: {total_rows}")
-        
+
         # Альтернативный подсчет - если нужно посчитать все вложенные элементы
         def count_all_items(data):
             """Рекурсивно подсчитывает все элементы во вложенных структурах"""
@@ -163,14 +163,14 @@ def get_api_fields():
 
         total_items = count_all_items(admin_data)
         logging.info(f"TOTAL ITEMS (INCLUDING NESTED): {total_items}")
-        
+
         # Информация о структуре данных
         logging.info(f"DATA TYPE: {type(admin_data).__name__}")
         if isinstance(admin_data, dict):
             logging.info("Response is a SINGLE OBJECT (dictionary)")
         elif isinstance(admin_data, list):
             logging.info(f"Response is a LIST with {len(admin_data)} items")
-        
+
         logging.info("=" * 50)
 
     except Exception as e:
