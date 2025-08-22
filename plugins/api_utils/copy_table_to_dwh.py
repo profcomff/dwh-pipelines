@@ -115,7 +115,13 @@ def copy_table_to_dwh(
                 __COPY_CTX_ENCRYPT_COLS = set(encrypt_cols)
                 __COPY_CTX_KEY_OWNER_COL = key_owner_column
                 __COPY_CTX_KEY_TABLE = key_table
-                data.to_sql(to_table, dwh, schema=to_schema, if_exists="append", method=__custom_execute)
+                data.to_sql(
+                    to_table,
+                    dwh,
+                    schema=to_schema,
+                    if_exists="append",
+                    method=__custom_execute,
+                )
                 logging.info(f"encrypting columns {encrypt_cols}")
             logging.info("%d of %d rows copied", i + len(data), data_length)
 
