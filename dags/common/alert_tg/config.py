@@ -14,8 +14,8 @@ def get_env_variable(name: str, default=None):
 
 # Список адресов API для разных окружений
 API_APP_URLS = {
-    "test": "https://api.test.profcomff.com/rating/comment",
-    "prod": "https://api.profcomff.com/rating/comment",
+    "test": "https://api.test.profcomff.com/rating",
+    "prod": "https://api.profcomff.com/rating",
 }
 APP_URLS = {
     "test": "https://app.test.profcomff.com/apps/44",
