@@ -2,17 +2,17 @@ import logging
 
 import requests
 
-from dags.common.alert_tg.config import get_api_url, get_token_auth
+from dags.common.alert_tg.config import get_userdata_url, get_token_auth
 
 
-def get_lecturer_by_id(lecturer_id: int):
+def get_userdata_by_id(user_id: int):
     """Получает объект преподавателя по id."""
-    api_url = get_api_url()
+    userdata_url = get_userdata_url()
     headers = {"Authorization": get_token_auth(), "accept": "application/json"}
 
-    response = requests.get(api_url+"/lecturer/"+lecturer_id, headers=headers)
+    response = requests.get(userdata_url+"/user/"+user_id, headers=headers)
 
-    logging.info("Lecrurer: "+response.text)
+    logging.info("UserData: "+response.text)
 
     if response.status_code != 200:
         logging.error("Ошибка запроса: %s", response.text)
@@ -27,3 +27,11 @@ def get_lecturer_by_id(lecturer_id: int):
     except ValueError as e:
         logging.error("Ошибка парсинга JSON: %s", e)
         return None
+
+def get_user_name_from_userdata(user_id: int):
+    if user_id is None:
+        return "Anonim"
+
+    for dct in get_userdata_by_id(user_id=user_id)['items']:
+        if dct.get("param", None) == "Полное имя":
+            return dct['value']
