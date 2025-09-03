@@ -14,9 +14,15 @@ def get_env_variable(name: str, default=None):
 
 # Список адресов API для разных окружений
 API_APP_URLS = {
-    "test": "https://api.test.profcomff.com/rating/comment",
-    "prod": "https://api.profcomff.com/rating/comment",
+    "test": "https://api.test.profcomff.com/rating",
+    "prod": "https://api.profcomff.com/rating",
 }
+
+API_USERDATA_URLS = {
+    "test": "https://api.test.profcomff.com/userdata",
+    "prod": "https://api.profcomff.com/userdata",
+}
+
 APP_URLS = {
     "test": "https://app.test.profcomff.com/apps/44",
     "prod": "https://app.profcomff.com/apps/62",
@@ -25,7 +31,12 @@ APP_URLS = {
 
 def get_api_url():
     environment = get_env_variable("_ENVIRONMENT", "test")
-    return API_APP_URLS.get(environment, APP_URLS["test"])
+    return API_APP_URLS.get(environment, API_APP_URLS["test"])
+
+
+def get_userdata_url():
+    environment = get_env_variable("_ENVIRONMENT", "test")
+    return API_USERDATA_URLS.get(environment, API_USERDATA_URLS["test"])
 
 
 def get_app_url():
