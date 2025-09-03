@@ -2,7 +2,7 @@ import logging
 
 import requests
 
-from dags.common.alert_tg.config import get_userdata_url, get_token_auth
+from dags.common.alert_tg.config import get_token_auth, get_userdata_url
 
 
 def get_userdata_by_id(user_id: int):
@@ -10,9 +10,9 @@ def get_userdata_by_id(user_id: int):
     userdata_url = get_userdata_url()
     headers = {"Authorization": get_token_auth(), "accept": "application/json"}
 
-    response = requests.get(userdata_url+"/user/"+user_id, headers=headers)
+    response = requests.get(userdata_url + "/user/" + user_id, headers=headers)
 
-    logging.info("UserData: "+response.text)
+    logging.info("UserData: " + response.text)
 
     if response.status_code != 200:
         logging.error("Ошибка запроса: %s", response.text)
@@ -27,6 +27,7 @@ def get_userdata_by_id(user_id: int):
     except ValueError as e:
         logging.error("Ошибка парсинга JSON: %s", e)
         return None
+
 
 def get_user_name_from_userdata(user_id: int):
     if user_id is None:

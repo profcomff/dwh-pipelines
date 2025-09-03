@@ -33,6 +33,7 @@ def get_api_url():
     environment = get_env_variable("_ENVIRONMENT", "test")
     return API_APP_URLS.get(environment, API_APP_URLS["test"])
 
+
 def get_userdata_url():
     environment = get_env_variable("_ENVIRONMENT", "test")
     return API_USERDATA_URLS.get(environment, API_USERDATA_URLS["test"])

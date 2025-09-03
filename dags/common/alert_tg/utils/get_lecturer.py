@@ -10,9 +10,9 @@ def get_lecturer_by_id(lecturer_id: int):
     api_url = get_api_url()
     headers = {"Authorization": get_token_auth(), "accept": "application/json"}
 
-    response = requests.get(api_url+"/lecturer/"+lecturer_id, headers=headers)
+    response = requests.get(api_url + "/lecturer/" + lecturer_id, headers=headers)
 
-    logging.info("Lecrurer: "+response.text)
+    logging.info("Lecrurer: " + response.text)
 
     if response.status_code != 200:
         logging.error("Ошибка запроса: %s", response.text)

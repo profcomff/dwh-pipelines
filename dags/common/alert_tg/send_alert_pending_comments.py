@@ -37,21 +37,25 @@ def process_comments(last_run_ts, is_monday):
             comment_update_ts = datetime.datetime.fromisoformat(comment["update_ts"])
             if comment_update_ts >= last_run_ts:
                 summary_message = f""  # формируем Сообщение для ТГ
-                
+
                 try:
                     lecturer = get_lecturer_by_id(comment['lecturer_id'])
                     if lecturer:
                         summary_message += f"👨‍🏫 Преподаватель: {lecturer['last_name']+lecturer['first_name'][:1]+'.'+lecturer['middle_name'][:1]+'.'}\n"
                 except Exception as e:
                     logging.log("Не удалось получить имя преподавателя:", e)
-            
+
                 summary_message += f"📚 Предмет: \"{comment['subject']}\"\n"
                 try:
-                    summary_message += f"👤 Автор_id: {get_user_name_from_userdata(comment['user_id'])}\n"  # Получаем Имя
+                    summary_message += (
+                        f"👤 Автор_id: {get_user_name_from_userdata(comment['user_id'])}\n"  # Получаем Имя
+                    )
                 except Exception as e:
                     logging.log("Не удалось получить имя юзера:", e)
 
-                summary_message += f"💬 Текст: \"{comment['text'] if len(comment['text']) < 17 else comment['text'][:13]+'...'}\"\n"
+                summary_message += (
+                    f"💬 Текст: \"{comment['text'] if len(comment['text']) < 17 else comment['text'][:13]+'...'}\"\n"
+                )
                 comments_to_send.append(summary_message)
                 total_today += 1
 

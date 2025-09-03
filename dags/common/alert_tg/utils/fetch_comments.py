@@ -10,7 +10,7 @@ def fetch_comments(payload):
     api_url = get_api_url()
     headers = {"Authorization": get_token_auth(), "accept": "application/json"}
 
-    response = requests.get(api_url+"/comment", params=payload, headers=headers)
+    response = requests.get(api_url + "/comment", params=payload, headers=headers)
 
     logging.info(response.text)
 
