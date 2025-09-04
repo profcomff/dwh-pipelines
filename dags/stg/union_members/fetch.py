@@ -73,8 +73,9 @@ def fetch_union_members():
         i["card_user"] = i["card"].get("user")
         del i["card"]
     data = pd.DataFrame(users_dict)
+    logging.info(f"Number of people in initial DataFrame: {len(data)}")
     logging.info(f"DataFrame columns: {list(data.columns)}")
-    data.to_sql(
+    sql_num = data.to_sql(
         "union_member",
         Connection.get_connection_from_secrets("postgres_dwh")
         .get_uri()
@@ -84,7 +85,7 @@ def fetch_union_members():
         if_exists="replace",
         index=False,
     )
-    return len(data)
+    return f"Number of people in sql DataFrame {sql_num}"
 
 
 # ТАСКА ВЫВОДА ПОЛЕЙ ДЛЯ ENDPOINT /api/auth/users/me/
