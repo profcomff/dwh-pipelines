@@ -197,7 +197,7 @@ def get_api_fields():
     },
 )
 def union_member_download():
-    # union_members_result = fetch_union_members()
+    union_members_result = fetch_union_members()
     union_members_result = get_api_fields()
 
 
