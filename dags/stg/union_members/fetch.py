@@ -40,25 +40,38 @@ def fetch_union_members():
         token = resp.json()["auth_token"]
 
         resp = s.get(
-            "https://api-lk.msuprof.com/api/auth/users/",
+            "https://api-lk.msuprof.com/api/auth/users/?status=MEMBER",
             headers={
                 "Authorization": f"token {token}",
             },
         )
         logging.info(resp)
 
-    try:
-        users_dict = resp.json()
-    except Exception as e:
-        logging.error("Failed to fetch data from lk.msuprof.com")
-        raise e
+        try:
+            users_dict = resp.json()
+        except Exception as e:
+            logging.error("Failed to fetch data from lk.msuprof.com")
+            raise e
 
-    if users_dict:
-        all_keys = set()
+        if users_dict:
+            all_keys = set()
+            for user in users_dict:
+                all_keys.update(user.keys())
+
+            logging.info(f"All fields from API: {sorted(all_keys)}")
         for user in users_dict:
-            all_keys.update(user.keys())
+            resp_studend_id = s.get(
+                f"https://api-lk.msuprof.com/api/auth/users/{user["id"]}",
+                headers={
+                    "Authorization": f"token {token}",
+                },
+            )
+            try:
+                resp_studend_id_dict = resp_studend_id.json()
+            except Exception as e:
+                logging.error(f"Failed to fetch data from lk.msuprof.com for user {user["id"]}")
 
-        logging.info(f"All fields from API: {sorted(all_keys)}")
+            users_dict["student_id"] = resp_studend_id_dict["student_id"]
 
     for i in users_dict:
         if "card" not in i:
