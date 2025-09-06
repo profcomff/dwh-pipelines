@@ -64,15 +64,14 @@ def fetch_union_members():
                 f"https://api-lk.msuprof.com/api/auth/users/{user["id"]}",
                 headers={
                     "Authorization": f"token {token}",
-                }
+                },
             )
             try:
                 resp_studend_id_dict = resp_studend_id.json()
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user["id"]}")
-            
+
             users_dict["student_id"] = resp_studend_id_dict["student_id"]
-    
 
     for i in users_dict:
         if "card" not in i:
