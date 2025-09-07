@@ -41,39 +41,39 @@ def patch_lecturer_rating_backend(lecturer_with_rating: list[dict]):
 def get_lecturers_with_rating_from_dwh() -> list[dict]:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
-        with conn.cursor() as cursor:
-            try:
-                cursor.execute(
-                    """
-                SELECT * FROM DWH_RATING.lecturer as l
-                WHERE l.valid_to_dt is NULL
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
                 """
+            SELECT * FROM DWH_RATING.lecturer as l
+            WHERE l.valid_to_dt is NULL
+            """
+            )
+            results = cursor.fetchall()
+            lecturers_with_rating = []
+            for result in results:
+                lecturers_with_rating.append(
+                    {
+                        "id": int(result[0]),
+                        "first_name": str(result[1]),
+                        "last_name": str(result[2]),
+                        "middle_name": str(result[3]),
+                        "avatar_link": str(result[4]) if result[4] is not None else None,
+                        "timetable_id": int(result[5]),
+                        "mark_weighted": float(result[6]),
+                        "mark_kindness_weighted": float(result[7]),
+                        "mark_clarity_weighted": float(result[8]),
+                        "mark_freebie_weighted": float(result[9]),
+                        "rank": int(result[10]),
+                    }
                 )
-                results = cursor.fetchall()
-                lecturers_with_rating = []
-                for result in results:
-                    lecturers_with_rating.append(
-                        {
-                            "id": int(result[0]),
-                            "first_name": str(result[1]),
-                            "last_name": str(result[2]),
-                            "middle_name": str(result[3]),
-                            "avatar_link": str(result[4]) if result[4] is not None else None,
-                            "timetable_id": int(result[5]),
-                            "mark_weighted": float(result[6]),
-                            "mark_kindness_weighted": float(result[7]),
-                            "mark_clarity_weighted": float(result[8]),
-                            "mark_freebie_weighted": float(result[9]),
-                            "rank": int(result[10]),
-                        }
-                    )
 
-                logging.info(f"Took {len(lecturers_with_rating)} lecturers from dwh database")
-                return lecturers_with_rating
+            logging.info(f"Took {len(lecturers_with_rating)} lecturers from dwh database")
+            return lecturers_with_rating
 
-            except Exception as e:
-                logging.error(f"Error ocured while fetching data from dwh db: {str(e)}")
-                return []
+        except Exception as e:
+            logging.error(f"Error ocured while fetching data from dwh db: {str(e)}")
+            return []
 
 
 with DAG(
