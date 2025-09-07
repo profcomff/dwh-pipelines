@@ -24,7 +24,7 @@ def patch_lecturer_rating_backend(lecturer_with_rating: list[dict]):
         response = r.patch(
             url=API_URL,
             headers={
-                "Authorization": f"token {Variable.get('RATING_API_TOKEN')}",
+                "Authorization": f"token {Variable.get('TOKEN_ROBOT_RATING')}",
             },
             json=lecturer_with_rating,
         )
