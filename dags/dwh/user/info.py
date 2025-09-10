@@ -35,7 +35,7 @@ with DAG(
         params={"tablename": "info"},
     )
     run_sql_encrypted = PostgresOperator(
-        task_id="execute_sql_enctyped",
+        task_id="execute_sql_encrypted",
         postgres_conn_id="postgres_dwh",
         sql="info.sql",
         doc_md=get_sql_code("info.sql", os.path.dirname(os.path.abspath(__file__))),
