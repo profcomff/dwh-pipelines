@@ -103,71 +103,31 @@ select
 	    ud.city_source as city_source,
 	    ud.department as department,
 	    ud.department_source as department_source,
-	    case
-	    	when um.education_form is not null and ud.education_form is not null then
-	    	case
-	    		when um.education_form = ud.education_form then um.education_form
-	    		else CONCAT(um.education_form, ', ', ud.education_form)
-	    	end
-	    	when um.education_form is not null then um.education_form
-	    	when ud.education_form is not null then ud.education_form
-	    end  as education_form,
+	    CONCAT_WS(um.education_form, ', ', ud.education_form) as education_form,
 	    case
 	    	when um.education_form is not null and ud.education_form is not null then CONCAT(um.source, ', ', ud.education_form_source)
 	    	when um.education_form is not null then um.source
 	    	when ud.education_form is not null then ud.education_form_source
 	    end  as education_form_source,
-	    case
-	    	when um.education_level is not null and ud.education_level is not null then
-	    	case
-	    		when um.education_level = ud.education_level then um.education_level
-	    		else CONCAT(um.education_level, ', ', ud.education_level)
-	    	end
-	    	when um.education_level is not null then um.education_level
-	    	when ud.education_level is not null then ud.education_level
-	    end  as education_level,
+	   CONCAT_WS(um.education_level, ', ', ud.education_level)  as education_level,
 	    case
 	    	when um.education_level is not null and ud.education_level is not null then CONCAT(um.source, ', ', ud.education_level_source)
 	    	when um.education_level is not null then um.source
 	    	when ud.education_level is not null then ud.education_level_source
 	    end  as education_level_source,
-	    case
-	    	when um.email is not null and ud.email is not null then
-	    	case
-	    		when um.email = ud.email then um.email
-	    		else CONCAT(um.email, ', ', ud.email)
-	    	end
-	    	when um.email is not null then um.email
-	    	when ud.email is not null then ud.email
-	    end  as email,
+	    CONCAT_WS(um.email, ', ', ud.email) as email,
 	    case
 	    	when um.email is not null and ud.email is not null then CONCAT(um.source, ', ', ud.email_source)
 	    	when um.email is not null then um.source
 	    	when ud.email is not null then ud.email_source
 	    end  as email_source,
-	    case
-	    	when um.faculty is not null and ud.faculty is not null then
-	    	case
-	    		when um.faculty = ud.faculty then um.faculty
-	    		else CONCAT(um.faculty, ', ', ud.faculty)
-	    	end
-	    	when um.faculty is not null then um.faculty
-	    	when ud.faculty is not null then ud.faculty
-	    end  as faculty,
+	    CONCAT_WS(um.faculty, ', ', ud.faculty) as faculty,
 	    case
 	    	when um.faculty is not null and ud.faculty is not null then CONCAT(um.source, ', ', ud.faculty_source)
 	    	when um.faculty is not null then um.source
 	    	when ud.faculty is not null then ud.faculty_source
 	    end  as faculty_source,
-	    case
-	    	when um.full_name is not null and ud.full_name is not null then
-	    	case
-	    		when um.full_name = ud.full_name then um.full_name
-	    		else CONCAT(um.full_name, ', ', ud.full_name)
-	    	end
-	    	when um.full_name is not null then um.full_name
-	    	when ud.full_name is not null then ud.full_name
-	    end  as full_name,
+	    CONCAT_WS(um.full_name, ', ', ud.full_name) as full_name,
 	    case
 	    	when um.full_name is not null and ud.full_name is not null then CONCAT(um.source, ', ', ud.full_name_source)
 	    	when um.full_name is not null then um.source
@@ -177,29 +137,13 @@ select
 	    ud.git_hub_username_source as git_hub_username_source,
 	    ud.home_phone_number as home_phone_number,
 	    ud.home_phone_number_source as home_phone_number_source,
-	    case
-	    	when um.phone_number is not null and ud.phone_number is not null then
-	    	case
-	    		when um.phone_number = ud.phone_number then um.phone_number
-	    		else CONCAT(um.phone_number, ', ', ud.phone_number)
-	    	end
-	    	when um.phone_number is not null then um.phone_number
-	    	when ud.phone_number is not null then ud.phone_number
-	    end  as phone_number,
+	   CONCAT_WS(um.phone_number, ', ', ud.phone_number) as phone_number,
 	    case
 	    	when um.phone_number is not null and ud.phone_number is not null then CONCAT(um.source, ', ', ud.phone_number_source)
 	    	when um.phone_number is not null then um.source
 	    	when ud.phone_number is not null then ud.phone_number_source
 	    end  as phone_number_source,
-	    case
-	    	when um.photo is not null and ud.photo is not null then
-	    	case
-	    		when um.photo = ud.photo then um.photo
-	    		else CONCAT(um.photo, ', ', ud.photo)
-	    	end
-	    	when um.photo is not null then um.photo
-	    	when ud.photo is not null then ud.photo
-	    end  as photo,
+	    CONCAT_WS(um.photo, ', ', ud.photo) as photo,
 	    case
 	    	when um.photo is not null and ud.photo is not null then CONCAT(um.source, ', ', ud.photo_source)
 	    	when um.photo is not null then um.source
@@ -209,15 +153,7 @@ select
 	    ud.position_source as position_source,
 	    ud.sex as sex,
 	    ud.sex_source as sex_source,
-	    case
-	    	when um.student_id is not null and ud.student_id is not null then
-	    	case
-	    		when um.student_id = ud.student_id then um.student_id
-	    		else CONCAT(um.student_id, ', ', ud.student_id)
-	    	end
-	    	when um.student_id is not null then um.student_id
-	    	when ud.student_id is not null then ud.student_id
-	    end  as student_id,
+	    CONCAT_WS(um.student_id, ', ', ud.student_id) as student_id,
 	    case
 	    	when um.student_id is not null and ud.student_id is not null then CONCAT(um.source, ', ', ud.student_id_source)
 	    	when um.student_id is not null then um.source
@@ -756,7 +692,7 @@ on conflict(user_id, address) do update set
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
 	
-
+/*
 insert into "ODS_USERDATA".status(
 	status, 
 	user_id, 
@@ -810,6 +746,6 @@ on conflict(user_id, rzd_number) do update set
 	rzd_datetime = EXCLUDED.rzd_datetime,
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
-	
+*/
 
 drop table temp_combined_data;
