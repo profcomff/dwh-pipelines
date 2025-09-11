@@ -79,7 +79,7 @@ temp_stg_union_member_data as(
 		card_number as card_number,
 		card_user as card_user,
 		student_id as student_id,
-		CONCAT(first_name, ' ', middle_name, ' ', last_name) as full_name,
+		CONCAT_WS(' ',first_name, middle_name, last_name) as full_name,
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
 )
@@ -103,31 +103,31 @@ select
 	    ud.city_source as city_source,
 	    ud.department as department,
 	    ud.department_source as department_source,
-	    CONCAT_WS(um.education_form, ', ', ud.education_form) as education_form,
+	    CONCAT_WS(', ',um.education_form, ud.education_form) as education_form,
 	    case
 	    	when um.education_form is not null and ud.education_form is not null then CONCAT(um.source, ', ', ud.education_form_source)
 	    	when um.education_form is not null then um.source
 	    	when ud.education_form is not null then ud.education_form_source
 	    end  as education_form_source,
-	   CONCAT_WS(um.education_level, ', ', ud.education_level)  as education_level,
+	   CONCAT_WS(', ', um.education_level, ud.education_level)  as education_level,
 	    case
 	    	when um.education_level is not null and ud.education_level is not null then CONCAT(um.source, ', ', ud.education_level_source)
 	    	when um.education_level is not null then um.source
 	    	when ud.education_level is not null then ud.education_level_source
 	    end  as education_level_source,
-	    CONCAT_WS(um.email, ', ', ud.email) as email,
+	    CONCAT_WS(', ', um.email, ud.email) as email,
 	    case
 	    	when um.email is not null and ud.email is not null then CONCAT(um.source, ', ', ud.email_source)
 	    	when um.email is not null then um.source
 	    	when ud.email is not null then ud.email_source
 	    end  as email_source,
-	    CONCAT_WS(um.faculty, ', ', ud.faculty) as faculty,
+	    CONCAT_WS(', ', um.faculty, ud.faculty) as faculty,
 	    case
 	    	when um.faculty is not null and ud.faculty is not null then CONCAT(um.source, ', ', ud.faculty_source)
 	    	when um.faculty is not null then um.source
 	    	when ud.faculty is not null then ud.faculty_source
 	    end  as faculty_source,
-	    CONCAT_WS(um.full_name, ', ', ud.full_name) as full_name,
+	    CONCAT_WS(', ', um.full_name, ud.full_name) as full_name,
 	    case
 	    	when um.full_name is not null and ud.full_name is not null then CONCAT(um.source, ', ', ud.full_name_source)
 	    	when um.full_name is not null then um.source
@@ -137,13 +137,13 @@ select
 	    ud.git_hub_username_source as git_hub_username_source,
 	    ud.home_phone_number as home_phone_number,
 	    ud.home_phone_number_source as home_phone_number_source,
-	   CONCAT_WS(um.phone_number, ', ', ud.phone_number) as phone_number,
+	   CONCAT_WS(', ', um.phone_number, ud.phone_number) as phone_number,
 	    case
 	    	when um.phone_number is not null and ud.phone_number is not null then CONCAT(um.source, ', ', ud.phone_number_source)
 	    	when um.phone_number is not null then um.source
 	    	when ud.phone_number is not null then ud.phone_number_source
 	    end  as phone_number_source,
-	    CONCAT_WS(um.photo, ', ', ud.photo) as photo,
+	    CONCAT_WS(', ', um.photo, ud.photo) as photo,
 	    case
 	    	when um.photo is not null and ud.photo is not null then CONCAT(um.source, ', ', ud.photo_source)
 	    	when um.photo is not null then um.source
@@ -153,7 +153,7 @@ select
 	    ud.position_source as position_source,
 	    ud.sex as sex,
 	    ud.sex_source as sex_source,
-	    CONCAT_WS(um.student_id, ', ', ud.student_id) as student_id,
+	    CONCAT_WS(', ', um.student_id, ud.student_id) as student_id,
 	    case
 	    	when um.student_id is not null and ud.student_id is not null then CONCAT(um.source, ', ', ud.student_id_source)
 	    	when um.student_id is not null then um.source
@@ -482,7 +482,7 @@ select
  	CURRENT_TIMESTAMP,
 	False
 from temp_combined_data
-where home_phone_number is not null
+where phone_number is not null
 on conflict(user_id, phone_number) do update set
 	phone_number = EXCLUDED.phone_number,
 	source = EXCLUDED.source,
@@ -692,7 +692,7 @@ on conflict(user_id, address) do update set
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
 	
-/*
+
 insert into "ODS_USERDATA".status(
 	status, 
 	user_id, 
@@ -746,6 +746,6 @@ on conflict(user_id, rzd_number) do update set
 	rzd_datetime = EXCLUDED.rzd_datetime,
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
-*/
+
 
 drop table temp_combined_data;
