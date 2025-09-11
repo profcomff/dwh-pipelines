@@ -37,8 +37,24 @@ def fetch_union_members():
                 "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
             },
         )
-        logging.info(resp)
-        token = resp.json()["auth_token"]
+        if resp.status_code != 200:
+            logging.error(f"Auth failed with {resp.status_code}")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
+        
+        try:
+            response_data = resp.json()
+        except ValueError as e:
+            logging.error("Failed to parse JSON response")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception("Invalid JSON response from authentication endpoint") from e
+
+        if "auth_token" not in response_data:
+            logging.error("No auth_token in response")
+            logging.error(f"Available keys: {list(response_data.keys())}")
+            raise Exception("Authentication response missing auth_token")
+
+        token = response_data["auth_token"]
 
         resp = s.get(
             "https://api-lk.msuprof.com/api/auth/users/?status=MEMBER",
@@ -46,6 +62,10 @@ def fetch_union_members():
                 "Authorization": f"token {token}",
             },
         )
+        if resp.status_code != 200:
+            logging.error(f"Auth failed with {resp.status_code}")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
         logging.info(resp)
 
         try:
@@ -61,15 +81,19 @@ def fetch_union_members():
 
             logging.info(f"All fields from API: {sorted(all_keys)}")
         for user in users_dict:
-            resp_studend_id = s.get(
+            resp_student_id = s.get(
                 f"https://api-lk.msuprof.com/api/auth/users/{user['id']}",
                 headers={
                     "Authorization": f"token {token}",
                 },
             )
+            if resp_student_id.status_code != 200:
+                logging.error(f"Auth failed with {resp_student_id.status_code}")
+                logging.error(f"Response text: {resp_student_id.text}")
+                raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
             try:
-                resp_studend_id_dict = resp_studend_id.json()
-                user["student_id"] = resp_studend_id_dict["student_id"]
+                resp_student_id_dict = resp_student_id.json()
+                user["student_id"] = resp_student_id_dict["student_id"]
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
