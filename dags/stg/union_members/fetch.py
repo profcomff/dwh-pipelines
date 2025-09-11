@@ -41,7 +41,7 @@ def fetch_union_members():
             logging.error(f"Auth failed with {resp.status_code}")
             logging.error(f"Response text: {resp.text}")
             raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
-        
+
         try:
             response_data = resp.json()
         except ValueError as e:
