@@ -224,10 +224,11 @@ def get_api_fields():
 
 
 with DAG(
+    dag_id="union_member_dwh",
     schedule="0 0 */1 * *",
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags=["dwh", "union_member"],
+    tags=["stg", "union_member"],
     default_args={
         "owner": "dyakovri",
         "retries": 3,
