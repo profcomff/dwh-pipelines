@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import requests as r
+from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
@@ -36,8 +37,24 @@ def fetch_union_members():
                 "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
             },
         )
-        logging.info(resp)
-        token = resp.json()["auth_token"]
+        if resp.status_code != 200:
+            logging.error(f"Auth failed with {resp.status_code}")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
+
+        try:
+            response_data = resp.json()
+        except ValueError as e:
+            logging.error("Failed to parse JSON response")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception("Invalid JSON response from authentication endpoint") from e
+
+        if "auth_token" not in response_data:
+            logging.error("No auth_token in response")
+            logging.error(f"Available keys: {list(response_data.keys())}")
+            raise Exception("Authentication response missing auth_token")
+
+        token = response_data["auth_token"]
 
         resp = s.get(
             "https://api-lk.msuprof.com/api/auth/users/?status=MEMBER",
@@ -45,6 +62,10 @@ def fetch_union_members():
                 "Authorization": f"token {token}",
             },
         )
+        if resp.status_code != 200:
+            logging.error(f"Auth failed with {resp.status_code}")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
         logging.info(resp)
 
         try:
@@ -60,18 +81,21 @@ def fetch_union_members():
 
             logging.info(f"All fields from API: {sorted(all_keys)}")
         for user in users_dict:
-            resp_studend_id = s.get(
-                f"https://api-lk.msuprof.com/api/auth/users/{user["id"]}",
+            resp_student_id = s.get(
+                f"https://api-lk.msuprof.com/api/auth/users/{user['id']}",
                 headers={
                     "Authorization": f"token {token}",
                 },
             )
+            if resp_student_id.status_code != 200:
+                logging.error(f"Auth failed with {resp_student_id.status_code}")
+                logging.error(f"Response text: {resp_student_id.text}")
+                raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
             try:
-                resp_studend_id_dict = resp_studend_id.json()
+                resp_student_id_dict = resp_student_id.json()
+                user["student_id"] = resp_student_id_dict["student_id"]
             except Exception as e:
-                logging.error(f"Failed to fetch data from lk.msuprof.com for user {user["id"]}")
-
-            users_dict["student_id"] = resp_studend_id_dict["student_id"]
+                logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
     for i in users_dict:
         if "card" not in i:
@@ -101,10 +125,11 @@ def fetch_union_members():
     return f"Number of people in sql DataFrame {sql_num}"
 
 
+"""
 # ТАСКА ВЫВОДА ПОЛЕЙ ДЛЯ ENDPOINT /api/auth/users/me/
 @task(task_id="get_fields", outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def get_api_fields():
-    """Скачать данные из ЛК ОПК - ТОЛЬКО ЛОГИРОВАНИЕ АДМИНА"""
+    #Скачать данные из ЛК ОПК - ТОЛЬКО ЛОГИРОВАНИЕ АДМИНА
 
     with r.Session() as s:
         logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
@@ -145,7 +170,7 @@ def get_api_fields():
 
         # Подсчет общего количества "строк" в ответе API
         def count_rows(data):
-            """Рекурсивно подсчитывает количество записей в данных"""
+            #Рекурсивно подсчитывает количество записей в данных
             if isinstance(data, dict):
                 # Если это словарь, считаем как одну запись
                 return 1
@@ -161,7 +186,7 @@ def get_api_fields():
 
         # Альтернативный подсчет - если нужно посчитать все вложенные элементы
         def count_all_items(data):
-            """Рекурсивно подсчитывает все элементы во вложенных структурах"""
+            #Рекурсивно подсчитывает все элементы во вложенных структурах
             count = 0
             if isinstance(data, dict):
                 count += 1  # сам словарь
@@ -195,9 +220,10 @@ def get_api_fields():
 
     logging.info("FUNCTION COMPLETED - CHECK LOGS ABOVE FOR ADMIN DATA")
     return total_rows
+"""
 
 
-@dag(
+with DAG(
     schedule="0 0 */1 * *",
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
@@ -208,10 +234,5 @@ def get_api_fields():
         "retry_delay": timedelta(minutes=5),
         "on_failure_callback": lambda: send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS"))),
     },
-)
-def union_member_download():
-    union_members_result = fetch_union_members()
-    union_members_result = get_api_fields()
-
-
-union_member_sync = union_member_download()
+):
+    fetch_union_members()
