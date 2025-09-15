@@ -92,8 +92,8 @@ select
 		ud.birth_city as birth_city,
 		ud.birth_city_source as birth_city_source,
 		COALESCE(
-		    CASE WHEN ud.birthday ~ '^\d{2}-\d{2}-\d{4}' THEN ud.birthday::TIMESTAMP ELSE NULL END,
-		    CASE WHEN um.birthday ~ '^\d{2}-\d{2}-\d{4}' THEN um.birthday::TIMESTAMP ELSE NULL END
+		    CASE WHEN ud.birthday ~ '^\d{2}.\d{2}.\d{4}' THEN ud.birthday::TIMESTAMP ELSE NULL END,
+		    CASE WHEN um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN um.birthday::TIMESTAMP ELSE NULL END
 		) AS birthday,
 	    CASE 
 	        WHEN um.birthday IS NOT NULL THEN um.source
