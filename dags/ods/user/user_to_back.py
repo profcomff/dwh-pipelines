@@ -8,7 +8,6 @@ from airflow.models import Variable
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
-
 start_year = 2025
 start_month = 9
 start_day = 17
