@@ -94,6 +94,7 @@ def fetch_union_members():
             try:
                 resp_student_id_dict = resp_student_id.json()
                 user["student_id"] = resp_student_id_dict["student_id"]
+                user["middle_name"] = resp_student_id_dict["middle_name"]
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
