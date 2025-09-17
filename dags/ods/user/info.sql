@@ -4,7 +4,7 @@ with temp_source_data as(
 ),
 temp_stg_userdata_data as(
 	select
-	  owner_id as user_id,
+	  owner_id::varchar as user_id,
 	  string_agg(distinct case when p.name = 'Электронная почта' then value end, ', ') as email,
 	  string_agg(distinct case when p.name = 'Электронная почта' then temp_source_data.name end, ', ') as email_source,
 	  string_agg(distinct case when p.name = 'Номер телефона' then value end, ', ') as phone_number,
@@ -50,8 +50,27 @@ temp_stg_userdata_data as(
 	  string_agg(distinct case when p.name = 'Место работы' then value end, ', ') as workplace,
 	  string_agg(distinct case when p.name = 'Место работы' then temp_source_data.name end, ', ') as workplace_source,
 	  string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as workplace_address,
-	  string_agg(distinct case when p.name = 'Расположение работы' then temp_source_data.name end, ', ') as workplace_address_source
-	from "STG_USERDATA".{{ params.tablename }} i
+	  string_agg(distinct case when p.name = 'Расположение работы' then temp_source_data.name end, ', ') as workplace_address_source,
+	  string_agg(distinct 
+	  case when p.name = 'Полное имя' then 
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1] -- TODO пересобрать логику мэтча, подумать где и как лучше нормировать данные перед мэтчем
+	  end, ', ') as first_name_if,  -- из формата Имя Фамилия
+
+	  string_agg(distinct 
+	  case when p.name = 'Полное имя' then 
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[2]
+	  end, ', ') as last_name_if,   -- из формата Имя Фамилия
+
+	  string_agg(distinct 
+	  case when p.name = 'Полное имя' then 
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[2]
+	  end, ', ') as first_name_fio, -- из формата Фамилия Имя Отчество
+
+	  string_agg(distinct 
+	  case when p.name = 'Полное имя' then 
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]  
+	  end, ', ') as last_name_fio  -- из формата Фамилия Имя Отчество
+	from "STG_USERDATA".info i
 	left join "STG_USERDATA".param p on i.param_id = p.id
 	join temp_source_data on i.source_id = temp_source_data.id
 	group by owner_id
@@ -77,8 +96,10 @@ temp_stg_union_member_data as(
 		card_status as card_status,
 		card_date as card_date,
 		card_number as card_number,
-		card_user as card_user,
+		card_user as user_id,
 		student_id as student_id,
+		first_name as first_name,
+		last_name as last_name,
 		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name 
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
@@ -145,7 +166,7 @@ select
 	    ud.git_hub_username_source as git_hub_username_source,
 	    ud.home_phone_number as home_phone_number,
 	    ud.home_phone_number_source as home_phone_number_source,
-	   CONCAT_WS(', ', um.phone_number, ud.phone_number) as phone_number,
+	    CONCAT_WS(', ', um.phone_number, ud.phone_number) as phone_number,
 	    case
 	    	when um.phone_number is not null and ud.phone_number is not null then CONCAT(um.source, ', ', ud.phone_number_source)
 	    	when um.phone_number is not null then um.source
@@ -183,12 +204,87 @@ select
 	    um.rzd_number as rzd_number,
 	    um.source as rzd_number_source,
 	    um.rzd_status as rzd_status,
-	    um.rzd_datetime as rzd_datetime  
-	from temp_stg_userdata_data ud full outer join temp_stg_union_member_data um on ud.student_id = um.student_id and ud.first_name = um.first_name and ud.last_name = um.last_name;
+	    um.rzd_datetime as rzd_datetime
+from temp_stg_userdata_data ud left join temp_stg_union_member_data um on (
+	(ud.student_id = um.student_id and ud.student_id is not null) or 
+	(lower(ud.first_name_if) = lower(um.first_name) and lower(ud.last_name_if) = lower(um.last_name)) or
+	(lower(ud.first_name_fio) = lower(um.first_name) and lower(ud.last_name_fio) = lower(um.last_name))
+)
 
+union
+
+select
+		um.user_id as user_id,
+		null as academic_group,
+		null as academic_group_source,
+		null as address,
+		null as address_source,
+		null as birth_city,
+		null as birth_city_source,
+		CASE 
+			WHEN um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN 
+				um.birthday::TIMESTAMP 
+			ELSE NULL 
+		END AS birthday,
+	    CASE 
+	        WHEN um.birthday IS NOT NULL AND um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN um.source
+	        ELSE NULL
+	    END AS birthday_source,
+	    null as city,
+	    null as city_source,
+	    null as department,
+	    null as department_source,
+	    um.education_form as education_form,
+	    um.source as education_form_source,
+	   um.education_level as education_level,
+	    um.source as education_level_source,
+	    um.email as email,
+	    um.source as email_source,
+	    um.faculty as faculty,
+	    um.source as faculty_source,
+	    um.full_name as full_name,
+	    um.source as full_name_source,
+	    null as git_hub_username,
+	    null as git_hub_username_source,
+	    null as home_phone_number,
+	    null as home_phone_number_source,
+	    um.phone_number as phone_number,
+	    um.source as phone_number_source,
+	    um.photo as photo,
+	    um.source as photo_source,
+	    null as position,
+	    null as position_source,
+	    null as sex,
+	    null as sex_source,
+	    um.student_id as student_id,
+	    um.source as student_id_source,
+	    null as telegram_username,
+	    null as telegram_username_source,
+	    null as university,
+	    null as university_source,
+	    null as vk_username,
+	    null as vk_username_source,
+	    null as workplace,
+	    null as workplace_source,
+	    null as workplace_address,
+	    null as workplace_address_source,
+	    um.status as status,
+	    um.source as status_source,
+	    um.status_gain_date as status_gain_date,
+	    um.rzd_number as rzd_number,
+	    um.source as rzd_number_source,
+	    um.rzd_status as rzd_status,
+	    um.rzd_datetime as rzd_datetime
+from temp_stg_union_member_data um 
+where not exists (
+	select 1 from temp_stg_userdata_data ud 
+	where (ud.student_id = um.student_id and ud.student_id is not null) or 
+	      (lower(ud.first_name_if) = lower(um.first_name) and lower(ud.last_name_if) = lower(um.last_name)) or
+	      (lower(ud.first_name_fio) = lower(um.first_name) and lower(ud.last_name_fio) = lower(um.last_name))
+);
 insert into "ODS_USERDATA".academic_group (
 	"group", 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -196,7 +292,7 @@ insert into "ODS_USERDATA".academic_group (
 )
 select
 	academic_group,
-	user_id,
+	user_id::integer,
 	academic_group_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -210,7 +306,7 @@ on conflict(user_id, "group") do update set
 
 insert into "ODS_USERDATA".address (
 	address, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -218,7 +314,7 @@ insert into "ODS_USERDATA".address (
 )
 select
 	address,
-	user_id,
+	user_id::integer,
 	address_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -232,7 +328,7 @@ on conflict(user_id, address) do update set
 
 insert into "ODS_USERDATA".birth_city(
 	city, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -240,7 +336,7 @@ insert into "ODS_USERDATA".birth_city(
 )
 select
 	birth_city,
-	user_id,
+	user_id::integer,
 	birth_city_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -254,7 +350,7 @@ on conflict(user_id, city) do update set
 
 insert into "ODS_USERDATA".birthday(
 	birthday, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -262,7 +358,7 @@ insert into "ODS_USERDATA".birthday(
 )
 select
 	birthday,
-	user_id,
+	user_id::integer,
 	birthday_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -276,7 +372,7 @@ on conflict(user_id, birthday) do update set
 
 insert into "ODS_USERDATA".city(
 	city, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -284,7 +380,7 @@ insert into "ODS_USERDATA".city(
 )
 select
 	city,
-	user_id,
+	user_id::integer,
 	city_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -299,7 +395,7 @@ on conflict(user_id, city) do update set
 
 insert into "ODS_USERDATA".department(
 	department, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -307,7 +403,7 @@ insert into "ODS_USERDATA".department(
 )
 select
 	department,
-	user_id,
+	user_id::integer,
 	department_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -321,7 +417,7 @@ on conflict(user_id, department) do update set
 
 insert into "ODS_USERDATA".education_form(
 	form, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -329,7 +425,7 @@ insert into "ODS_USERDATA".education_form(
 )
 select
 	education_form,
-	user_id,
+	user_id::integer,
 	education_form_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -343,7 +439,7 @@ on conflict(user_id, form) do update set
 
 insert into "ODS_USERDATA".education_level(
 	level, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -351,7 +447,7 @@ insert into "ODS_USERDATA".education_level(
 )
 select
 	education_level,
-	user_id,
+	user_id::integer,
 	education_level_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -365,7 +461,7 @@ on conflict(user_id, level) do update set
 
 insert into "ODS_USERDATA".email(
 	email, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -373,7 +469,7 @@ insert into "ODS_USERDATA".email(
 )
 select
 	email,
-	user_id,
+	user_id::integer,
 	email_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -387,7 +483,7 @@ on conflict(user_id, email) do update set
 
 insert into "ODS_USERDATA".faculty(
 	faculty, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -395,7 +491,7 @@ insert into "ODS_USERDATA".faculty(
 )
 select
 	faculty,
-	user_id,
+	user_id::integer,
 	faculty_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -410,7 +506,7 @@ on conflict(user_id, faculty) do update set
 
 insert into "ODS_USERDATA".full_name(
 	name, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -418,7 +514,7 @@ insert into "ODS_USERDATA".full_name(
 )
 select
 	full_name,
-	user_id,
+	user_id::integer,
 	full_name_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -432,7 +528,7 @@ on conflict(user_id, name) do update set
 
 insert into "ODS_USERDATA".git_hub_username(
 	username, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -440,7 +536,7 @@ insert into "ODS_USERDATA".git_hub_username(
 )
 select
 	git_hub_username,
-	user_id,
+	user_id::integer,
 	git_hub_username_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -454,7 +550,7 @@ on conflict(user_id, username) do update set
 
 insert into "ODS_USERDATA".home_phone_number(
 	phone_number, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -462,7 +558,7 @@ insert into "ODS_USERDATA".home_phone_number(
 )
 select
 	home_phone_number,
-	user_id,
+	user_id::integer,
 	home_phone_number_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -476,7 +572,7 @@ on conflict(user_id, phone_number) do update set
 
 insert into "ODS_USERDATA".phone_number(
 	phone_number, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -484,7 +580,7 @@ insert into "ODS_USERDATA".phone_number(
 )
 select
 	phone_number,
-	user_id,
+	user_id::integer,
 	phone_number_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -499,7 +595,7 @@ on conflict(user_id, phone_number) do update set
 
 insert into "ODS_USERDATA".photo(
 	url, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -507,7 +603,7 @@ insert into "ODS_USERDATA".photo(
 )
 select
 	photo,
-	user_id,
+	user_id::integer,
 	photo_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -521,7 +617,7 @@ on conflict(user_id, url) do update set
 
 insert into "ODS_USERDATA".position(
 	position, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -529,7 +625,7 @@ insert into "ODS_USERDATA".position(
 )
 select
 	position,
-	user_id,
+	user_id::integer,
 	position_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -544,7 +640,7 @@ on conflict(user_id, position) do update set
 
 insert into "ODS_USERDATA".sex(
 	gender, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -552,7 +648,7 @@ insert into "ODS_USERDATA".sex(
 )
 select
 	sex,
-	user_id,
+	user_id::integer,
 	sex_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -566,7 +662,7 @@ on conflict(user_id, gender) do update set
 
 insert into "ODS_USERDATA".student_id(
 	student_id, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -574,7 +670,7 @@ insert into "ODS_USERDATA".student_id(
 )
 select
 	student_id,
-	user_id,
+	user_id::integer,
 	student_id_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -589,7 +685,7 @@ on conflict(user_id, student_id) do update set
 
 insert into "ODS_USERDATA".telegram_username(
 	username, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -597,7 +693,7 @@ insert into "ODS_USERDATA".telegram_username(
 )
 select
 	telegram_username,
-	user_id,
+	user_id::integer,
 	telegram_username_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -612,7 +708,7 @@ on conflict(user_id, username) do update set
 
 insert into "ODS_USERDATA".university(
 	university, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -620,7 +716,7 @@ insert into "ODS_USERDATA".university(
 )
 select
 	university,
-	user_id,
+	user_id::integer,
 	university_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -634,7 +730,7 @@ on conflict(user_id, university) do update set
 
 insert into "ODS_USERDATA".vk_username(
 	username, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -642,7 +738,7 @@ insert into "ODS_USERDATA".vk_username(
 )
 select
 	vk_username,
-	user_id,
+	user_id::integer,
 	vk_username_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -657,7 +753,7 @@ on conflict(user_id, username) do update set
 
 insert into "ODS_USERDATA".workplace(
 	workplace, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -665,7 +761,7 @@ insert into "ODS_USERDATA".workplace(
 )
 select
 	workplace,
-	user_id,
+	user_id::integer,
 	workplace_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -680,7 +776,7 @@ on conflict(user_id, workplace) do update set
 
 insert into "ODS_USERDATA".workplace_address(
 	address, 
-	user_id, 
+	user_id,
 	source, 
 	created, 
 	modified, 
@@ -688,7 +784,7 @@ insert into "ODS_USERDATA".workplace_address(
 )
 select
 	workplace_address,
-	user_id,
+	user_id::integer,
 	workplace_address_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
@@ -703,7 +799,7 @@ on conflict(user_id, address) do update set
 
 insert into "ODS_USERDATA".status(
 	status, 
-	user_id, 
+	user_id,
 	status_gain_date,
 	source, 
 	created, 
@@ -712,7 +808,7 @@ insert into "ODS_USERDATA".status(
 )
 select
 	status,
-	user_id,
+	user_id::integer,
 	status_gain_date,
 	status_source,
 	CURRENT_TIMESTAMP,
@@ -729,7 +825,7 @@ on conflict(user_id, status) do update set
 
 insert into "ODS_USERDATA".rzd(
 	rzd_number, 
-    user_id, 
+    user_id,
     rzd_status,
     rzd_datetime,
     source, 
@@ -739,7 +835,7 @@ insert into "ODS_USERDATA".rzd(
 )
 select
 	rzd_number,
-	user_id,
+	user_id::integer,
 	rzd_status,
 	rzd_datetime,
 	rzd_number_source,
