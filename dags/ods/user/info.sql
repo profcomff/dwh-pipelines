@@ -176,7 +176,7 @@ select
 	    um.source as rzd_number_source,
 	    um.rzd_status as rzd_status,
 	    um.rzd_datetime as rzd_datetime  
-	from temp_stg_userdata_data ud full outer join temp_stg_union_member_data um on ud.student_id = um.student_id;
+	from temp_stg_userdata_data ud full outer join temp_stg_union_member_data um on ud.student_id = um.student_id and ud.first_name = um.first_name and ud.last_name = um.last_name;
 
 insert into "ODS_USERDATA".academic_group (
 	"group", 
