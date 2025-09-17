@@ -79,7 +79,7 @@ temp_stg_union_member_data as(
 		card_number as card_number,
 		card_user as card_user,
 		student_id as student_id,
-		CONCAT_WS(' ',first_name, middle_name, last_name) as full_name,
+		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name 
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
 )
@@ -176,7 +176,7 @@ select
 	    um.source as rzd_number_source,
 	    um.rzd_status as rzd_status,
 	    um.rzd_datetime as rzd_datetime  
-	from temp_stg_userdata_data ud full outer join temp_stg_union_member_data um on ud.student_id = um.student_id;
+	from temp_stg_userdata_data ud full outer join temp_stg_union_member_data um on ud.student_id = um.student_id and ud.first_name = um.first_name and ud.last_name = um.last_name;
 
 insert into "ODS_USERDATA".academic_group (
 	"group", 
