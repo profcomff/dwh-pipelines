@@ -24,13 +24,13 @@ def post_union_members_to_backend(union_members_ids: list):
     for union_member_id in union_members_ids:
         data = {
             "items": [{"category": "Учетные данные", "param": "is_union_member", "value": "True"}],
-            "source": "admin",
+            "source": "opk_db",
         }
         try:
             response = r.post(
                 url=API_BASE_URL + f"/user/{union_member_id}",
                 headers={
-                    "Authorization": f"token {Variable.get('AuthToken??? ГДЕ ЭТИ ВАШИ ТОКЕНЫ ЧЕКАТЬ, почему у нас в аирфлоу их нет???')}",
+                    "Authorization": f"token {Variable.get('Auth_token_userdata')}",
                 },
                 json=data,
             )
