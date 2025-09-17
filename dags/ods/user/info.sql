@@ -79,7 +79,7 @@ temp_stg_union_member_data as(
 		card_number as card_number,
 		card_user as card_user,
 		student_id as student_id,
-		CONCAT_WS(' ',first_name, middle_name, last_name) as full_name,
+		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name 
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
 )
