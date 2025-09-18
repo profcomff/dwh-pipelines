@@ -16,14 +16,42 @@ start_day = 17
 API_BASE_URL = "https://api.test.profcomff.com/userdata/"
 
 
+def get_phone_number_by_user_id(user_id: int) -> str:
+    hook = PostgresHook(postgres_conn_id="postgres_dwh")
+    with hook.get_conn() as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                f"""
+            SELECT phone_number FROM "ODS_USERDATA".phone_number as ud
+            WHERE ud.user_id = {user_id} and ud.is_deleted = False and ud.modified = (
+            select MAX(modified) from "ODS_USERDATA".student_id)
+            and ud.created = (
+            select MAX(created) from "ODS_USERDATA".student_id)
+            """
+            )
+            result = str(cursor.fetchall())
+
+            logging.info(f"Took phone_number for {user_id} from dwh database")
+            return result
+
+        except Exception as e:
+            logging.error(f"Error ocured while collecting phone number for user {user_id} from dwh db: {str(e)}")
+            return ""
+
+
 def post_union_members_to_backend(union_members_ids: list):
     succes_rate = {
         "succeed_ids": [],
         "failed_ids": [],
     }
     for union_member_id in union_members_ids:
+        phone_number = get_phone_number_by_user_id(union_member_id)
         data = {
-            "items": [{"category": "Учетные данные", "param": "is_union_member", "value": "True"}],
+            "items": [
+                {"category": "Учетные данные", "param": "is_union_member", "value": "True"},
+                {"category": "Контактные данные", "param": "phone_number", "value": f"{phone_number}"},
+            ],
             "source": "opk_db",
         }
         try:
