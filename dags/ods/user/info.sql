@@ -77,6 +77,7 @@ temp_stg_userdata_data as(
 ),
 temp_stg_union_member_data as(
 	select 
+		id::varchar as user_id,
 		type_of_learning as education_form,
 		rzd_status as rzd_status,
 		academic_level as education_level,
@@ -96,7 +97,7 @@ temp_stg_union_member_data as(
 		card_status as card_status,
 		card_date as card_date,
 		card_number as card_number,
-		card_user as user_id,
+		card_user as card_user,
 		student_id as student_id,
 		first_name as first_name,
 		last_name as last_name,
