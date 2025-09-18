@@ -104,7 +104,8 @@ temp_stg_union_member_data as(
 		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name 
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
-)
+),
+temp_union_data as (
 select
 		ud.user_id as user_id,
 		ud.academic_group as academic_group,
@@ -282,7 +283,123 @@ where not exists (
 	where (ud.student_id = um.student_id and ud.student_id is not null) or 
 	      (lower(ud.first_name_if) = lower(um.first_name) and lower(ud.last_name_if) = lower(um.last_name)) or
 	      (lower(ud.first_name_fio) = lower(um.first_name) and lower(ud.last_name_fio) = lower(um.last_name))
-);
+)
+)
+select 
+	user_id,
+	academic_group,
+	academic_group_source,
+	address,
+	address_source,
+	birth_city,
+	birth_city_source,
+	birthday,
+	birthday_source,
+	city,
+	city_source,
+	department,
+	department_source,
+	education_form,
+	education_form_source,
+	education_level,
+	education_level_source,
+	email,
+	email_source,
+	faculty,
+	faculty_source,
+	full_name,
+	full_name_source,
+	git_hub_username,
+	git_hub_username_source,
+	home_phone_number,
+	home_phone_number_source,
+	phone_number,
+	phone_number_source,
+	photo,
+	photo_source,
+	position,
+	position_source,
+	sex,
+	sex_source,
+	student_id,
+	student_id_source,
+	telegram_username,
+	telegram_username_source,
+	university,
+	university_source,
+	vk_username,
+	vk_username_source,
+	workplace,
+	workplace_source,
+	workplace_address,
+	workplace_address_source,
+	status,
+	status_source,
+	status_gain_date,
+	rzd_number,
+	rzd_number_source,
+	rzd_status,
+	rzd_datetime
+from (
+	select *,
+		row_number() over (
+			partition by user_id, 
+			coalesce(academic_group, ''), 
+			coalesce(address, ''), 
+			coalesce(birth_city, ''),
+			coalesce(city, ''),
+			coalesce(department, ''),
+			coalesce(education_form, ''),
+			coalesce(education_level, ''),
+			coalesce(email, ''),
+			coalesce(faculty, ''),
+			coalesce(full_name, ''),
+			coalesce(git_hub_username, ''),
+			coalesce(home_phone_number, ''),
+			coalesce(phone_number, ''),
+			coalesce(photo, ''),
+			coalesce(position, ''),
+			coalesce(sex, ''),
+			coalesce(student_id, ''),
+			coalesce(telegram_username, ''),
+			coalesce(university, ''),
+			coalesce(vk_username, ''),
+			coalesce(workplace, ''),
+			coalesce(workplace_address, ''),
+			coalesce(status, ''),
+			coalesce(rzd_number, '')
+			order by 
+				-- Сортируем по полноте данных (количество заполненных полей)
+				(case when academic_group is not null then 1 else 0 end +
+				 case when address is not null then 1 else 0 end +
+				 case when birth_city is not null then 1 else 0 end +
+				 case when city is not null then 1 else 0 end +
+				 case when department is not null then 1 else 0 end +
+				 case when education_form is not null then 1 else 0 end +
+				 case when education_level is not null then 1 else 0 end +
+				 case when email is not null then 1 else 0 end +
+				 case when faculty is not null then 1 else 0 end +
+				 case when full_name is not null then 1 else 0 end +
+				 case when git_hub_username is not null then 1 else 0 end +
+				 case when home_phone_number is not null then 1 else 0 end +
+				 case when phone_number is not null then 1 else 0 end +
+				 case when photo is not null then 1 else 0 end +
+				 case when position is not null then 1 else 0 end +
+				 case when sex is not null then 1 else 0 end +
+				 case when student_id is not null then 1 else 0 end +
+				 case when telegram_username is not null then 1 else 0 end +
+				 case when university is not null then 1 else 0 end +
+				 case when vk_username is not null then 1 else 0 end +
+				 case when workplace is not null then 1 else 0 end +
+				 case when workplace_address is not null then 1 else 0 end +
+				 case when status is not null then 1 else 0 end +
+				 case when rzd_number is not null then 1 else 0 end) desc,
+				user_id
+		) as rn
+	from temp_union_data
+) deduplicated 
+where rn = 1;
+
 insert into "ODS_USERDATA".academic_group (
 	"group", 
 	user_id,
