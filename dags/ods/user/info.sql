@@ -93,11 +93,11 @@ temp_stg_union_member_data as(
 		has_student_id as has_student_id,
 		entry_date as entry_date,
 		status_gain_date as status_gain_date,
-		card_id as card_id,
-		card_status as card_status,
-		card_date as card_date,
-		card_number as card_number,
-		card_user as card_user,
+		card_id::varchar as card_id,
+		card_status::varchar as card_status,
+		card_date::varchar as card_date,
+		card_number::varchar as card_number,
+		card_user::varchar as card_user,
 		student_id as student_id,
 		first_name as first_name,
 		last_name as last_name,
@@ -252,7 +252,12 @@ select
 	    END as rzd_status,
 	    CASE
 	    	WHEN um.rzd_number IS NOT NULL AND um.rzd_status IS NOT NULL AND um.rzd_datetime IS NOT NULL THEN um.rzd_datetime
-	    END as rzd_datetime
+	    END as rzd_datetime,
+	    um.card_id as card_id,
+	    um.card_status as card_status,
+	    um.card_date as card_date,
+	    um.card_number as card_number,
+	    um.card_user as card_user
 from temp_stg_userdata_data ud left join temp_stg_union_member_data um on (
 	(ud.student_id = um.student_id and ud.student_id is not null and um.student_id is not null and trim(ud.student_id) != '' and trim(um.student_id) != '') or 
 	(lower(trim(ud.first_name_if)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_if)) = lower(trim(um.last_name)) and 
@@ -317,7 +322,12 @@ select
 	rzd_number,
 	rzd_number_source,
 	rzd_status,
-	rzd_datetime
+	rzd_datetime,
+	card_id,
+	card_status,
+	card_date,
+	card_number,
+	card_user
 from (
 	select *,
 		row_number() over (
@@ -347,7 +357,12 @@ from (
 				 case when workplace is not null and trim(workplace) != '' then 1 else 0 end +
 				 case when workplace_address is not null and trim(workplace_address) != '' then 1 else 0 end +
 				 case when status is not null and trim(status) != '' then 1 else 0 end +
-				 case when rzd_number is not null and trim(rzd_number) != '' then 1 else 0 end) desc,
+				 case when rzd_number is not null and trim(rzd_number) != '' then 1 else 0 end +
+				 case when card_id is not null and trim(card_id) != '' then 1 else 0 end +
+				 case when card_status is not null and trim(card_status) != '' then 1 else 0 end +
+				 case when card_date is not null and trim(card_date) != '' then 1 else 0 end +
+				 case when card_number is not null and trim(card_number) != '' then 1 else 0 end +
+				 case when card_user is not null and trim(card_user) != '' then 1 else 0 end) desc,
 				-- Добавляем детерминированность через user_id
 				user_id
 		) as rn
@@ -1074,6 +1089,53 @@ on conflict(user_id, rzd_number) do update set
 	rzd_number = EXCLUDED.rzd_number,
 	rzd_status = EXCLUDED.rzd_status,
 	rzd_datetime = EXCLUDED.rzd_datetime,
+	source = EXCLUDED.source,
+	modified = CURRENT_TIMESTAMP;
+
+
+insert into "ODS_USERDATA".card(
+	card_id,
+	card_status,
+	card_date,
+	card_number,
+	card_user,
+	user_id,
+	source,
+	created,
+	modified,
+	is_deleted
+)
+select 
+	card_id,
+	card_status,
+	card_date,
+	card_number,
+	card_user,
+	user_id,
+	'union_member' as source,
+	CURRENT_TIMESTAMP,
+	CURRENT_TIMESTAMP,
+	False
+from (
+	select distinct
+		card_id,
+		card_status,
+		card_date,
+		card_number,
+		card_user,
+		user_id::integer as user_id
+	from temp_combined_data
+	where card_id is not null and trim(card_id) != '' 
+		and card_status is not null and trim(card_status) != ''
+		and card_date is not null and trim(card_date) != ''
+		and card_number is not null and trim(card_number) != ''
+		and card_user is not null and trim(card_user) != ''
+) dedup
+on conflict(card_id, user_id) do update set
+	card_status = EXCLUDED.card_status,
+	card_date = EXCLUDED.card_date,
+	card_number = EXCLUDED.card_number,
+	card_user = EXCLUDED.card_user,
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
 
