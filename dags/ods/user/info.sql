@@ -343,31 +343,7 @@ select
 from (
 	select *,
 		row_number() over (
-			partition by user_id, 
-			coalesce(academic_group, ''), 
-			coalesce(address, ''), 
-			coalesce(birth_city, ''),
-			coalesce(city, ''),
-			coalesce(department, ''),
-			coalesce(education_form, ''),
-			coalesce(education_level, ''),
-			coalesce(email, ''),
-			coalesce(faculty, ''),
-			coalesce(full_name, ''),
-			coalesce(git_hub_username, ''),
-			coalesce(home_phone_number, ''),
-			coalesce(phone_number, ''),
-			coalesce(photo, ''),
-			coalesce(position, ''),
-			coalesce(sex, ''),
-			coalesce(student_id, ''),
-			coalesce(telegram_username, ''),
-			coalesce(university, ''),
-			coalesce(vk_username, ''),
-			coalesce(workplace, ''),
-			coalesce(workplace_address, ''),
-			coalesce(status, ''),
-			coalesce(rzd_number, '')
+			partition by user_id 
 			order by 
 				-- Сортируем по полноте данных (количество заполненных полей)
 				(case when academic_group is not null then 1 else 0 end +
@@ -393,8 +369,7 @@ from (
 				 case when workplace is not null then 1 else 0 end +
 				 case when workplace_address is not null then 1 else 0 end +
 				 case when status is not null then 1 else 0 end +
-				 case when rzd_number is not null then 1 else 0 end) desc,
-				user_id
+				 case when rzd_number is not null then 1 else 0 end) desc
 		) as rn
 	from temp_union_data
 ) deduplicated 
@@ -408,15 +383,21 @@ insert into "ODS_USERDATA".academic_group (
 	modified, 
 	is_deleted
 )
-select
+select 
 	academic_group,
-	user_id::integer,
+	user_id,
 	academic_group_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where academic_group is not null
+from (
+	select distinct
+		academic_group,
+		user_id::integer as user_id,
+		academic_group_source
+	from temp_combined_data
+	where academic_group is not null
+) dedup
 on conflict(user_id, "group") do update set
 	"group" = EXCLUDED."group",
 	source = EXCLUDED.source,
@@ -430,15 +411,21 @@ insert into "ODS_USERDATA".address (
 	modified, 
 	is_deleted
 )
-select
+select 
 	address,
-	user_id::integer,
+	user_id,
 	address_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where address is not null
+from (
+	select distinct
+		address,
+		user_id::integer as user_id,
+		address_source
+	from temp_combined_data
+	where address is not null
+) dedup
 on conflict(user_id, address) do update set
 	address = EXCLUDED.address,
 	source = EXCLUDED.source,
@@ -452,15 +439,21 @@ insert into "ODS_USERDATA".birth_city(
 	modified, 
 	is_deleted
 )
-select
+select 
 	birth_city,
-	user_id::integer,
+	user_id,
 	birth_city_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where birth_city is not null
+from (
+	select distinct
+		birth_city,
+		user_id::integer as user_id,
+		birth_city_source
+	from temp_combined_data
+	where birth_city is not null
+) dedup
 on conflict(user_id, city) do update set
 	city = EXCLUDED.city,
 	source = EXCLUDED.source,
@@ -474,15 +467,21 @@ insert into "ODS_USERDATA".birthday(
 	modified, 
 	is_deleted
 )
-select
+select 
 	birthday,
-	user_id::integer,
+	user_id,
 	birthday_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where birthday is not null
+from (
+	select distinct
+		birthday,
+		user_id::integer as user_id,
+		birthday_source
+	from temp_combined_data
+	where birthday is not null
+) dedup
 on conflict(user_id, birthday) do update set
 	birthday = EXCLUDED.birthday,
 	source = EXCLUDED.source,
@@ -496,15 +495,21 @@ insert into "ODS_USERDATA".city(
 	modified, 
 	is_deleted
 )
-select
+select 
 	city,
-	user_id::integer,
+	user_id,
 	city_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where city is not null
+from (
+	select distinct
+		city,
+		user_id::integer as user_id,
+		city_source
+	from temp_combined_data
+	where city is not null
+) dedup
 on conflict(user_id, city) do update set
 	city = EXCLUDED.city,
 	source = EXCLUDED.source,
@@ -519,15 +524,21 @@ insert into "ODS_USERDATA".department(
 	modified, 
 	is_deleted
 )
-select
+select 
 	department,
-	user_id::integer,
+	user_id,
 	department_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where department is not null
+from (
+	select distinct
+		department,
+		user_id::integer as user_id,
+		department_source
+	from temp_combined_data
+	where department is not null
+) dedup
 on conflict(user_id, department) do update set
 	department = EXCLUDED.department,
 	source = EXCLUDED.source,
@@ -541,15 +552,21 @@ insert into "ODS_USERDATA".education_form(
 	modified, 
 	is_deleted
 )
-select
+select 
 	education_form,
-	user_id::integer,
+	user_id,
 	education_form_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where education_form is not null
+from (
+	select distinct
+		education_form,
+		user_id::integer as user_id,
+		education_form_source
+	from temp_combined_data
+	where education_form is not null
+) dedup
 on conflict(user_id, form) do update set
 	form = EXCLUDED.form,
 	source = EXCLUDED.source,
@@ -563,15 +580,21 @@ insert into "ODS_USERDATA".education_level(
 	modified, 
 	is_deleted
 )
-select
+select 
 	education_level,
-	user_id::integer,
+	user_id,
 	education_level_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where education_level is not null
+from (
+	select distinct
+		education_level,
+		user_id::integer as user_id,
+		education_level_source
+	from temp_combined_data
+	where education_level is not null
+) dedup
 on conflict(user_id, level) do update set
 	level = EXCLUDED.level,
 	source = EXCLUDED.source,
@@ -585,15 +608,21 @@ insert into "ODS_USERDATA".email(
 	modified, 
 	is_deleted
 )
-select
+select 
 	email,
-	user_id::integer,
+	user_id,
 	email_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where email is not null
+from (
+	select distinct
+		email,
+		user_id::integer as user_id,
+		email_source
+	from temp_combined_data
+	where email is not null
+) dedup
 on conflict(user_id, email) do update set
 	email = EXCLUDED.email,
 	source = EXCLUDED.source,
@@ -607,15 +636,21 @@ insert into "ODS_USERDATA".faculty(
 	modified, 
 	is_deleted
 )
-select
+select 
 	faculty,
-	user_id::integer,
+	user_id,
 	faculty_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where faculty is not null
+from (
+	select distinct
+		faculty,
+		user_id::integer as user_id,
+		faculty_source
+	from temp_combined_data
+	where faculty is not null
+) dedup
 on conflict(user_id, faculty) do update set
 	faculty = EXCLUDED.faculty,
 	source = EXCLUDED.source,
@@ -630,15 +665,21 @@ insert into "ODS_USERDATA".full_name(
 	modified, 
 	is_deleted
 )
-select
+select 
 	full_name,
-	user_id::integer,
+	user_id,
 	full_name_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where full_name is not null
+from (
+	select distinct
+		full_name,
+		user_id::integer as user_id,
+		full_name_source
+	from temp_combined_data
+	where full_name is not null
+) dedup
 on conflict(user_id, name) do update set
 	name = EXCLUDED.name,
 	source = EXCLUDED.source,
@@ -696,15 +737,21 @@ insert into "ODS_USERDATA".phone_number(
 	modified, 
 	is_deleted
 )
-select
+select 
 	phone_number,
-	user_id::integer,
+	user_id,
 	phone_number_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where phone_number is not null
+from (
+	select distinct
+		phone_number,
+		user_id::integer as user_id,
+		phone_number_source
+	from temp_combined_data
+	where phone_number is not null
+) dedup
 on conflict(user_id, phone_number) do update set
 	phone_number = EXCLUDED.phone_number,
 	source = EXCLUDED.source,
@@ -786,15 +833,21 @@ insert into "ODS_USERDATA".student_id(
 	modified, 
 	is_deleted
 )
-select
+select 
 	student_id,
-	user_id::integer,
+	user_id,
 	student_id_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where student_id is not null
+from (
+	select distinct
+		student_id,
+		user_id::integer as user_id,
+		student_id_source
+	from temp_combined_data
+	where student_id is not null
+) dedup
 on conflict(user_id, student_id) do update set
 	student_id = EXCLUDED.student_id,
 	source = EXCLUDED.source,
@@ -924,16 +977,23 @@ insert into "ODS_USERDATA".status(
 	modified, 
 	is_deleted
 )
-select
+select 
 	status,
-	user_id::integer,
+	user_id,
 	status_gain_date,
 	status_source,
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
-from temp_combined_data
-where status is not null
+from (
+	select distinct
+		status,
+		user_id::integer as user_id,
+		status_gain_date,
+		status_source
+	from temp_combined_data
+	where status is not null
+) dedup
 on conflict(user_id, status) do update set
 	status = EXCLUDED.status,
 	status_gain_date = EXCLUDED.status_gain_date,
