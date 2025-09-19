@@ -1,6 +1,6 @@
 import datetime
 import logging
-
+import os
 import requests as r
 from airflow import DAG, Dataset
 from airflow.decorators import task
@@ -12,10 +12,14 @@ start_year = 2025
 start_month = 9
 start_day = 17
 
+env = os.getenev("_ENVIRONMENT")
 
-API_BASE_URL = "https://api.test.profcomff.com/userdata/"
-
-
+match env:
+    case "prod": 
+        API_BASE_URL =  "https://api.profcomff.com/userdata/"
+    case "test":
+        API_BASE_URL =  "https://api.test.profcomff.com/userdata/"
+        
 def get_phone_number_by_user_id(user_id: int) -> str:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
@@ -58,7 +62,7 @@ def post_union_members_to_backend(union_members_ids: list):
             response = r.post(
                 url=API_BASE_URL + f"/user/{union_member_id}",
                 headers={
-                    "Authorization": f"token {Variable.get('Auth_token_userdata')}",
+                    "Authorization": f"token {Variable.get('TOKEN_ROBOT_USERDATA')}",
                 },
                 json=data,
             )
