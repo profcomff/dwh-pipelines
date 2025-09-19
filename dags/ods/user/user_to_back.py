@@ -64,7 +64,7 @@ def post_union_members_to_backend(union_members_ids: list):
             response = r.post(
                 url=API_BASE_URL + f"/user/{union_member_id}",
                 headers={
-                    "Authorization": f"token {Variable.get('TOKEN_ROBOT_USERDATA')}",
+                    "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
                 },
                 json=data,
             )
