@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+
 import requests as r
 from airflow import DAG, Dataset
 from airflow.decorators import task
@@ -15,11 +16,12 @@ start_day = 17
 env = os.getenev("_ENVIRONMENT")
 
 match env:
-    case "prod": 
-        API_BASE_URL =  "https://api.profcomff.com/userdata/"
+    case "prod":
+        API_BASE_URL = "https://api.profcomff.com/userdata/"
     case "test":
-        API_BASE_URL =  "https://api.test.profcomff.com/userdata/"
-        
+        API_BASE_URL = "https://api.test.profcomff.com/userdata/"
+
+
 def get_phone_number_by_user_id(user_id: int) -> str:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
