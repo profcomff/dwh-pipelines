@@ -259,13 +259,15 @@ select
 	    um.card_number as card_number,
 	    um.card_user as card_user
 from temp_stg_userdata_data ud left join temp_stg_union_member_data um on (
-	(ud.student_id = um.student_id and ud.student_id is not null and um.student_id is not null and trim(ud.student_id) != '' and trim(um.student_id) != '') or 
-	(lower(trim(ud.first_name_if)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_if)) = lower(trim(um.last_name)) and 
-	 ud.first_name_if is not null and ud.last_name_if is not null and um.first_name is not null and um.last_name is not null and 
-	 trim(ud.first_name_if) != '' and trim(ud.last_name_if) != '' and trim(um.first_name) != '' and trim(um.last_name) != '') or
-	(lower(trim(ud.first_name_fio)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_fio)) = lower(trim(um.last_name)) and 
-	 ud.first_name_fio is not null and ud.last_name_fio is not null and um.first_name is not null and um.last_name is not null and 
-	 trim(ud.first_name_fio) != '' and trim(ud.last_name_fio) != '' and trim(um.first_name) != '' and trim(um.last_name) != '')
+	ud.student_id = um.student_id and ud.student_id is not null and um.student_id is not null and trim(ud.student_id) != '' and trim(um.student_id) != '' and
+	(
+		(lower(trim(ud.first_name_if)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_if)) = lower(trim(um.last_name)) and 
+		 ud.first_name_if is not null and ud.last_name_if is not null and um.first_name is not null and um.last_name is not null and 
+		 trim(ud.first_name_if) != '' and trim(ud.last_name_if) != '' and trim(um.first_name) != '' and trim(um.last_name) != '') or
+		(lower(trim(ud.first_name_fio)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_fio)) = lower(trim(um.last_name)) and 
+		 ud.first_name_fio is not null and ud.last_name_fio is not null and um.first_name is not null and um.last_name is not null and 
+		 trim(ud.first_name_fio) != '' and trim(ud.last_name_fio) != '' and trim(um.first_name) != '' and trim(um.last_name) != '')
+	)
 )
 )
 select 
