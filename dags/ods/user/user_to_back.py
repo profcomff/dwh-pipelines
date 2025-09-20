@@ -55,8 +55,8 @@ def post_union_members_to_backend(union_members_ids: list):
         phone_number = get_phone_number_by_user_id(union_member_id)
         data = {
             "items": [
-                {"category": "Учетные данные", "param": "is_union_member", "value": "True"},
-                {"category": "Контактные данные", "param": "phone_number", "value": f"{phone_number}"},
+                {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "True"},
+                {"category": "Контактные данные", "param": "Номер телефона", "value": f"{phone_number}"},
             ],
             "source": "opk_db",
         }
