@@ -12,8 +12,8 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 start_year = 2025
 start_month = 9
 start_day = 17
-
-env = os.getenev("_ENVIRONMENT")
+API_BASE_URL=""
+env = Variable.get('_ENVIRONMENT')
 
 match env:
     case "prod":
