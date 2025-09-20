@@ -15,8 +15,13 @@ start_year = 2025
 start_month = 9
 start_day = 6
 
-
-API_URL = "https://api.test.profcomff.com/lecturer/import_rating"
+env = Variable.get('_ENVIRONMENT')
+API_URL = ""
+match env:
+    case "test":
+        API_URL = "https://api.test.profcomff.com/lecturer/import_rating"
+    case "prod":
+        API_URL = "https://api.profcomff.com/lecturer/import_rating"
 
 
 def patch_lecturer_rating_backend(lecturer_with_rating: list[dict]):
