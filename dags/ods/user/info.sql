@@ -39,8 +39,10 @@ temp_stg_userdata_data as(
 	  string_agg(distinct case when p.name = 'Кафедра' then temp_source_data.name end, ', ') as department_source,
 	  string_agg(distinct case when p.name = 'Форма обучения' then value end, ', ') as education_form,
 	  string_agg(distinct case when p.name = 'Форма обучения' then temp_source_data.name end, ', ') as education_form_source,
-	  string_agg(distinct case when p.name = 'Полное имя' then value end, ', ') as full_name,
-	  string_agg(distinct case when p.name = 'Полное имя' then temp_source_data.name end, ', ') as full_name_source,
+	  array_agg(distinct (case when p.name = 'Полное имя' then value end) order by (case when p.name = 'Полное имя' then value end)) as full_names,
+	  array_to_string(array_agg(distinct (case when p.name = 'Полное имя' then value end) order by (case when p.name = 'Полное имя' then value end)), ', ') as full_name,
+	  array_agg(distinct (case when p.name = 'Полное имя' then temp_source_data.name end) order by (case when p.name = 'Полное имя' then temp_source_data.name end)) as full_name_sources,
+	  array_to_string(array_agg(distinct (case when p.name = 'Полное имя' then temp_source_data.name end) order by (case when p.name = 'Полное имя' then temp_source_data.name end)), ', ') as full_name_source,
 	  string_agg(distinct case when p.name = 'Дата рождения' then value end, ', ') as birthday,
 	  string_agg(distinct case when p.name = 'Дата рождения' then temp_source_data.name end, ', ') as birthday_source,
 	  string_agg(distinct case when p.name = 'Фото' then value end, ', ') as photo,
@@ -51,32 +53,54 @@ temp_stg_userdata_data as(
 	  string_agg(distinct case when p.name = 'Место работы' then temp_source_data.name end, ', ') as workplace_source,
 	  string_agg(distinct case when p.name = 'Расположение работы' then value end, ', ') as workplace_address,
 	  string_agg(distinct case when p.name = 'Расположение работы' then temp_source_data.name end, ', ') as workplace_address_source,
-	  string_agg(distinct 
-	  case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then 
-		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1] 
-	  end, ', ') as first_name_if,  -- из формата Имя Фамилия
+	  array_agg(distinct
+	  (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]
+	  end) order by (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]
+	  end)) as first_names_if,  -- из формата Имя Фамилия
 
-	  string_agg(distinct 
-	  case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then 
+	  array_agg(distinct
+	  (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
 		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[2]
-	  end, ', ') as last_name_if,   -- из формата Имя Фамилия
-
-	  string_agg(distinct 
-	  case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then 
+	  end) order by (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
 		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[2]
-	  end, ', ') as first_name_fio, -- из формата Фамилия Имя Отчество (ВТОРОЙ элемент - имя)
+	  end)) as last_names_if,   -- из формата Имя Фамилия
 
-	  string_agg(distinct 
-	  case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then 
-		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]  
-	  end, ', ') as last_name_fio  -- из формата Фамилия Имя Отчество (ПЕРВЫЙ элемент - фамилия)
+	  array_agg(distinct
+	  (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[2]
+	  end) order by (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[2]
+	  end)) as first_names_fio, -- из формата Фамилия Имя Отчество (ВТОРОЙ элемент - имя)
+
+	  array_agg(distinct
+	  (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]
+	  end) order by (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) >= 2 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]
+	  end)) as last_names_fio,  -- из формата Фамилия Имя Отчество (ПЕРВЫЙ элемент - фамилия)
+
+	  array_agg(distinct
+	  (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) = 3 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]
+	  end) order by (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) = 3 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[1]
+	  end)) as first_names_otf, -- из формата Имя Отчество Фамилия
+
+	  array_agg(distinct
+	  (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) = 3 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[3]
+	  end) order by (case when p.name = 'Полное имя' and array_length(string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '), 1) = 3 then
+		  (string_to_array(trim(regexp_replace(lower(value), '\s+', ' ', 'g')), ' '))[3]
+	  end)) as last_names_otf  -- из формата Имя Отчество Фамилия
 	from "STG_USERDATA".info i
 	left join "STG_USERDATA".param p on i.param_id = p.id
 	join temp_source_data on i.source_id = temp_source_data.id
 	group by owner_id
 ),
 temp_stg_union_member_data as(
-	select 
+	select
 		id::varchar as user_id,
 		type_of_learning as education_form,
 		rzd_status as rzd_status,
@@ -101,7 +125,7 @@ temp_stg_union_member_data as(
 		student_id as student_id,
 		first_name as first_name,
 		last_name as last_name,
-		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name 
+		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
 ),
@@ -115,18 +139,18 @@ select
 		ud.birth_city as birth_city,
 		ud.birth_city_source as birth_city_source,
 		COALESCE(
-			CASE 
-				WHEN ud.birthday ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
+			CASE
+				WHEN ud.birthday ~ '^\d{2}\.\d{2}\.\d{4}$' THEN
 					TO_TIMESTAMP(ud.birthday, 'DD.MM.YYYY')
-				ELSE NULL 
+				ELSE NULL
 			END,
-			CASE 
-				WHEN um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN 
-					um.birthday::TIMESTAMP 
-				ELSE NULL 
+			CASE
+				WHEN um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN
+					um.birthday::TIMESTAMP
+				ELSE NULL
 			END
 		) AS birthday,
-	    CASE 
+	    CASE
 	        WHEN um.birthday IS NOT NULL AND um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN um.source
 	        WHEN ud.birthday IS NOT NULL AND ud.birthday ~ '^\d{2}\.\d{2}\.\d{4}$' THEN ud.birthday_source
 	    END AS birthday_source,
@@ -175,14 +199,14 @@ select
 	    	when ud.faculty is not null then ud.faculty_source
 	    end  as faculty_source,
 	    CASE
-	    	WHEN um.full_name IS NOT NULL AND ud.full_name IS NOT NULL AND um.full_name != ud.full_name THEN CONCAT_WS(', ', um.full_name, ud.full_name)
+	    	WHEN um.full_name IS NOT NULL AND ud.full_names IS NOT NULL AND um.full_name != ANY(ud.full_names) THEN array_to_string(array_append(ud.full_names, um.full_name), ', ')
 	    	WHEN um.full_name IS NOT NULL THEN um.full_name
-	    	WHEN ud.full_name IS NOT NULL THEN ud.full_name
+	    	WHEN ud.full_names IS NOT NULL THEN array_to_string(ud.full_names, ', ')
 	    END as full_name,
 	    case
-	    	when um.full_name is not null and ud.full_name is not null and um.full_name != ud.full_name then CONCAT(um.source, ', ', ud.full_name_source)
+	    	when um.full_name is not null and ud.full_names is not null and um.full_name != ANY(ud.full_names) then CONCAT(um.source, ', ', array_to_string(ud.full_name_sources, ', '))
 	    	when um.full_name is not null then um.source
-	    	when ud.full_name is not null then ud.full_name_source
+	    	when ud.full_names is not null then array_to_string(ud.full_name_sources, ', ')
 	    end  as full_name_source,
 	    ud.git_hub_username as git_hub_username,
 	    ud.git_hub_username_source as git_hub_username_source,
@@ -212,16 +236,8 @@ select
 	    ud.position_source as position_source,
 	    ud.sex as sex,
 	    ud.sex_source as sex_source,
-	    CASE
-	    	WHEN um.student_id IS NOT NULL AND ud.student_id IS NOT NULL AND um.student_id != ud.student_id THEN CONCAT_WS(', ', um.student_id, ud.student_id)
-	    	WHEN um.student_id IS NOT NULL THEN um.student_id
-	    	WHEN ud.student_id IS NOT NULL THEN ud.student_id
-	    END as student_id,
-	    case
-	    	when um.student_id is not null and ud.student_id is not null and um.student_id != ud.student_id then CONCAT(um.source, ', ', ud.student_id_source)
-	    	when um.student_id is not null then um.source
-	    	when ud.student_id is not null then ud.student_id_source
-	    end  as student_id_source,
+	    ud.student_id as student_id,
+	    COALESCE(ud.student_id_source, um.source) as student_id_source,
 	    ud.telegram_username as telegram_username,
 	    ud.telegram_username_source as telegram_username_source,
 	    ud.university as university,
@@ -259,18 +275,37 @@ select
 	    um.card_number as card_number,
 	    um.card_user as card_user
 from temp_stg_userdata_data ud left join temp_stg_union_member_data um on (
-	ud.student_id = um.student_id and ud.student_id is not null and um.student_id is not null and trim(ud.student_id) != '' and trim(um.student_id) != '' and
-	(
-		(lower(trim(ud.first_name_if)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_if)) = lower(trim(um.last_name)) and 
-		 ud.first_name_if is not null and ud.last_name_if is not null and um.first_name is not null and um.last_name is not null and 
-		 trim(ud.first_name_if) != '' and trim(ud.last_name_if) != '' and trim(um.first_name) != '' and trim(um.last_name) != '') or
-		(lower(trim(ud.first_name_fio)) = lower(trim(um.first_name)) and lower(trim(ud.last_name_fio)) = lower(trim(um.last_name)) and 
-		 ud.first_name_fio is not null and ud.last_name_fio is not null and um.first_name is not null and um.last_name is not null and 
-		 trim(ud.first_name_fio) != '' and trim(ud.last_name_fio) != '' and trim(um.first_name) != '' and trim(um.last_name) != '')
+	ud.student_id is not null and trim(ud.student_id) != '' and ud.student_id = um.student_id and um.student_id is not null and trim(um.student_id) != ''
+	and (
+		(
+			exists (select 1 from unnest(ud.first_names_if) as fn where lower(trim(fn)) = lower(trim(um.first_name)))
+			and exists (select 1 from unnest(ud.last_names_if) as ln where lower(trim(ln)) = lower(trim(um.last_name)))
+			and ud.first_names_if is not null and array_length(ud.first_names_if, 1) > 0
+			and ud.last_names_if is not null and array_length(ud.last_names_if, 1) > 0
+			and um.first_name is not null and um.last_name is not null
+			and trim(um.first_name) != '' and trim(um.last_name) != ''
+		)
+		or (
+			exists (select 1 from unnest(ud.first_names_fio) as fn where lower(trim(fn)) = lower(trim(um.first_name)))
+			and exists (select 1 from unnest(ud.last_names_fio) as ln where lower(trim(ln)) = lower(trim(um.last_name)))
+			and ud.first_names_fio is not null and array_length(ud.first_names_fio, 1) > 0
+			and ud.last_names_fio is not null and array_length(ud.last_names_fio, 1) > 0
+			and um.first_name is not null and um.last_name is not null
+			and trim(um.first_name) != '' and trim(um.last_name) != ''
+		)
+		or (
+			exists (select 1 from unnest(ud.first_names_otf) as fn where lower(trim(fn)) = lower(trim(um.first_name)))
+			and exists (select 1 from unnest(ud.last_names_otf) as ln where lower(trim(ln)) = lower(trim(um.last_name)))
+			and ud.first_names_otf is not null and array_length(ud.first_names_otf, 1) > 0
+			and ud.last_names_otf is not null and array_length(ud.last_names_otf, 1) > 0
+			and um.first_name is not null and um.last_name is not null
+			and trim(um.first_name) != '' and trim(um.last_name) != ''
+		)
 	)
 )
+where um.user_id is not null
 )
-select 
+select
 	user_id,
 	academic_group,
 	academic_group_source,
@@ -333,9 +368,8 @@ select
 from (
 	select *,
 		row_number() over (
-			partition by user_id 
-			order by 
-				-- Сортируем по полноте данных (количество заполненных полей)
+			partition by user_id
+			order by
 				(case when academic_group is not null and trim(academic_group) != '' then 1 else 0 end +
 				 case when address is not null and trim(address) != '' then 1 else 0 end +
 				 case when birth_city is not null and trim(birth_city) != '' then 1 else 0 end +
@@ -365,22 +399,21 @@ from (
 				 case when card_date is not null and trim(card_date) != '' then 1 else 0 end +
 				 case when card_number is not null and trim(card_number) != '' then 1 else 0 end +
 				 case when card_user is not null and trim(card_user) != '' then 1 else 0 end) desc,
-				-- Добавляем детерминированность через user_id
 				user_id
 		) as rn
 	from temp_union_data
-) deduplicated 
+) deduplicated
 where rn = 1;
 
 insert into "ODS_USERDATA".academic_group (
-	"group", 
+	"group",
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	academic_group,
 	user_id,
 	academic_group_source,
@@ -394,6 +427,7 @@ from (
 		academic_group_source
 	from temp_combined_data
 	where academic_group is not null and trim(academic_group) != '' and academic_group_source is not null and trim(academic_group_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, "group") do update set
 	"group" = EXCLUDED."group",
@@ -401,14 +435,14 @@ on conflict(user_id, "group") do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".address (
-	address, 
+	address,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	address,
 	user_id,
 	address_source,
@@ -422,6 +456,7 @@ from (
 		address_source
 	from temp_combined_data
 	where address is not null and trim(address) != '' and address_source is not null and trim(address_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, address) do update set
 	address = EXCLUDED.address,
@@ -429,14 +464,14 @@ on conflict(user_id, address) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".birth_city(
-	city, 
+	city,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	birth_city,
 	user_id,
 	birth_city_source,
@@ -450,6 +485,7 @@ from (
 		birth_city_source
 	from temp_combined_data
 	where birth_city is not null and trim(birth_city) != '' and birth_city_source is not null and trim(birth_city_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, city) do update set
 	city = EXCLUDED.city,
@@ -457,14 +493,14 @@ on conflict(user_id, city) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".birthday(
-	birthday, 
+	birthday,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	birthday,
 	user_id,
 	birthday_source,
@@ -478,6 +514,7 @@ from (
 		birthday_source
 	from temp_combined_data
 	where birthday is not null and birthday_source is not null and trim(birthday_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, birthday) do update set
 	birthday = EXCLUDED.birthday,
@@ -485,14 +522,14 @@ on conflict(user_id, birthday) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".city(
-	city, 
+	city,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	city,
 	user_id,
 	city_source,
@@ -506,6 +543,7 @@ from (
 		city_source
 	from temp_combined_data
 	where city is not null and trim(city) != '' and city_source is not null and trim(city_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, city) do update set
 	city = EXCLUDED.city,
@@ -514,14 +552,14 @@ on conflict(user_id, city) do update set
 
 
 insert into "ODS_USERDATA".department(
-	department, 
+	department,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	department,
 	user_id,
 	department_source,
@@ -535,6 +573,7 @@ from (
 		department_source
 	from temp_combined_data
 	where department is not null and trim(department) != '' and department_source is not null and trim(department_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, department) do update set
 	department = EXCLUDED.department,
@@ -542,14 +581,14 @@ on conflict(user_id, department) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".education_form(
-	form, 
+	form,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	education_form,
 	user_id,
 	education_form_source,
@@ -563,6 +602,7 @@ from (
 		education_form_source
 	from temp_combined_data
 	where education_form is not null and trim(education_form) != '' and education_form_source is not null and trim(education_form_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, form) do update set
 	form = EXCLUDED.form,
@@ -570,14 +610,14 @@ on conflict(user_id, form) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".education_level(
-	level, 
+	level,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	education_level,
 	user_id,
 	education_level_source,
@@ -591,6 +631,7 @@ from (
 		education_level_source
 	from temp_combined_data
 	where education_level is not null and trim(education_level) != '' and education_level_source is not null and trim(education_level_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, level) do update set
 	level = EXCLUDED.level,
@@ -598,14 +639,14 @@ on conflict(user_id, level) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".email(
-	email, 
+	email,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	email,
 	user_id,
 	email_source,
@@ -619,6 +660,7 @@ from (
 		email_source
 	from temp_combined_data
 	where email is not null and trim(email) != '' and email_source is not null and trim(email_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, email) do update set
 	email = EXCLUDED.email,
@@ -626,14 +668,14 @@ on conflict(user_id, email) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".faculty(
-	faculty, 
+	faculty,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	faculty,
 	user_id,
 	faculty_source,
@@ -647,6 +689,7 @@ from (
 		faculty_source
 	from temp_combined_data
 	where faculty is not null and trim(faculty) != '' and faculty_source is not null and trim(faculty_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, faculty) do update set
 	faculty = EXCLUDED.faculty,
@@ -655,14 +698,14 @@ on conflict(user_id, faculty) do update set
 
 
 insert into "ODS_USERDATA".full_name(
-	name, 
+	name,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	full_name,
 	user_id,
 	full_name_source,
@@ -676,6 +719,7 @@ from (
 		full_name_source
 	from temp_combined_data
 	where full_name is not null and trim(full_name) != '' and full_name_source is not null and trim(full_name_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, name) do update set
 	name = EXCLUDED.name,
@@ -683,14 +727,14 @@ on conflict(user_id, name) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".git_hub_username(
-	username, 
+	username,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	git_hub_username,
 	user_id,
 	git_hub_username_source,
@@ -704,6 +748,7 @@ from (
 		git_hub_username_source
 	from temp_combined_data
 	where git_hub_username is not null and trim(git_hub_username) != '' and git_hub_username_source is not null and trim(git_hub_username_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, username) do update set
 	username = EXCLUDED.username,
@@ -711,14 +756,14 @@ on conflict(user_id, username) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".home_phone_number(
-	phone_number, 
+	phone_number,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	home_phone_number,
 	user_id,
 	home_phone_number_source,
@@ -732,6 +777,7 @@ from (
 		home_phone_number_source
 	from temp_combined_data
 	where home_phone_number is not null and trim(home_phone_number) != '' and home_phone_number_source is not null and trim(home_phone_number_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, phone_number) do update set
 	phone_number = EXCLUDED.phone_number,
@@ -739,14 +785,14 @@ on conflict(user_id, phone_number) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".phone_number(
-	phone_number, 
+	phone_number,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	phone_number,
 	user_id,
 	phone_number_source,
@@ -760,6 +806,7 @@ from (
 		phone_number_source
 	from temp_combined_data
 	where phone_number is not null and trim(phone_number) != '' and phone_number_source is not null and trim(phone_number_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, phone_number) do update set
 	phone_number = EXCLUDED.phone_number,
@@ -768,14 +815,14 @@ on conflict(user_id, phone_number) do update set
 
 
 insert into "ODS_USERDATA".photo(
-	url, 
+	url,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	photo,
 	user_id,
 	photo_source,
@@ -789,6 +836,7 @@ from (
 		photo_source
 	from temp_combined_data
 	where photo is not null and trim(photo) != '' and photo_source is not null and trim(photo_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, url) do update set
 	url = EXCLUDED.url,
@@ -796,14 +844,14 @@ on conflict(user_id, url) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".position(
-	position, 
+	position,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	position,
 	user_id,
 	position_source,
@@ -817,6 +865,7 @@ from (
 		position_source
 	from temp_combined_data
 	where position is not null and trim(position) != '' and position_source is not null and trim(position_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, position) do update set
 	position = EXCLUDED.position,
@@ -825,14 +874,14 @@ on conflict(user_id, position) do update set
 
 
 insert into "ODS_USERDATA".sex(
-	gender, 
+	gender,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	sex,
 	user_id,
 	sex_source,
@@ -846,6 +895,7 @@ from (
 		sex_source
 	from temp_combined_data
 	where sex is not null and trim(sex) != '' and sex_source is not null and trim(sex_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, gender) do update set
 	gender = EXCLUDED.gender,
@@ -853,14 +903,14 @@ on conflict(user_id, gender) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".student_id(
-	student_id, 
+	student_id,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	student_id,
 	user_id,
 	student_id_source,
@@ -882,14 +932,14 @@ on conflict(user_id, student_id) do update set
 
 
 insert into "ODS_USERDATA".telegram_username(
-	username, 
+	username,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	telegram_username,
 	user_id,
 	telegram_username_source,
@@ -903,6 +953,7 @@ from (
 		telegram_username_source
 	from temp_combined_data
 	where telegram_username is not null and trim(telegram_username) != '' and telegram_username_source is not null and trim(telegram_username_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, username) do update set
 	username = EXCLUDED.username,
@@ -911,14 +962,14 @@ on conflict(user_id, username) do update set
 
 
 insert into "ODS_USERDATA".university(
-	university, 
+	university,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	university,
 	user_id,
 	university_source,
@@ -932,6 +983,7 @@ from (
 		university_source
 	from temp_combined_data
 	where university is not null and trim(university) != '' and university_source is not null and trim(university_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, university) do update set
 	university = EXCLUDED.university,
@@ -939,14 +991,14 @@ on conflict(user_id, university) do update set
 	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".vk_username(
-	username, 
+	username,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	vk_username,
 	user_id,
 	vk_username_source,
@@ -960,6 +1012,7 @@ from (
 		vk_username_source
 	from temp_combined_data
 	where vk_username is not null and trim(vk_username) != '' and vk_username_source is not null and trim(vk_username_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, username) do update set
 	username = EXCLUDED.username,
@@ -968,14 +1021,14 @@ on conflict(user_id, username) do update set
 
 
 insert into "ODS_USERDATA".workplace(
-	workplace, 
+	workplace,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	workplace,
 	user_id,
 	workplace_source,
@@ -989,6 +1042,7 @@ from (
 		workplace_source
 	from temp_combined_data
 	where workplace is not null and trim(workplace) != '' and workplace_source is not null and trim(workplace_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, workplace) do update set
 	workplace = EXCLUDED.workplace,
@@ -997,14 +1051,14 @@ on conflict(user_id, workplace) do update set
 
 
 insert into "ODS_USERDATA".workplace_address(
-	address, 
+	address,
 	user_id,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	workplace_address,
 	user_id,
 	workplace_address_source,
@@ -1018,6 +1072,7 @@ from (
 		workplace_address_source
 	from temp_combined_data
 	where workplace_address is not null and trim(workplace_address) != '' and workplace_address_source is not null and trim(workplace_address_source) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, address) do update set
 	address = EXCLUDED.address,
@@ -1026,15 +1081,15 @@ on conflict(user_id, address) do update set
 	
 
 insert into "ODS_USERDATA".status(
-	status, 
+	status,
 	user_id,
 	status_gain_date,
-	source, 
-	created, 
-	modified, 
+	source,
+	created,
+	modified,
 	is_deleted
 )
-select 
+select
 	status,
 	user_id,
 	status_gain_date,
@@ -1050,6 +1105,7 @@ from (
 		status_source
 	from temp_combined_data
 	where status is not null and trim(status) != '' and status_source is not null and trim(status_source) != '' and status_gain_date is not null
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, status) do update set
 	status = EXCLUDED.status,
@@ -1059,16 +1115,16 @@ on conflict(user_id, status) do update set
 
 
 insert into "ODS_USERDATA".rzd(
-	rzd_number, 
+	rzd_number,
     user_id,
     rzd_status,
     rzd_datetime,
-    source, 
-    created, 
-    modified, 
+    source,
+    created,
+    modified,
     is_deleted
 )
-select 
+select
 	rzd_number,
 	user_id,
 	rzd_status,
@@ -1086,6 +1142,7 @@ from (
 		rzd_number_source
 	from temp_combined_data
 	where rzd_number is not null and trim(rzd_number) != '' and rzd_number_source is not null and trim(rzd_number_source) != '' and rzd_status is not null and trim(rzd_status) != '' and rzd_datetime is not null
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, rzd_number) do update set
 	rzd_number = EXCLUDED.rzd_number,
@@ -1107,7 +1164,7 @@ insert into "ODS_USERDATA".card(
 	modified,
 	is_deleted
 )
-select 
+select
 	card_id,
 	card_status,
 	card_date,
@@ -1132,6 +1189,7 @@ from (
 		and card_date is not null and trim(card_date) != ''
 		and card_number is not null and trim(card_number) != ''
 		and card_user is not null and trim(card_user) != ''
+	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(card_id, user_id) do update set
 	card_status = EXCLUDED.card_status,
