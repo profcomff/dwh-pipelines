@@ -13,15 +13,19 @@ start_year = 2025
 start_month = 9
 start_day = 17
 API_BASE_URL = ""
+API_BASE_AUTH_URL = ""
 env = Variable.get('_ENVIRONMENT')
 
 match env:
     case "prod":
         API_BASE_URL = "https://api.profcomff.com/userdata/"
+        API_BASE_AUTH_URL = "https://api.profcomff.com/auth/"
     case "test":
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
+        API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
     case "development":
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
+        API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
 
 
 def get_phone_number_by_user_ids(user_id: int) -> str:
@@ -110,6 +114,53 @@ def get_union_members_ids_from_dwh() -> list:
         except Exception as e:
             logging.error(f"Error ocured while fetching data from dwh db: {str(e)}")
             return []
+        
+
+def get_group_number_by_name(name: str) -> int:
+    hook = PostgresHook(postgres_conn_id="postgres_dwh")
+    with hook.get_conn() as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                f"""
+            SELECT id FROM "ODS_AUTH".group as g
+            WHERE g.name = {name}
+            """
+            )
+            result = cursor.fetchall()
+
+            logging.info(f"Took group id for {name} from dwh database")
+            return result
+
+        except Exception as e:
+            logging.error(f"Error ocured while collecting group id for  {name} from dwh db: {str(e)}")
+            return ""
+
+
+def post_members_to_union_group_to_backend(union_members_ids: list):
+    name = "Профком"
+    group = get_group_number_by_name(name)
+    data = {
+      "name": name,
+      "parent_id": None,
+      "scopes": union_members_ids
+    }
+    try:
+        response = r.patch(
+            url=API_BASE_AUTH_URL + f"group/{group}",
+            headers={
+                "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
+            },
+            json=data,
+        )
+        if response.status_code == 200:
+            logging.info(f"Updated group with union members {union_members_ids} from dwh database")
+        else:
+            logging.error(
+                f"Update group with union members {union_members_ids} copy to backend failed with code: {response.status_code}\n Response text: {response.text}"
+            )
+    except Exception as e:
+            logging.error(f"Error sending data to backend: {str(e)}")
 
 
 with DAG(
@@ -128,8 +179,13 @@ with DAG(
     @task
     def patch_backend(um: list):
         return post_union_members_to_backend(union_members_ids=um)
+    
+    @task
+    def patch_to_group_backend(um: list):
+        post_members_to_union_group_to_backend(union_members_ids=um)
 
     get_union_members_ids_task = get_union_members_ids()
     patch_backend_task = patch_backend(get_union_members_ids_task)
+    patch_to_group_backend_task = patch_to_group_backend(get_union_members_ids_task)
 
-    get_union_members_ids_task >> patch_backend_task
+    get_union_members_ids_task >> patch_backend_task >> patch_to_group_backend_task
