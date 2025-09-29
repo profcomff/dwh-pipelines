@@ -189,3 +189,4 @@ with DAG(
     patch_to_group_backend_task = patch_to_group_backend(get_union_members_ids_task)
 
     get_union_members_ids_task >> patch_backend_task >> patch_to_group_backend_task
+    
