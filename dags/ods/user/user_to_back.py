@@ -20,9 +20,11 @@ match env:
         API_BASE_URL = "https://api.profcomff.com/userdata/"
     case "test":
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
+    case "development":
+        API_BASE_URL = "https://api.test.profcomff.com/userdata/"
 
 
-def get_phone_number_by_user_id(user_id: int) -> str:
+def get_phone_number_by_user_ids(user_id: int) -> str:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
         cursor = conn.cursor()
@@ -52,17 +54,17 @@ def post_union_members_to_backend(union_members_ids: list):
         "failed_ids": [],
     }
     for union_member_id in union_members_ids:
-        phone_number = get_phone_number_by_user_id(union_member_id)
+        phone_number = get_phone_number_by_user_ids(union_member_id)
         data = {
             "items": [
-                {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "True"},
-                {"category": "Контактные данные", "param": "Номер телефона", "value": f"{phone_number}"},
+                {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
+                {"category": "Контакты", "param": "Номер телефона", "value": f"{phone_number}"},
             ],
-            "source": "opk_db",
+            "source": "dwh",
         }
         try:
             response = r.post(
-                url=API_BASE_URL + f"/user/{union_member_id}",
+                url=API_BASE_URL + f"user/{union_member_id}",
                 headers={
                     "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
                 },
