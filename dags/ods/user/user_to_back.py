@@ -114,7 +114,7 @@ def get_union_members_ids_from_dwh() -> list:
         except Exception as e:
             logging.error(f"Error ocured while fetching data from dwh db: {str(e)}")
             return []
-        
+
 
 def get_group_number_by_name(name: str) -> int:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
@@ -126,7 +126,7 @@ def get_group_number_by_name(name: str) -> int:
                 SELECT id FROM "STG_AUTH".group as g
                 WHERE g.name = %s
                 """,
-                (name,)
+                (name,),
             )
             result = cursor.fetchone()[0]
 
@@ -148,14 +148,14 @@ def get_groups_numbers(user_id: int) -> list:
                 SELECT group_id FROM "STG_AUTH".user_group
                 WHERE user_id = %s
                 """,
-                (user_id,)
+                (user_id,),
             )
             result = cursor.fetchall()
 
-            group_ids = [i[0] for i in result] if result else []            
+            group_ids = [i[0] for i in result] if result else []
             logging.info(f"Found group ids {group_ids} for user {user_id} from dwh database")
             return group_ids
-        
+
         except Exception as e:
             logging.error(f"Error occured while collecting group ids for user {user_id} from dwh db: {str(e)}")
             return []
@@ -168,9 +168,7 @@ def post_members_to_union_group_to_backend(union_members_ids: list):
         for union_member in union_members_ids:
             all_groups = get_groups_numbers(union_member)
             all_groups.append(group)
-            data = {
-                "groups": all_groups
-            }
+            data = {"groups": all_groups}
             response = r.patch(
                 url=API_BASE_AUTH_URL + f"user/{union_member}",
                 headers={
@@ -185,7 +183,7 @@ def post_members_to_union_group_to_backend(union_members_ids: list):
                     f"Update group with union members {union_members_ids} copy to backend failed with code: {response.status_code}\n Response text: {response.text}"
                 )
     except Exception as e:
-            logging.error(f"Error sending data to backend: {str(e)}")
+        logging.error(f"Error sending data to backend: {str(e)}")
 
 
 def get_users_from_profcom_group() -> list:
@@ -200,7 +198,7 @@ def get_users_from_profcom_group() -> list:
                 SELECT user_id FROM "STG_AUTH".user_group
                 WHERE group_id = %s
                 """,
-                (group_id,)
+                (group_id,),
             )
             result = cursor.fetchall()
             user_ids = [i[0] for i in result] if result else []
@@ -225,9 +223,7 @@ def remove_non_union_members_from_profcom_group(union_members_ids: list):
         for user_id in users_to_remove:
             all_groups = get_groups_numbers(user_id)
             updated_groups = [group for group in all_groups if group != group_id]
-            data = {
-                "groups": updated_groups
-            }
+            data = {"groups": updated_groups}
             response = r.patch(
                 url=API_BASE_AUTH_URL + f"user/{user_id}",
                 headers={
@@ -261,7 +257,7 @@ with DAG(
     @task
     def patch_backend(um: list):
         return post_union_members_to_backend(union_members_ids=um)
-    
+
     @task
     def patch_to_group_backend(um: list):
         post_members_to_union_group_to_backend(union_members_ids=um)
@@ -276,4 +272,3 @@ with DAG(
     remove_non_union_members_task = remove_non_union_members(get_union_members_ids_task)
 
     get_union_members_ids_task >> patch_backend_task >> patch_to_group_backend_task >> remove_non_union_members_task
-    
