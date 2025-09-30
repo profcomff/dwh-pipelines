@@ -122,18 +122,19 @@ def get_group_number_by_name(name: str) -> int:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                f"""
-            SELECT id FROM "STG_AUTH".group as g
-            WHERE g.name = {name}
-            """
+                """
+                SELECT id FROM "STG_AUTH".group as g
+                WHERE g.name = %s
+                """,
+                (name,)
             )
-            result = cursor.fetchall()
+            result = cursor.fetchone()[0]
 
-            logging.info(f"Took group id for {name} from dwh database")
+            logging.info(f"Took group id {result} for {name} from dwh database")
             return result
 
         except Exception as e:
-            logging.error(f"Error ocured while collecting group id for  {name} from dwh db: {str(e)}")
+            logging.error(f"Error ocured while collecting group id for {name} from dwh db: {str(e)}")
             return ""
 
 
