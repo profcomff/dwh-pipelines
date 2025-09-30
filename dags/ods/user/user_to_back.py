@@ -123,7 +123,7 @@ def get_group_number_by_name(name: str) -> int:
         try:
             cursor.execute(
                 f"""
-            SELECT id FROM "ODS_AUTH".group as g
+            SELECT id FROM "STG_AUTH".group as g
             WHERE g.name = {name}
             """
             )
@@ -149,7 +149,7 @@ def post_members_to_union_group_to_backend(union_members_ids: list):
         response = r.patch(
             url=API_BASE_AUTH_URL + f"group/{group}",
             headers={
-                "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
+                "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
             },
             json=data,
         )
