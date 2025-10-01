@@ -14,18 +14,22 @@ start_month = 9
 start_day = 17
 API_BASE_URL = ""
 API_BASE_AUTH_URL = ""
+API_BASE_GROUP_ID = None
 env = Variable.get('_ENVIRONMENT')
 
 match env:
     case "prod":
         API_BASE_URL = "https://api.profcomff.com/userdata/"
         API_BASE_AUTH_URL = "https://api.profcomff.com/auth/"
+        API_BASE_GROUP_ID = 22
     case "test":
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
         API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
+        API_BASE_GROUP_ID = 121
     case "development":
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
         API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
+        API_BASE_GROUP_ID = 121
 
 
 def get_phone_number_by_user_ids(user_id: int) -> str:
@@ -70,7 +74,7 @@ def post_union_members_to_backend(union_members_ids: list):
             response = r.post(
                 url=API_BASE_URL + f"user/{union_member_id}",
                 headers={
-                    "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
+                    "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
                 },
                 json=data,
             )
@@ -116,58 +120,37 @@ def get_union_members_ids_from_dwh() -> list:
             return []
 
 
-def get_group_number_by_name(name: str) -> int:
-    hook = PostgresHook(postgres_conn_id="postgres_dwh")
-    with hook.get_conn() as conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute(
-                """
-                SELECT id FROM "STG_AUTH".group as g
-                WHERE g.name = %s
-                """,
-                (name,),
-            )
-            result = cursor.fetchone()[0]
-
-            logging.info(f"Took group id {result} for {name} from dwh database")
-            return result
-
-        except Exception as e:
-            logging.error(f"Error ocured while collecting group id for {name} from dwh db: {str(e)}")
-            return ""
-
-
 def get_groups_numbers(user_id: int) -> list:
-    hook = PostgresHook(postgres_conn_id="postgres_dwh")
-    with hook.get_conn() as conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute(
-                """
-                SELECT group_id FROM "STG_AUTH".user_group
-                WHERE user_id = %s
-                """,
-                (user_id,),
-            )
-            result = cursor.fetchall()
+    try:
+        response = r.get(
+            url=API_BASE_AUTH_URL + f"user/{user_id}",
+            headers={
+                "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
+            },
+            params={"info": "groups"},
+        )
+        if response.status_code == 200:
+            data = response.json()
+            group_ids = data.get("groups")
 
-            group_ids = [i[0] for i in result] if result else []
-            logging.info(f"Found group ids {group_ids} for user {user_id} from dwh database")
+            logging.info(f"Found group ids {group_ids} for user {user_id} from auth backend")
             return group_ids
-
-        except Exception as e:
-            logging.error(f"Error occured while collecting group ids for user {user_id} from dwh db: {str(e)}")
+        else:
+            logging.error(
+                f"Get groups for user {user_id} failed with code: {response.status_code}\n Response text: {response.text}"
+            )
             return []
+
+    except Exception as e:
+        logging.error(f"Error occurred while collecting group ids for user {user_id} from auth backend: {str(e)}")
+        return []
 
 
 def post_members_to_union_group_to_backend(union_members_ids: list):
-    name = "Профком"
-    group = get_group_number_by_name(name)
     try:
         for union_member in union_members_ids:
             all_groups = get_groups_numbers(union_member)
-            all_groups.append(group)
+            all_groups.append(API_BASE_GROUP_ID)
             data = {"groups": all_groups}
             response = r.patch(
                 url=API_BASE_AUTH_URL + f"user/{union_member}",
@@ -186,43 +169,42 @@ def post_members_to_union_group_to_backend(union_members_ids: list):
         logging.error(f"Error sending data to backend: {str(e)}")
 
 
-def get_users_from_profcom_group() -> list:
-    group_name = "Профком"
-    group_id = get_group_number_by_name(group_name)
-    hook = PostgresHook(postgres_conn_id="postgres_dwh")
-    with hook.get_conn() as conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute(
-                """
-                SELECT user_id FROM "STG_AUTH".user_group
-                WHERE group_id = %s
-                """,
-                (group_id,),
-            )
-            result = cursor.fetchall()
-            user_ids = [i[0] for i in result] if result else []
+def get_users_from_union_group() -> list:
+    try:
+        response = r.get(
+            url=API_BASE_AUTH_URL + f"group/{API_BASE_GROUP_ID}",
+            headers={
+                "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
+            },
+            params={"info": "users"},
+        )
+        if response.status_code == 200:
+            data = response.json()
+            user_ids = data.get("users")
 
-            logging.info(f"Found {user_ids} users in profcom group from dwh database")
+            logging.info(f"Found {len(user_ids)} users in union group from auth backend: {user_ids}")
             return user_ids
-
-        except Exception as e:
-            logging.error(f"Error occurred while collecting users from profcom group from dwh db: {str(e)}")
+        else:
+            logging.error(
+                f"Get users from union group failed with code: {response.status_code}\n Response text: {response.text}"
+            )
             return []
 
+    except Exception as e:
+        logging.error(f"Error occurred while collecting users from union group from auth backend: {str(e)}")
+        return []
 
-def remove_non_union_members_from_profcom_group(union_members_ids: list):
-    group_name = "Профком"
-    group_id = get_group_number_by_name(group_name)
+
+def remove_non_union_members_from_union_group(union_members_ids: list):
     try:
-        users_in_group = get_users_from_profcom_group()
+        users_in_group = get_users_from_union_group()
         users_to_remove = []
         for user_id in users_in_group:
             if user_id not in union_members_ids:
                 users_to_remove.append(user_id)
         for user_id in users_to_remove:
             all_groups = get_groups_numbers(user_id)
-            updated_groups = [group for group in all_groups if group != group_id]
+            updated_groups = [group for group in all_groups if group != API_BASE_GROUP_ID]
             data = {"groups": updated_groups}
             response = r.patch(
                 url=API_BASE_AUTH_URL + f"user/{user_id}",
@@ -232,13 +214,13 @@ def remove_non_union_members_from_profcom_group(union_members_ids: list):
                 json=data,
             )
             if response.status_code == 200:
-                logging.info(f"Successfully removed user {user_id} from profcom group")
+                logging.info(f"Successfully removed user {user_id} from union group")
             else:
                 logging.error(
-                    f"Failed to remove user {user_id} from profcom group. Status code: {response.status_code}, Response: {response.text}"
+                    f"Failed to remove user {user_id} from union group. Status code: {response.status_code}, Response: {response.text}"
                 )
     except Exception as e:
-        logging.error(f"Error occurred while removing non-union members from profcom group: {str(e)}")
+        logging.error(f"Error occurred while removing non-union members from prounioncom group: {str(e)}")
 
 
 with DAG(
@@ -264,7 +246,7 @@ with DAG(
 
     @task
     def remove_non_union_members(um: list):
-        remove_non_union_members_from_profcom_group(union_members_ids=um)
+        remove_non_union_members_from_union_group(union_members_ids=um)
 
     get_union_members_ids_task = get_union_members_ids()
     patch_backend_task = patch_backend(get_union_members_ids_task)
