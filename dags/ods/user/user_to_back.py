@@ -26,10 +26,6 @@ match env:
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
         API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
         API_BASE_GROUP_ID = 121
-    case "development":
-        API_BASE_URL = "https://api.test.profcomff.com/userdata/"
-        API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
-        API_BASE_GROUP_ID = 121
 
 
 def get_phone_number_by_user_ids(user_id: int) -> str:
@@ -198,11 +194,7 @@ def get_users_from_union_group() -> list:
 def remove_non_union_members_from_union_group(union_members_ids: list):
     try:
         users_in_group = get_users_from_union_group()
-        users_to_remove = []
-        for user_id in users_in_group:
-            if user_id not in union_members_ids:
-                users_to_remove.append(user_id)
-        for user_id in users_to_remove:
+        for user_id in [id for id in users_in_group if id not in union_members_ids]:
             all_groups = get_groups_numbers(user_id)
             updated_groups = [group for group in all_groups if group != API_BASE_GROUP_ID]
             data = {"groups": updated_groups}
@@ -220,7 +212,7 @@ def remove_non_union_members_from_union_group(union_members_ids: list):
                     f"Failed to remove user {user_id} from union group. Status code: {response.status_code}, Response: {response.text}"
                 )
     except Exception as e:
-        logging.error(f"Error occurred while removing non-union members from prounioncom group: {str(e)}")
+        logging.error(f"Error occurred while removing non-union members from union group: {str(e)}")
 
 
 with DAG(
