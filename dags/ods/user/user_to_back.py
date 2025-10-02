@@ -13,15 +13,19 @@ start_year = 2025
 start_month = 9
 start_day = 17
 API_BASE_URL = ""
+API_BASE_AUTH_URL = ""
+API_BASE_GROUP_ID = None
 env = Variable.get('_ENVIRONMENT')
 
 match env:
     case "prod":
         API_BASE_URL = "https://api.profcomff.com/userdata/"
+        API_BASE_AUTH_URL = "https://api.profcomff.com/auth/"
+        API_BASE_GROUP_ID = 22
     case "test":
         API_BASE_URL = "https://api.test.profcomff.com/userdata/"
-    case "development":
-        API_BASE_URL = "https://api.test.profcomff.com/userdata/"
+        API_BASE_AUTH_URL = "https://api.test.profcomff.com/auth/"
+        API_BASE_GROUP_ID = 121
 
 
 def get_phone_number_by_user_ids(user_id: int) -> str:
@@ -112,6 +116,105 @@ def get_union_members_ids_from_dwh() -> list:
             return []
 
 
+def get_groups_numbers(user_id: int) -> list:
+    try:
+        response = r.get(
+            url=API_BASE_AUTH_URL + f"user/{user_id}",
+            headers={
+                "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
+            },
+            params={"info": "groups"},
+        )
+        if response.status_code == 200:
+            data = response.json()
+            group_ids = data.get("groups")
+
+            logging.info(f"Found group ids {group_ids} for user {user_id} from auth backend")
+            return group_ids
+        else:
+            logging.error(
+                f"Get groups for user {user_id} failed with code: {response.status_code}\n Response text: {response.text}"
+            )
+            return []
+
+    except Exception as e:
+        logging.error(f"Error occurred while collecting group ids for user {user_id} from auth backend: {str(e)}")
+        return []
+
+
+def post_members_to_union_group_to_backend(union_members_ids: list):
+    try:
+        for union_member in union_members_ids:
+            all_groups = get_groups_numbers(union_member)
+            all_groups.append(API_BASE_GROUP_ID)
+            data = {"groups": all_groups}
+            response = r.patch(
+                url=API_BASE_AUTH_URL + f"user/{union_member}",
+                headers={
+                    "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
+                },
+                json=data,
+            )
+            if response.status_code == 200:
+                logging.info(f"Updated group with union members {union_members_ids} from dwh database")
+            else:
+                logging.error(
+                    f"Update group with union members {union_members_ids} copy to backend failed with code: {response.status_code}\n Response text: {response.text}"
+                )
+    except Exception as e:
+        logging.error(f"Error sending data to backend: {str(e)}")
+
+
+def get_users_from_union_group() -> list:
+    try:
+        response = r.get(
+            url=API_BASE_AUTH_URL + f"group/{API_BASE_GROUP_ID}",
+            headers={
+                "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
+            },
+            params={"info": "users"},
+        )
+        if response.status_code == 200:
+            data = response.json()
+            user_ids = data.get("users")
+
+            logging.info(f"Found {len(user_ids)} users in union group from auth backend: {user_ids}")
+            return user_ids
+        else:
+            logging.error(
+                f"Get users from union group failed with code: {response.status_code}\n Response text: {response.text}"
+            )
+            return []
+
+    except Exception as e:
+        logging.error(f"Error occurred while collecting users from union group from auth backend: {str(e)}")
+        return []
+
+
+def remove_non_union_members_from_union_group(union_members_ids: list):
+    try:
+        users_in_group = get_users_from_union_group()
+        for user_id in [id for id in users_in_group if id not in union_members_ids]:
+            all_groups = get_groups_numbers(user_id)
+            updated_groups = [group for group in all_groups if group != API_BASE_GROUP_ID]
+            data = {"groups": updated_groups}
+            response = r.patch(
+                url=API_BASE_AUTH_URL + f"user/{user_id}",
+                headers={
+                    "Authorization": f"{Variable.get('TOKEN_ROBOT_AUTH')}",
+                },
+                json=data,
+            )
+            if response.status_code == 200:
+                logging.info(f"Successfully removed user {user_id} from union group")
+            else:
+                logging.error(
+                    f"Failed to remove user {user_id} from union group. Status code: {response.status_code}, Response: {response.text}"
+                )
+    except Exception as e:
+        logging.error(f"Error occurred while removing non-union members from union group: {str(e)}")
+
+
 with DAG(
     dag_id="union_member_to_backend",
     schedule=[Dataset("ODS_USERDATA.student_id")],
@@ -129,7 +232,17 @@ with DAG(
     def patch_backend(um: list):
         return post_union_members_to_backend(union_members_ids=um)
 
+    @task
+    def patch_to_group_backend(um: list):
+        post_members_to_union_group_to_backend(union_members_ids=um)
+
+    @task
+    def remove_non_union_members(um: list):
+        remove_non_union_members_from_union_group(union_members_ids=um)
+
     get_union_members_ids_task = get_union_members_ids()
     patch_backend_task = patch_backend(get_union_members_ids_task)
+    patch_to_group_backend_task = patch_to_group_backend(get_union_members_ids_task)
+    remove_non_union_members_task = remove_non_union_members(get_union_members_ids_task)
 
-    get_union_members_ids_task >> patch_backend_task
+    get_union_members_ids_task >> patch_backend_task >> patch_to_group_backend_task >> remove_non_union_members_task
