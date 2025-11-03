@@ -1,5 +1,9 @@
+# Разработка
 apache-airflow
 pytest
 black
 isort
 flake8
+
+# Тестирование
+structlog==23.1.0

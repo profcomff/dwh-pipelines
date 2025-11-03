@@ -24,6 +24,6 @@ with DAG(
     tags=["dwh", "infra"],
     default_args={"owner": "roslavtsevsv"},
 ) as dag:
-    fetch_dwh_db()  # Выводит в логи различия между
+    fetch_dwh_db()  # Выводит в логи различия между API БД и DWH
     send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
     send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS")))
