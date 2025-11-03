@@ -53,14 +53,17 @@ def prettify_diff(text: str, diff_obj: set):
     return text
 
 
-def fetch_dwh_db(**context):
+# Проверяет целостность данных между API БД и DWH
+def fetch_dwh_db(**context):  # **context -> аргумент context является словарем из параметров дага
+    # Ссылка на текущую таску - она берется из контекста
     dag_run = context.get("dag_run")
     log_link = dag_run.get_task_instance(context["task_instance"].task_id).log_url
     log_link = log_link.replace("http://localhost:8080", get_base_url())
 
+    # Подключение к БД - API и DWH
     api_sql_engine = create_engine(API_DB_DSN)
     dwh_sql_engine = create_engine(DWH_DB_DSN)
-    text = ""
+    text = ""  # Сюда будут добавляться сообщения для логов
 
     with api_sql_engine.connect() as api_conn, dwh_sql_engine.connect() as dwh_conn:
         api_cols = api_conn.execute(
@@ -82,8 +85,8 @@ def fetch_dwh_db(**context):
         api_cols = set((SCHEMAS[i.table_schema], i.table_name, i.column_name) for i in api_cols)
         dwh_cols = set((i.table_schema, i.table_name, i.column_name) for i in dwh_cols)
 
-        diff_with_api = api_cols - dwh_cols
-        diff_with_dwh = dwh_cols - api_cols
+        diff_with_api = api_cols - dwh_cols  # Есть в API, НЕТ в DWH
+        diff_with_dwh = dwh_cols - api_cols  # Есть в DWH, НЕТ в API
 
     schemas_diff_api = set([obj[0] for obj in diff_with_api if obj[1] != "alembic_version"])
     if len(schemas_diff_api) > 0:
@@ -95,3 +98,4 @@ def fetch_dwh_db(**context):
 
     logging.info(text)
     return schemas_diff_api, schemas_diff_dwh, log_link
+    # TO DO: добавить алерты с различием API БД и DWH (пока только вывод в логи airflow)

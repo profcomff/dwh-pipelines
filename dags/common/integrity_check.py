@@ -24,6 +24,6 @@ with DAG(
     tags=["dwh", "infra"],
     default_args={"owner": "roslavtsevsv"},
 ) as dag:
-    result = fetch_dwh_db()
-    send_telegram_message(int(Variable.get("TG_CHAT_DWH")), result)
-    send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS")), result)
+    fetch_dwh_db()  # Выводит в логи различия между
+    send_telegram_message(int(Variable.get("TG_CHAT_DWH")))
+    send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS")))
