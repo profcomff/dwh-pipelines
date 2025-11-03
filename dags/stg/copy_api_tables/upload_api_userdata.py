@@ -17,7 +17,7 @@ copy_table_to_dwh = task(task_id="copy_table_to_dwh", trigger_rule="one_done", r
 with DAG(
     dag_id="upload_api_userdata",
     start_date=datetime(2024, 1, 1),
-    schedule="@daily",
+    schedule=timedelta(minutes=5),
     catchup=False,
     tags=["dwh", "stg", "userdata"],
     default_args={"owner": "dyakovri"},
@@ -50,7 +50,7 @@ with DAG(
 with DAG(
     dag_id="upload_api_userdata_encrypted",
     start_date=datetime(2025, 4, 24),
-    schedule="@daily",
+    schedule=timedelta(minutes=5),
     catchup=False,
     tags=["dwh", "stg", "userdata", "encryption"],
     default_args={

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import requests as r
+from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.decorators import dag, task
 from airflow.models import Connection, Variable
@@ -36,29 +37,66 @@ def fetch_union_members():
                 "password": str(Variable.get("LK_MSUPROF_ADMIN_PASSWORD")),
             },
         )
-        logging.info(resp)
-        token = resp.json()["auth_token"]
+        if resp.status_code != 200:
+            logging.error(f"Auth failed with {resp.status_code}")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
+
+        try:
+            response_data = resp.json()
+        except ValueError as e:
+            logging.error("Failed to parse JSON response")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception("Invalid JSON response from authentication endpoint") from e
+
+        if "auth_token" not in response_data:
+            logging.error("No auth_token in response")
+            logging.error(f"Available keys: {list(response_data.keys())}")
+            raise Exception("Authentication response missing auth_token")
+
+        token = response_data["auth_token"]
 
         resp = s.get(
-            "https://api-lk.msuprof.com/api/auth/users/",
+            "https://api-lk.msuprof.com/api/auth/users/?status=MEMBER",
             headers={
                 "Authorization": f"token {token}",
             },
         )
+        if resp.status_code != 200:
+            logging.error(f"Auth failed with {resp.status_code}")
+            logging.error(f"Response text: {resp.text}")
+            raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
         logging.info(resp)
 
-    try:
-        users_dict = resp.json()
-    except Exception as e:
-        logging.error("Failed to fetch data from lk.msuprof.com")
-        raise e
+        try:
+            users_dict = resp.json()
+        except Exception as e:
+            logging.error("Failed to fetch data from lk.msuprof.com")
+            raise e
 
-    if users_dict:
-        all_keys = set()
+        if users_dict:
+            all_keys = set()
+            for user in users_dict:
+                all_keys.update(user.keys())
+
+            logging.info(f"All fields from API: {sorted(all_keys)}")
         for user in users_dict:
-            all_keys.update(user.keys())
-
-        logging.info(f"All fields from API: {sorted(all_keys)}")
+            resp_student_id = s.get(
+                f"https://api-lk.msuprof.com/api/auth/users/{user['id']}",
+                headers={
+                    "Authorization": f"token {token}",
+                },
+            )
+            if resp_student_id.status_code != 200:
+                logging.error(f"Auth failed with {resp_student_id.status_code}")
+                logging.error(f"Response text: {resp_student_id.text}")
+                raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
+            try:
+                resp_student_id_dict = resp_student_id.json()
+                user["student_id"] = resp_student_id_dict["student_id"]
+                user["middle_name"] = resp_student_id_dict["middle_name"]
+            except Exception as e:
+                logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
     for i in users_dict:
         if "card" not in i:
@@ -73,8 +111,9 @@ def fetch_union_members():
         i["card_user"] = i["card"].get("user")
         del i["card"]
     data = pd.DataFrame(users_dict)
+    logging.info(f"Number of people in initial DataFrame: {len(data)}")
     logging.info(f"DataFrame columns: {list(data.columns)}")
-    data.to_sql(
+    sql_num = data.to_sql(
         "union_member",
         Connection.get_connection_from_secrets("postgres_dwh")
         .get_uri()
@@ -84,13 +123,14 @@ def fetch_union_members():
         if_exists="replace",
         index=False,
     )
-    return len(data)
+    return f"Number of people in sql DataFrame {sql_num}"
 
 
+"""
 # ТАСКА ВЫВОДА ПОЛЕЙ ДЛЯ ENDPOINT /api/auth/users/me/
 @task(task_id="get_fields", outlets=Dataset("STG_UNION_MEMBER.union_member"))
 def get_api_fields():
-    """Скачать данные из ЛК ОПК - ТОЛЬКО ЛОГИРОВАНИЕ АДМИНА"""
+    #Скачать данные из ЛК ОПК - ТОЛЬКО ЛОГИРОВАНИЕ АДМИНА
 
     with r.Session() as s:
         logging.info("Using user %s to fetch", Variable.get("LK_MSUPROF_ADMIN_USERNAME"))
@@ -128,35 +168,73 @@ def get_api_fields():
         logging.info("=" * 50)
         logging.info(f"TOTAL FIELDS COUNT: {len(admin_data.keys())}")
         logging.info("=" * 50)
-        if admin_data:
-            df = pd.DataFrame(admin_data)
-            logging.info(f"DATAFRAME SHAPE: {df.shape}")
-            logging.info("=" * 50)
+
+        # Подсчет общего количества "строк" в ответе API
+        def count_rows(data):
+            #Рекурсивно подсчитывает количество записей в данных
+            if isinstance(data, dict):
+                # Если это словарь, считаем как одну запись
+                return 1
+            elif isinstance(data, list):
+                # Если это список, считаем количество элементов
+                return len(data)
+            else:
+                # Для примитивных типов считаем как одну запись
+                return 1
+
+        total_rows = count_rows(admin_data)
+        logging.info(f"TOTAL ROWS IN API RESPONSE: {total_rows}")
+
+        # Альтернативный подсчет - если нужно посчитать все вложенные элементы
+        def count_all_items(data):
+            #Рекурсивно подсчитывает все элементы во вложенных структурах
+            count = 0
+            if isinstance(data, dict):
+                count += 1  # сам словарь
+                for value in data.values():
+                    count += count_all_items(value)
+            elif isinstance(data, list):
+                count += len(data)  # все элементы списка
+                for item in data:
+                    count += count_all_items(item)
+            else:
+                count += 1  # примитивное значение
+            return count
+
+        total_items = count_all_items(admin_data)
+        logging.info(f"TOTAL ITEMS (INCLUDING NESTED): {total_items}")
+
+        # Информация о структуре данных
+        logging.info(f"DATA TYPE: {type(admin_data).__name__}")
+        if isinstance(admin_data, dict):
+            logging.info("Response is a SINGLE OBJECT (dictionary)")
+        elif isinstance(admin_data, list):
+            logging.info(f"Response is a LIST with {len(admin_data)} items")
+
+        logging.info("=" * 50)
 
     except Exception as e:
         logging.error("Failed to fetch data from lk.msuprof.com")
         logging.error(f"Response text: {resp.text}")
+        logging.error(f"Error: {str(e)}")
         raise e
 
     logging.info("FUNCTION COMPLETED - CHECK LOGS ABOVE FOR ADMIN DATA")
-    return 0
+    return total_rows
+"""
 
 
-@dag(
+with DAG(
+    dag_id="union_member_dwh",
     schedule="0 0 */1 * *",
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
-    tags=["dwh", "union_member"],
+    tags=["stg", "union_member"],
     default_args={
         "owner": "dyakovri",
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
         "on_failure_callback": lambda: send_telegram_message(int(Variable.get("TG_CHAT_MANAGERS"))),
     },
-)
-def union_member_download():
-    # union_members_result = fetch_union_members()
-    union_members_result = get_api_fields()
-
-
-union_member_sync = union_member_download()
+):
+    fetch_union_members()

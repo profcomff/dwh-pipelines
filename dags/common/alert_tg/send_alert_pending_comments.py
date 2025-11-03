@@ -7,6 +7,8 @@ from airflow.decorators import task
 
 from dags.common.alert_tg.config import BATCH_SIZE, get_app_url, get_env_variable, set_env_variable
 from dags.common.alert_tg.utils.fetch_comments import fetch_comments
+from dags.common.alert_tg.utils.get_lecturer import get_lecturer_by_id
+from dags.common.alert_tg.utils.get_userdata import get_user_name_from_userdata
 from dags.common.alert_tg.utils.send_telegram import send_comments
 from plugins.features import alert_message
 
@@ -34,13 +36,31 @@ def process_comments(last_run_ts, is_monday):
             total_unreviewed += 1
             comment_update_ts = datetime.datetime.fromisoformat(comment["update_ts"])
             if comment_update_ts >= last_run_ts:
-                comments_to_send.append(
-                    f"UUID: {comment['uuid']}\n👤 Автор_id: {comment['user_id']}\n💬 Предмет: \"{comment['subject']}\""
+                summary_message = f""  # формируем Сообщение для ТГ
+
+                try:
+                    lecturer = get_lecturer_by_id(comment['lecturer_id'])
+                    if lecturer:
+                        summary_message += f"👨‍🏫 Преподаватель: {lecturer['last_name']+lecturer['first_name'][:1]+'.'+lecturer['middle_name'][:1]+'.'}\n"
+                except Exception as e:
+                    logging.log("Не удалось получить имя преподавателя:", e)
+
+                summary_message += f"📚 Предмет: \"{comment['subject']}\"\n"
+                try:
+                    summary_message += (
+                        f"👤 Автор_id: {get_user_name_from_userdata(comment['user_id'])}\n"  # Получаем Имя
+                    )
+                except Exception as e:
+                    logging.log("Не удалось получить имя юзера:", e)
+
+                summary_message += (
+                    f"💬 Текст: \"{comment['text'] if len(comment['text']) < 17 else comment['text'][:13]+'...'}\"\n"
                 )
+                comments_to_send.append(summary_message)
                 total_today += 1
 
         if comments_to_send:
-            send_comments("\n\n".join(comments_to_send))
+            send_comments("\n".join(comments_to_send))
             logging.info(f"Sent {len(comments_to_send)} new comments.")
         payload["offset"] += BATCH_SIZE
 
