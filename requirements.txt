@@ -1,7 +1,7 @@
 # Разработка
 apache-airflow
 pytest
-black
+blalack
 isort
 flake8
 
