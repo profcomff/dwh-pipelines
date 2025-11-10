@@ -24,7 +24,7 @@ FROM
     LATERAL (
         SELECT value AS elem
         FROM jsonb_array_elements(
-            CASE 
+            CASE  
                 WHEN additional_data IS NULL OR additional_data = '' THEN jsonb_build_array('{}'::jsonb)
                 WHEN additional_data::jsonb IS NULL THEN jsonb_build_array('{}'::jsonb)
                 WHEN jsonb_typeof(additional_data::jsonb) = 'array' THEN additional_data::jsonb
