@@ -33,4 +33,5 @@ FROM
     ) AS expanded
 WHERE 
     user_id = -2
-    AND action IS NOT NULL;
+    AND action IS NOT NULL
+    AND (additional_data = '' OR additional_data LIKE '{%' OR additional_data LIKE '[%');
