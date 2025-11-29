@@ -27,7 +27,7 @@ def send_telegram_message_or_print(chat_id, balance):
             f"https://api.telegram.org/bot{token}/sendMessage",
             json={
                 "chat_id": chat_id,
-                "text": f"Баланс vds.sh составляет {balance} рублей. Время пополнить счет, @MArzangulyan!",
+                "text": f"Баланс vds.sh составляет {balance} рублей. Время пополнить счет, @Mark_Shidran!",
             },
         )
 
