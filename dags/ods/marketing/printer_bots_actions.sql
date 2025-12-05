@@ -25,10 +25,12 @@ FROM
     LATERAL (
         SELECT value AS elem
         FROM jsonb_array_elements(
-            CASE 
-                WHEN additional_data = '' THEN jsonb_build_array('{}'::jsonb)
+            CASE  
+                WHEN additional_data IS NULL OR additional_data = '' THEN jsonb_build_array('{}'::jsonb)
+                --WHEN NOT jsonb_valid(additional_data) THEN jsonb_build_array('{}'::jsonb)
+                WHEN additional_data ~ '^\{.*\}$' THEN additional_data::jsonb
                 WHEN jsonb_typeof(additional_data::jsonb) = 'array' THEN additional_data::jsonb
-                ELSE jsonb_build_array(additional_data::jsonb)
+                ELSE jsonb_build_array(additional_data::jsonb) 
             END
         )
     ) AS expanded
