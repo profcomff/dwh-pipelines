@@ -43,8 +43,8 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             limit 1;
             """
             )
-            phone_number = str(cursor.fetchall())
-            result["phone_number"] = phone_number
+            phone_record = cursor.fetchone()
+            result["phone_number"] = str(phone_record[0] if phone_record else "")
             logging.info(f"Took phone_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -54,8 +54,8 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             limit 1;
             """
             )
-            card_number = str(cursor.fetchall())
-            result["card_number"] = card_number
+            card_record = cursor.fetchone()
+            result["card_number"] = str(card_record[0] if card_record else "")
             logging.info(f"Took card_number for {user_id} from dwh database")
             return result
 
