@@ -74,8 +74,8 @@ def post_union_members_to_backend(union_members_ids: list):
         data = {
             "items": [
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
-                {"category": "Контакты", "param": "Номер телефона", "value": info['phone_number']},
-                {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value":  info['card_number']},
+                {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
+                {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value":  str(info['card_number'])},
             ],
             "source": "dwh",
         }
