@@ -48,7 +48,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took phone_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select card_number from "".card as c
+            select card_number from "ODS_USERDATA".card as c
             where c.user_id = {user_id} and c.is_deleted = FALSE
             order by c.modified desc, c.created desc
             limit 1;
