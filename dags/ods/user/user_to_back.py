@@ -57,7 +57,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             card_number = str(cursor.fetchall())
             result["card_number"] = card_number
             logging.info(f"Took card_number for {user_id} from dwh database")
-            return (phone_number, card_number)
+            return result
 
         except Exception as e:
             logging.error(f"Error ocured while collecting phone number and card_number for user {user_id} from dwh db: {str(e)}")
