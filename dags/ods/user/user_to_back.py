@@ -75,7 +75,7 @@ def post_union_members_to_backend(union_members_ids: list):
             "items": [
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
                 {"category": "Контакты", "param": "Номер телефона", "value": info['phone_number']},
-                {{"category": "Учетные данные", "param": "Номер профсоюзного билета", "value":  info['card_number']},
+                {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value":  info['card_number']},
             ],
             "source": "dwh",
         }
