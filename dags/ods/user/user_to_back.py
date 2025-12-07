@@ -28,28 +28,40 @@ match env:
         API_BASE_GROUP_ID = 121
 
 
-def get_phone_number_by_user_ids(user_id: int) -> str:
+def get_phone_number_by_user_ids(user_id: int) -> dict:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
         cursor = conn.cursor()
+        result = {"phone_number": "", "card_number": ""}
         try:
             cursor.execute(
                 f"""
-            SELECT phone_number FROM "ODS_USERDATA".phone_number as ud
-            WHERE ud.user_id = {user_id} and ud.is_deleted = False and ud.modified = (
-            select MAX(modified) from "ODS_USERDATA".student_id)
-            and ud.created = (
-            select MAX(created) from "ODS_USERDATA".student_id)
+            select ud.phone_number
+            from "ODS_USERDATA".phone_number as ud
+            where ud.user_id = {user_id} and ud.is_deleted = FALSE
+            order by ud.modified desc, ud.created desc
+            limit 1;
             """
             )
-            result = str(cursor.fetchall())
-
+            phone_number = str(cursor.fetchall())
+            result["phone_number"] = phone_number
             logging.info(f"Took phone_number for {user_id} from dwh database")
-            return result
+            cursor.execute(
+                f"""
+            select card_number from "".card as c
+            where c.user_id = {user_id} and c.is_deleted = FALSE
+            order by c.modified desc, c.created desc
+            limit 1;
+            """
+            )
+            card_number = str(cursor.fetchall())
+            result["card_number"] = card_number
+            logging.info(f"Took card_number for {user_id} from dwh database")
+            return (phone_number, card_number)
 
         except Exception as e:
-            logging.error(f"Error ocured while collecting phone number for user {user_id} from dwh db: {str(e)}")
-            return ""
+            logging.error(f"Error ocured while collecting phone number and card_number for user {user_id} from dwh db: {str(e)}")
+            return result
 
 
 def post_union_members_to_backend(union_members_ids: list):
@@ -58,11 +70,12 @@ def post_union_members_to_backend(union_members_ids: list):
         "failed_ids": [],
     }
     for union_member_id in union_members_ids:
-        phone_number = get_phone_number_by_user_ids(union_member_id)
+        info = get_phone_number_by_user_ids(union_member_id)
         data = {
             "items": [
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
-                {"category": "Контакты", "param": "Номер телефона", "value": f"{phone_number}"},
+                {"category": "Контакты", "param": "Номер телефона", "value": info['phone_number']},
+                {{"category": "Учетные данные", "param": "Номер профсоюзного билета", "value":  info['card_number']},
             ],
             "source": "dwh",
         }
