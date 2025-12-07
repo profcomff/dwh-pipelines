@@ -110,10 +110,7 @@ def get_union_members_ids_from_dwh() -> list:
             cursor.execute(
                 """
             SELECT * FROM "ODS_USERDATA".student_id as ud
-            WHERE ud.is_deleted = False and ud.modified = (
-            select MAX(modified) from "ODS_USERDATA".student_id)
-            and ud.created = (
-            select MAX(created) from "ODS_USERDATA".student_id)
+            WHERE ud.is_deleted = False
             """
             )
             results = cursor.fetchall()
