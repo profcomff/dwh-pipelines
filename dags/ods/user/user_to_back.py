@@ -60,7 +60,9 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             return result
 
         except Exception as e:
-            logging.error(f"Error ocured while collecting phone number and card_number for user {user_id} from dwh db: {str(e)}")
+            logging.error(
+                f"Error ocured while collecting phone number and card_number for user {user_id} from dwh db: {str(e)}"
+            )
             return result
 
 
@@ -75,7 +77,7 @@ def post_union_members_to_backend(union_members_ids: list):
             "items": [
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
                 {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
-                {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value":  str(info['card_number'])},
+                {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value": str(info['card_number'])},
             ],
             "source": "dwh",
         }
