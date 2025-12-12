@@ -19,7 +19,7 @@ with DAG(
     tags=["dwh", "core", "rating", "comment"],
     description="scd2_lecturer_hist",
     start_date=datetime(2024, 11, 3),
-    catchup=False,
+    catchup=True,
     default_args={
         "retries": 1,
         "owner": "mixx3",
