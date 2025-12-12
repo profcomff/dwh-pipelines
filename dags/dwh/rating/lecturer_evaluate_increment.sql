@@ -1,5 +1,6 @@
 --evaluate increment
 insert into "DWH_RATING".lecturer(
+
     uuid,
     api_id,
     first_name,
