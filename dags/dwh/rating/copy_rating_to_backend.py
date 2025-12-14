@@ -45,7 +45,7 @@ def get_lecturers_with_rating_from_dwh() -> list[dict]:
         try:
             cursor.execute(
                 """
-            SELECT * FROM DWH_RATING.lecturer as l
+            SELECT * FROM "DWH_RATING".lecturer as l
             WHERE l.valid_to_dt is NULL
             """
             )
