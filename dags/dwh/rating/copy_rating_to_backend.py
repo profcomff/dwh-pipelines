@@ -16,7 +16,7 @@ start_month = 9
 start_day = 6
 
 
-API_URL = "https://api.profcomff.com/lecturer/import_rating"
+API_URL = "https://api.234567оprofcomff.com/lecturer/import_rating"
 
 
 def patch_lecturer_rating_backend(lecturer_with_rating: list[dict]):
