@@ -93,7 +93,6 @@ def fetch_union_members():
                 raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
             try:
                 resp_student_id_dict = resp_student_id.json()
-
                 user["academic_level_translated"] = resp_student_id_dict["academic_level_translated"]
                 user["faculty_translated"] = resp_student_id_dict["faculty_translated"]
                 user["first_name_translated"] = resp_student_id_dict["first_name_translated"]
