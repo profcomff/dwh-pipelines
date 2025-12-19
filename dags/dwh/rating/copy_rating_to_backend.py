@@ -16,7 +16,7 @@ start_month = 9
 start_day = 6
 
 
-API_URL = "https://api.test.profcomff.com/lecturer/import_rating"
+API_URL = "https://api.profcomff.com/lecturer/import_rating"
 
 
 def patch_lecturer_rating_backend(lecturer_with_rating: list[dict]):
@@ -45,7 +45,7 @@ def get_lecturers_with_rating_from_dwh() -> list[dict]:
         try:
             cursor.execute(
                 """
-            SELECT * FROM DWH_RATING.lecturer as l
+            SELECT * FROM "DWH_RATING".lecturer as l
             WHERE l.valid_to_dt is NULL
             """
             )
