@@ -93,8 +93,13 @@ def fetch_union_members():
                 raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
             try:
                 resp_student_id_dict = resp_student_id.json()
-                user["student_id"] = resp_student_id_dict["student_id"]
+                user["academic_level_translated"] = resp_student_id_dict["academic_level_translated"]
+                user["faculty_translated"] = resp_student_id_dict["faculty_translated"]
+                user["first_name_translated"] = resp_student_id_dict["first_name_translated"]
+                user["last_name_translated"] = resp_student_id_dict["last_name_translated"]
                 user["middle_name"] = resp_student_id_dict["middle_name"]
+                user["middle_name_translated"] = resp_student_id_dict["middle_name_translated"]
+                user["student_id"] = resp_student_id_dict["student_id"]
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
