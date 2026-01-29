@@ -55,7 +55,7 @@ def get_balance():
             if not response_text:
                 logging.error("Пустой ответ сервера при авторизации")
                 return None
-            
+
             # Проверка на первый символ
             if response_text[0] == '<':
                 logging.error("Получен HTML вместо JSON")
@@ -72,13 +72,13 @@ def get_balance():
 
         # Исключение на парсинг json
         except json.JSONDecodeError as e:
-            if "Expecting value" in str(e): # Проверяем исключение по ключевым словам
+            if "Expecting value" in str(e):  # Проверяем исключение по ключевым словам
                 if auth_response.text:
                     first_char = auth_response.text.strip[0]
                 else:
                     first_char = 'EMPTY'
                 logging.error(f"Не JSON ответ. Первый символ: '{first_char}'")
-            else: # Другое исключение того же класса
+            else:  # Другое исключение того же класса
                 logging.error(f"Ошибка JSON: {e}")
             return None
 
