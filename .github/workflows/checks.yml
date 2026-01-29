@@ -57,7 +57,7 @@ jobs:
       - uses: isort/isort-action@master
         with:
           requirementsFiles: "requirements.txt"
-      - uses: psf/black@stable
+      - uses: psf/black@23.11.0
       - name: Comment if linting failed
         if: failure()
         id: comment
