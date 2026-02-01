@@ -59,7 +59,7 @@ def get_balance():
             # Проверка на первый символ
             if response_text[0] == '<':
                 logging.error("Получен HTML вместо JSON")
-                logging.info(f"Начало ответа: {response_text[:15]}")
+                logging.warning(f"Ответ сервера: {response_text}")
                 return None
 
             # Парсинг; может завершиться exception'ом
@@ -78,13 +78,16 @@ def get_balance():
                 else:
                     first_char = 'EMPTY'
                 logging.error(f"Не JSON ответ. Первый символ: '{first_char}'")
+                logging.warning(f"Ответ сервера: {response_text}")
             else:  # Другое исключение того же класса
                 logging.error(f"Ошибка JSON: {e}")
+                logging.warning(f"Ответ сервера: {response_text}")
             return None
 
         # Ловим остальные исключения
         except Exception as e:
             logging.error(f"Ошибка: {e}")
+            logging.warning(f"Ответ сервера: {response_text}")
             return None
 
         balance_params = {'func': 'desktop', 'startform': 'vds', 'out': 'xjson'}
@@ -95,7 +98,7 @@ def get_balance():
         balance = float(balance_data.get('doc', {}).get('user', {}).get('$balance', str()))
 
         if balance is None:
-            logging.info("Баланс не был получен")
+            logging.error("Баланс не был получен")
             raise ValueError
 
         return balance
