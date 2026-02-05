@@ -74,7 +74,7 @@ def get_balance():
         except json.JSONDecodeError as e:
             if "Expecting value" in str(e):  # Проверяем исключение по ключевым словам
                 if auth_response.text:
-                    first_char = auth_response.text.strip[0]
+                    first_char = auth_response.text.strip()[0]
                 else:
                     first_char = 'EMPTY'
                 logging.error(f"Не JSON ответ. Первый символ: '{first_char}'")
