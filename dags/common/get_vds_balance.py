@@ -49,12 +49,46 @@ def get_balance():
         logging.info(f"Auth response status: {auth_response.status_code}")
 
         try:
-            auth_json = auth_response.json()
+            response_text = auth_response.text.strip()
+
+            # Проверка на не пустой ответ
+            if not response_text:
+                logging.error("Пустой ответ сервера при авторизации")
+                return None
+
+            # Проверка на первый символ
+            if response_text[0] == '<':
+                logging.error("Получен HTML вместо JSON")
+                logging.warning(f"Ответ сервера: {response_text}")
+                return None
+
+            # Парсинг; может завершиться exception'ом
+            auth_json = json.loads(response_text)
+
+            # Проверка на авторизацию
             if auth_json['doc']['$func'] == 'logon':
                 logging.error("Авторизация не удалась, все еще на странице входа")
                 return None
+
+        # Исключение на парсинг json
+        except json.JSONDecodeError as e:
+            if "Expecting value" in str(e):  # Проверяем исключение по ключевым словам
+                if auth_response.text:
+                    first_char = auth_response.text.strip()[0]
+                else:
+                    first_char = 'EMPTY'
+                logging.error(f"Не JSON ответ. Первый символ: '{first_char}'")
+                logging.warning(f"Ответ сервера: {response_text}")
+            else:  # Другое исключение того же класса
+                logging.error(f"Ошибка JSON: {e}")
+                logging.warning(f"Ответ сервера: {response_text}")
+            return None
+
+        # Ловим остальные исключения
         except Exception as e:
-            logging.info(f"Не удалось распарсить JSON ответа авторизации: {e}")
+            logging.error(f"Ошибка: {e}")
+            logging.warning(f"Ответ сервера: {response_text}")
+            return None
 
         balance_params = {'func': 'desktop', 'startform': 'vds', 'out': 'xjson'}
 
@@ -64,7 +98,7 @@ def get_balance():
         balance = float(balance_data.get('doc', {}).get('user', {}).get('$balance', str()))
 
         if balance is None:
-            logging.info("Баланс не был получен")
+            logging.error("Баланс не был получен")
             raise ValueError
 
         return balance
