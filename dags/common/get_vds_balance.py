@@ -43,65 +43,66 @@ def get_balance():
 
         session.get(url, verify=False)
 
+        # Авторизация
         login_data = {'func': 'auth', 'username': username, 'password': password}
-
         auth_response = session.post(url, data=login_data, verify=False)
         logging.info(f"Auth response status: {auth_response.status_code}")
 
-        try:
-            response_text = auth_response.text.strip()
+        # Подтверждение сессии (sok=ok) - обновленное API(?)
+        logging.info("Отправляем подтверждение сессии (sok=ok)...")
+        confirm_response = session.get(url, params={'sok': 'ok'}, verify=False)
+        logging.info(f"Confirm response status: {confirm_response.status_code}")
 
-            # Проверка на не пустой ответ
-            if not response_text:
-                logging.error("Пустой ответ сервера при авторизации")
-                return None
-
-            # Проверка на первый символ
-            if response_text[0] == '<':
-                logging.error("Получен HTML вместо JSON")
-                logging.warning(f"Ответ сервера: {response_text}")
-                return None
-
-            # Парсинг; может завершиться exception'ом
-            auth_json = json.loads(response_text)
-
-            # Проверка на авторизацию
-            if auth_json['doc']['$func'] == 'logon':
-                logging.error("Авторизация не удалась, все еще на странице входа")
-                return None
-
-        # Исключение на парсинг json
-        except json.JSONDecodeError as e:
-            if "Expecting value" in str(e):  # Проверяем исключение по ключевым словам
-                if auth_response.text:
-                    first_char = auth_response.text.strip()[0]
-                else:
-                    first_char = 'EMPTY'
-                logging.error(f"Не JSON ответ. Первый символ: '{first_char}'")
-                logging.warning(f"Ответ сервера: {response_text}")
-            else:  # Другое исключение того же класса
-                logging.error(f"Ошибка JSON: {e}")
-                logging.warning(f"Ответ сервера: {response_text}")
+        # На всякий
+        if confirm_response.status_code != 200:
+            logging.error("Не удалось подтвердить сессию")
             return None
 
-        # Ловим остальные исключения
-        except Exception as e:
-            logging.error(f"Ошибка: {e}")
-            logging.warning(f"Ответ сервера: {response_text}")
-            return None
-
+        # Здесь уже должен быть JSON
         balance_params = {'func': 'desktop', 'startform': 'vds', 'out': 'xjson'}
-
         balance_response = session.get(url, params=balance_params, verify=False)
         logging.info(f"Balance response status: {balance_response.status_code}")
-        balance_data = balance_response.json()
-        balance = float(balance_data.get('doc', {}).get('user', {}).get('$balance', str()))
 
-        if balance is None:
-            logging.error("Баланс не был получен")
-            raise ValueError
+        # Проверяем ответ баланса на HTML/JSON
+        response_text = balance_response.text.strip()
 
-        return balance
+        if not response_text:
+            logging.error("Пустой ответ сервера при запросе баланса")
+            return None
+
+        if response_text[0] == '<':
+            logging.error("Получен HTML вместо JSON при запросе баланса")
+            # Выгружаем в логи целиком что получили
+            logging.warning(f"Начало ответа: {response_text}")
+            return None
+
+        # Парсим баланс
+        try:
+            balance_data = balance_response.json()
+            logging.info(f"Ответ баланса (первые 200 символов): {str(balance_data)[:200]}")
+
+            # Извлечение баланса с проверкой на None
+            balance_str = balance_data.get('doc', {}).get('user', {}).get('$balance')
+
+            if balance_str is None:
+                logging.error("Ключ баланса не найден в ответе")
+                logging.debug(f"Структура ответа: {balance_data}")
+                return None
+
+            balance = float(balance_str)
+            logging.info(f"Успешно получен баланс: {balance}")
+            return balance
+
+        except json.JSONDecodeError as e:
+            logging.error(f"Ошибка парсинга JSON баланса: {e}")
+            logging.warning(f"Ответ сервера: {response_text[:200]}")
+            return None
+        except ValueError as e:
+            logging.error(f"Ошибка преобразования баланса в число: {e}")
+            return None
+        except Exception as e:
+            logging.error(f"Неожиданная ошибка при получении баланса: {e}")
+            return None
 
 
 with DAG(
