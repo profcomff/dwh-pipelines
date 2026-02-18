@@ -32,7 +32,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
         cursor = conn.cursor()
-        result = {"phone_number": "", "card_number": ""}
+        result = {"phone_number": "", "card_number": "", "full_name": "", "full_name_eng": "", "birthday": "", "faculty": "", "faculty_eng": "", "education_level": "", "education_level_eng": "", "photo": ""}
         try:
             cursor.execute(
                 f"""
@@ -57,6 +57,94 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             card_record = cursor.fetchone()
             result["card_number"] = str(card_record[0] if card_record else "")
             logging.info(f"Took card_number for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select full_name from "ODS_USERDATA".full_name as f
+            where f.user_id = {user_id} and f.is_deleted = FALSE
+            order by f.modified desc, f.created desc
+            limit 1;
+            """
+            )
+            fullname_record = cursor.fetchone()
+            result["full_name"] = str(fullname_record[0] if fullname_record else "")
+            logging.info(f"Took full_name for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select full_name_eng from "ODS_USERDATA".full_name_eng as f
+            where f.user_id = {user_id} and f.is_deleted = FALSE
+            order by f.modified desc, f.created desc
+            limit 1;
+            """
+            )
+            fullname_eng_record = cursor.fetchone()
+            result["full_name_eng"] = str(fullname_eng_record[0] if fullname_eng_record else "")
+            logging.info(f"Took full_name_eng for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select birthday from "ODS_USERDATA".birthday as b
+            where b.user_id = {user_id} and b.is_deleted = FALSE
+            order by b.modified desc, b.created desc
+            limit 1;
+            """
+            )
+            birthday_record = cursor.fetchone()
+            result["birthday"] = str(birthday_record[0] if birthday_record else "")
+            logging.info(f"Took birthday for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select faculty from "ODS_USERDATA".faculty as f
+            where f.user_id = {user_id} and f.is_deleted = FALSE
+            order by f.modified desc, f.created desc
+            limit 1;
+            """
+            )
+            faculty_record = cursor.fetchone()
+            result["faculty"] = str(faculty_record[0] if faculty_record else "")
+            logging.info(f"Took faculty for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select faculty_eng from "ODS_USERDATA".faculty_eng as f
+            where f.user_id = {user_id} and f.is_deleted = FALSE
+            order by f.modified desc, f.created desc
+            limit 1;
+            """
+            )
+            faculty_eng_record = cursor.fetchone()
+            result["faculty_eng"] = str(faculty_eng_record[0] if faculty_eng_record else "")
+            logging.info(f"Took faculty_eng for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select education_level from "ODS_USERDATA".education_level as e
+            where e.user_id = {user_id} and e.is_deleted = FALSE
+            order by e.modified desc, e.created desc
+            limit 1;
+            """
+            )
+            level_record = cursor.fetchone()
+            result["education_level"] = str(level_record[0] if level_record else "")
+            logging.info(f"Took education_level for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select education_level_eng from "ODS_USERDATA".education_level_eng as e
+            where e.user_id = {user_id} and e.is_deleted = FALSE
+            order by e.modified desc, e.created desc
+            limit 1;
+            """
+            )
+            level_eng_record = cursor.fetchone()
+            result["education_level_eng"] = str(level_eng_record[0] if level_eng_record else "")
+            logging.info(f"Took education_level_eng for {user_id} from dwh database")
+            cursor.execute(
+                f"""
+            select photo from "ODS_USERDATA".photo as p
+            where p.user_id = {user_id} and p.is_deleted = FALSE
+            order by p.modified desc, p.created desc
+            limit 1;
+            """
+            )
+            photo_record = cursor.fetchone()
+            result["photo"] = str(photo_record[0] if photo_record else "")
+            logging.info(f"Took photo for {user_id} from dwh database")
             return result
 
         except Exception as e:
@@ -78,6 +166,14 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
                 {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
                 {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value": str(info['card_number'])},
+                {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name'])},
+                {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name_eng'])},
+                {"category": "Личная информация", "param": "Дата рождения", "value": str(info['birthday'])},
+                {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
+                {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
+                {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
+                {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level_eng'])},
+                {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
             ],
             "source": "dwh",
         }
