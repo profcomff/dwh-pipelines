@@ -33,16 +33,16 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
     with hook.get_conn() as conn:
         cursor = conn.cursor()
         result = {
-            "phone_number": "", 
-            "card_number": "", 
-            "full_name": "", 
-            "full_name_eng": "", 
-            "birthday": "", 
-            "faculty": "", 
-            "faculty_eng": "", 
-            "education_level": "", 
-            "education_level_eng": "", 
-            "photo": ""
+            "phone_number": "",
+            "card_number": "",
+            "full_name": "",
+            "full_name_eng": "",
+            "birthday": "",
+            "faculty": "",
+            "faculty_eng": "",
+            "education_level": "",
+            "education_level_eng": "",
+            "photo": "",
         }
         try:
             cursor.execute(
