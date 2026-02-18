@@ -32,7 +32,18 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
     hook = PostgresHook(postgres_conn_id="postgres_dwh")
     with hook.get_conn() as conn:
         cursor = conn.cursor()
-        result = {"phone_number": "", "card_number": "", "full_name": "", "full_name_eng": "", "birthday": "", "faculty": "", "faculty_eng": "", "education_level": "", "education_level_eng": "", "photo": ""}
+        result = {
+            "phone_number": "", 
+            "card_number": "", 
+            "full_name": "", 
+            "full_name_eng": "", 
+            "birthday": "", 
+            "faculty": "", 
+            "faculty_eng": "", 
+            "education_level": "", 
+            "education_level_eng": "", 
+            "photo": ""
+        }
         try:
             cursor.execute(
                 f"""
@@ -59,7 +70,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took card_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select full_name from "ODS_USERDATA".full_name as f
+            select name from "ODS_USERDATA".full_name as f
             where f.user_id = {user_id} and f.is_deleted = FALSE
             order by f.modified desc, f.created desc
             limit 1;
@@ -70,7 +81,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took full_name for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select full_name_eng from "ODS_USERDATA".full_name_eng as f
+            select name from "ODS_USERDATA".full_name_eng as f
             where f.user_id = {user_id} and f.is_deleted = FALSE
             order by f.modified desc, f.created desc
             limit 1;
@@ -114,7 +125,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took faculty_eng for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select education_level from "ODS_USERDATA".education_level as e
+            select level from "ODS_USERDATA".education_level as e
             where e.user_id = {user_id} and e.is_deleted = FALSE
             order by e.modified desc, e.created desc
             limit 1;
@@ -125,7 +136,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took education_level for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select education_level_eng from "ODS_USERDATA".education_level_eng as e
+            select level from "ODS_USERDATA".education_level_eng as e
             where e.user_id = {user_id} and e.is_deleted = FALSE
             order by e.modified desc, e.created desc
             limit 1;
@@ -136,7 +147,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took education_level_eng for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select photo from "ODS_USERDATA".photo as p
+            select url from "ODS_USERDATA".photo as p
             where p.user_id = {user_id} and p.is_deleted = FALSE
             order by p.modified desc, p.created desc
             limit 1;
