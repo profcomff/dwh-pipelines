@@ -108,7 +108,7 @@ temp_stg_union_member_data as(
 		academic_level_translated as education_level_eng,
 		status as status,
 		faculty as faculty,
-		faculty_eng as faculty_eng,
+		faculty_translated as faculty_eng,
 		email as email,
 		date_of_birth as birthday,
 		phone_number as phone_number,
