@@ -105,8 +105,10 @@ temp_stg_union_member_data as(
 		type_of_learning as education_form,
 		rzd_status as rzd_status,
 		academic_level as education_level,
+		academic_level_translated as education_level_eng,
 		status as status,
 		faculty as faculty,
+		faculty_translated as faculty_eng,
 		email as email,
 		date_of_birth as birthday,
 		phone_number as phone_number,
@@ -124,8 +126,13 @@ temp_stg_union_member_data as(
 		card_user::varchar as card_user,
 		student_id as student_id,
 		first_name as first_name,
+		middle_name as middle_name,
 		last_name as last_name,
-		CONCAT_WS(' ',first_name, last_name) as full_name, --TODO добавить middle_name
+		CONCAT_WS(' ',first_name, middle_name, last_name) as full_name,
+		first_name_translated as first_name_translated,
+		middle_name_translated as middle_name_translated,
+		last_name_translated as last_name_translated,
+		CONCAT_WS(' ',first_name_translated, middle_name_translated, last_name_translated) as full_name_eng,
 		'union_member' as source
 	from "STG_UNION_MEMBER".union_member
 ),
@@ -178,6 +185,11 @@ select
 	    	when um.education_level is not null then um.source
 	    	when ud.education_level is not null then ud.education_level_source
 	    end  as education_level_source,
+		CASE
+	    	WHEN um.education_level_eng IS NOT NULL AND ud.education_level IS NOT NULL AND um.education_level_eng != ud.education_level THEN CONCAT_WS(', ', um.education_level_eng, ud.education_level)
+	    	WHEN um.education_level_eng IS NOT NULL THEN um.education_level_eng
+	    	WHEN ud.education_level IS NOT NULL THEN ud.education_level
+	    END as education_level_eng,
 	    CASE
 	    	WHEN um.email IS NOT NULL AND ud.email IS NOT NULL AND um.email != ud.email THEN CONCAT_WS(', ', um.email, ud.email)
 	    	WHEN um.email IS NOT NULL THEN um.email
@@ -198,6 +210,11 @@ select
 	    	when um.faculty is not null then um.source
 	    	when ud.faculty is not null then ud.faculty_source
 	    end  as faculty_source,
+		CASE
+	    	WHEN um.faculty_eng IS NOT NULL AND ud.faculty IS NOT NULL AND um.faculty_eng != ud.faculty THEN CONCAT_WS(', ', um.faculty_eng, ud.faculty)
+	    	WHEN um.faculty_eng IS NOT NULL THEN um.faculty_eng
+	    	WHEN ud.faculty IS NOT NULL THEN ud.faculty
+	    END as faculty_eng,
 	    CASE
 	    	WHEN um.full_name IS NOT NULL AND ud.full_names IS NOT NULL AND um.full_name != ANY(ud.full_names) THEN array_to_string(array_append(ud.full_names, um.full_name), ', ')
 	    	WHEN um.full_name IS NOT NULL THEN um.full_name
@@ -208,6 +225,11 @@ select
 	    	when um.full_name is not null then um.source
 	    	when ud.full_names is not null then array_to_string(ud.full_name_sources, ', ')
 	    end  as full_name_source,
+		CASE
+	    	WHEN um.full_name_eng IS NOT NULL AND ud.full_names IS NOT NULL AND um.full_name_eng != ANY(ud.full_names) THEN array_to_string(array_append(ud.full_names, um.full_name_eng), ', ')
+	    	WHEN um.full_name_eng IS NOT NULL THEN um.full_name_eng
+	    	WHEN ud.full_names IS NOT NULL THEN array_to_string(ud.full_names, ', ')
+	    END as full_name_eng,
 	    ud.git_hub_username as git_hub_username,
 	    ud.git_hub_username_source as git_hub_username_source,
 	    ud.home_phone_number as home_phone_number,
@@ -301,6 +323,31 @@ from temp_stg_userdata_data ud left join temp_stg_union_member_data um on (
 			and um.first_name is not null and um.last_name is not null
 			and trim(um.first_name) != '' and trim(um.last_name) != ''
 		)
+		or (
+			exists (select 1 from unnest(ud.first_names_if) as fn where lower(trim(fn)) = lower(trim(um.first_name_translated)))
+			and exists (select 1 from unnest(ud.last_names_if) as ln where lower(trim(ln)) = lower(trim(um.last_name_translated)))
+			and ud.first_names_if is not null and array_length(ud.first_names_if, 1) > 0
+			and ud.last_names_if is not null and array_length(ud.last_names_if, 1) > 0
+			and um.first_name_translated is not null and um.last_name_translated is not null
+			and trim(um.first_name_translated) != '' and trim(um.last_name_translated) != ''
+		)
+		or (
+			exists (select 1 from unnest(ud.first_names_fio) as fn where lower(trim(fn)) = lower(trim(um.first_name_translated)))
+			and exists (select 1 from unnest(ud.last_names_fio) as ln where lower(trim(ln)) = lower(trim(um.last_name_translated)))
+			and ud.first_names_fio is not null and array_length(ud.first_names_fio, 1) > 0
+			and ud.last_names_fio is not null and array_length(ud.last_names_fio, 1) > 0
+			and um.first_name_translated is not null and um.last_name_translated is not null
+			and trim(um.first_name_translated) != '' and trim(um.last_name_translated) != ''
+		)
+		or (
+			exists (select 1 from unnest(ud.first_names_otf) as fn where lower(trim(fn)) = lower(trim(um.first_name_translated)))
+			and exists (select 1 from unnest(ud.last_names_otf) as ln where lower(trim(ln)) = lower(trim(um.last_name_translated)))
+			and ud.first_names_otf is not null and array_length(ud.first_names_otf, 1) > 0
+			and ud.last_names_otf is not null and array_length(ud.last_names_otf, 1) > 0
+			and um.first_name_translated is not null and um.last_name_translated is not null
+			and trim(um.first_name_translated) != '' and trim(um.last_name_translated) != ''
+		)
+		
 	)
 )
 where um.user_id is not null
@@ -323,12 +370,15 @@ select
 	education_form_source,
 	education_level,
 	education_level_source,
+	education_level_eng,
 	email,
 	email_source,
 	faculty,
 	faculty_source,
+	faculty_eng,
 	full_name,
 	full_name_source,
+	full_name_eng,
 	git_hub_username,
 	git_hub_username_source,
 	home_phone_number,
@@ -377,9 +427,12 @@ from (
 				 case when department is not null and trim(department) != '' then 1 else 0 end +
 				 case when education_form is not null and trim(education_form) != '' then 1 else 0 end +
 				 case when education_level is not null and trim(education_level) != '' then 1 else 0 end +
+				 case when education_level_eng is not null and trim(education_level_eng) != '' then 1 else 0 end +
 				 case when email is not null and trim(email) != '' then 1 else 0 end +
 				 case when faculty is not null and trim(faculty) != '' then 1 else 0 end +
+				 case when faculty_eng is not null and trim(faculty_eng) != '' then 1 else 0 end +
 				 case when full_name is not null and trim(full_name) != '' then 1 else 0 end +
+				 case when full_name_eng is not null and trim(full_name_eng) != '' then 1 else 0 end +
 				 case when git_hub_username is not null and trim(git_hub_username) != '' then 1 else 0 end +
 				 case when home_phone_number is not null and trim(home_phone_number) != '' then 1 else 0 end +
 				 case when phone_number is not null and trim(phone_number) != '' then 1 else 0 end +
@@ -638,6 +691,36 @@ on conflict(user_id, level) do update set
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
 
+
+insert into "ODS_USERDATA".education_level_eng(
+	level,
+	user_id,
+	source,
+	created,
+	modified,
+	is_deleted
+)
+select
+	education_level_eng,
+	user_id,
+	education_level_source,
+	CURRENT_TIMESTAMP,
+ 	CURRENT_TIMESTAMP,
+	False
+from (
+	select distinct
+		education_level_eng,
+		user_id::integer as user_id,
+		education_level_source
+	from temp_combined_data
+	where education_level_eng is not null and trim(education_level_eng) != '' and education_level_source is not null and trim(education_level_source) != ''
+	and student_id is not null and trim(student_id) != ''
+) dedup
+on conflict(user_id, level) do update set
+	level = EXCLUDED.level,
+	source = EXCLUDED.source,
+	modified = CURRENT_TIMESTAMP;
+
 insert into "ODS_USERDATA".email(
 	email,
 	user_id,
@@ -697,6 +780,36 @@ on conflict(user_id, faculty) do update set
 	modified = CURRENT_TIMESTAMP;
 
 
+insert into "ODS_USERDATA".faculty_eng(
+	faculty_eng,
+	user_id,
+	source,
+	created,
+	modified,
+	is_deleted
+)
+select
+	faculty_eng,
+	user_id,
+	faculty_source,
+	CURRENT_TIMESTAMP,
+ 	CURRENT_TIMESTAMP,
+	False
+from (
+	select distinct
+		faculty_eng,
+		user_id::integer as user_id,
+		faculty_source
+	from temp_combined_data
+	where faculty_eng is not null and trim(faculty_eng) != '' and faculty_source is not null and trim(faculty_source) != ''
+	and student_id is not null and trim(student_id) != ''
+) dedup
+on conflict(user_id, faculty_eng) do update set
+	faculty_eng = EXCLUDED.faculty_eng,
+	source = EXCLUDED.source,
+	modified = CURRENT_TIMESTAMP;
+
+
 insert into "ODS_USERDATA".full_name(
 	name,
 	user_id,
@@ -719,6 +832,35 @@ from (
 		full_name_source
 	from temp_combined_data
 	where full_name is not null and trim(full_name) != '' and full_name_source is not null and trim(full_name_source) != ''
+	and student_id is not null and trim(student_id) != ''
+) dedup
+on conflict(user_id, name) do update set
+	name = EXCLUDED.name,
+	source = EXCLUDED.source,
+	modified = CURRENT_TIMESTAMP;
+
+insert into "ODS_USERDATA".full_name_eng(
+	name,
+	user_id,
+	source,
+	created,
+	modified,
+	is_deleted
+)
+select
+	full_name_eng,
+	user_id,
+	full_name_source,
+	CURRENT_TIMESTAMP,
+ 	CURRENT_TIMESTAMP,
+	False
+from (
+	select distinct
+		full_name_eng,
+		user_id::integer as user_id,
+		full_name_source
+	from temp_combined_data
+	where full_name_eng is not null and trim(full_name_eng) != '' and full_name_source is not null and trim(full_name_source) != ''
 	and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, name) do update set
