@@ -178,7 +178,11 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
                 {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
-                {"category": "Учёба", "param": "Ступень обучения", "value": dict_education.get(str(info['education_level']))},
+                {
+                    "category": "Учёба",
+                    "param": "Ступень обучения",
+                    "value": dict_education.get(str(info['education_level'])),
+                },
                 {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
             ],
             "source": "dwh",
