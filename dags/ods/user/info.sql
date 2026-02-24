@@ -105,7 +105,6 @@ temp_stg_union_member_data as(
 		type_of_learning as education_form,
 		rzd_status as rzd_status,
 		academic_level as education_level,
-		academic_level_translated as education_level_eng,
 		status as status,
 		faculty as faculty,
 		faculty_translated as faculty_eng,
@@ -185,11 +184,6 @@ select
 	    	when um.education_level is not null then um.source
 	    	when ud.education_level is not null then ud.education_level_source
 	    end  as education_level_source,
-		CASE
-	    	WHEN um.education_level_eng IS NOT NULL AND ud.education_level IS NOT NULL AND um.education_level_eng != ud.education_level THEN CONCAT_WS(', ', um.education_level_eng, ud.education_level)
-	    	WHEN um.education_level_eng IS NOT NULL THEN um.education_level_eng
-	    	WHEN ud.education_level IS NOT NULL THEN ud.education_level
-	    END as education_level_eng,
 	    CASE
 	    	WHEN um.email IS NOT NULL AND ud.email IS NOT NULL AND um.email != ud.email THEN CONCAT_WS(', ', um.email, ud.email)
 	    	WHEN um.email IS NOT NULL THEN um.email
@@ -370,7 +364,6 @@ select
 	education_form_source,
 	education_level,
 	education_level_source,
-	education_level_eng,
 	email,
 	email_source,
 	faculty,
@@ -427,7 +420,6 @@ from (
 				 case when department is not null and trim(department) != '' then 1 else 0 end +
 				 case when education_form is not null and trim(education_form) != '' then 1 else 0 end +
 				 case when education_level is not null and trim(education_level) != '' then 1 else 0 end +
-				 case when education_level_eng is not null and trim(education_level_eng) != '' then 1 else 0 end +
 				 case when email is not null and trim(email) != '' then 1 else 0 end +
 				 case when faculty is not null and trim(faculty) != '' then 1 else 0 end +
 				 case when faculty_eng is not null and trim(faculty_eng) != '' then 1 else 0 end +
@@ -691,35 +683,6 @@ on conflict(user_id, level) do update set
 	source = EXCLUDED.source,
 	modified = CURRENT_TIMESTAMP;
 
-
-insert into "ODS_USERDATA".education_level_eng(
-	level,
-	user_id,
-	source,
-	created,
-	modified,
-	is_deleted
-)
-select
-	education_level_eng,
-	user_id,
-	education_level_source,
-	CURRENT_TIMESTAMP,
- 	CURRENT_TIMESTAMP,
-	False
-from (
-	select distinct
-		education_level_eng,
-		user_id::integer as user_id,
-		education_level_source
-	from temp_combined_data
-	where education_level_eng is not null and trim(education_level_eng) != '' and education_level_source is not null and trim(education_level_source) != ''
-	and student_id is not null and trim(student_id) != ''
-) dedup
-on conflict(user_id, level) do update set
-	level = EXCLUDED.level,
-	source = EXCLUDED.source,
-	modified = CURRENT_TIMESTAMP;
 
 insert into "ODS_USERDATA".email(
 	email,
