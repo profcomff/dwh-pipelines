@@ -34,74 +34,111 @@ def send_telegram_message_or_print(chat_id, balance):
 
 @task(task_id="fetch_users", retries=3)
 def get_balance():
-    """Скачать данные из ЛК VDS.sh"""
+    """
+    Получение баланса из VDS.sh через API BILLmanager
+
+    Документация по авторизации: https://www.ispsystem.ru/docs/bc/razrabotchiku/rabota-s-api/vzaimodejstvie-cherez-api#id-%D0%92%D0%B7%D0%B0%D0%B8%D0%BC%D0%BE%D0%B4%D0%B5%D0%B9%D1%81%D1%82%D0%B2%D0%B8%D0%B5%D1%87%D0%B5%D1%80%D0%B5%D0%B7API-%D0%A1%D0%B5%D1%81%D1%81%D0%B8%D0%BE%D0%BD%D0%BD%D0%B0%D1%8F%D0%B0%D0%B2%D1%82%D0%BE%D1%80%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F
+    """
     urllib3.disable_warnings()
 
-    with r.Session() as session:
-        username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
-        password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
+    username = str(Variable.get("LK_VDSSH_ADMIN_USERNAME"))
+    password = str(Variable.get("LK_VDSSH_ADMIN_PASSWORD"))
+    url = "https://my.vds.sh/manager/billmgr"
 
-        session.get(url, verify=False)
+    # Параметры запроса согласно документации BILLmanager API
+    params = {
+        'authinfo': f'{username}:{password}',  # Авторизация в одну строку
+        'out': 'json',  # Требуем JSON (можно попробовать 'xjson')
+        'func': 'vds',  # Функция "Виртуальные серверы"
+        # 'out': 'xjson',                        # Перестраховка, если 'json' не сработает
+    }
 
-        login_data = {'func': 'auth', 'username': username, 'password': password}
+    logging.info(f"Отправка запроса к {url} с func=vds")
 
-        auth_response = session.post(url, data=login_data, verify=False)
-        logging.info(f"Auth response status: {auth_response.status_code}")
+    try:
+        # Выполняем GET-запрос с параметрами в URL
+        response = r.get(url, params=params, verify=False, timeout=30)
+        logging.info(f"Статус ответа: {response.status_code}")
 
+        # Проверка HTTP статуса
+        if response.status_code != 200:
+            logging.error(f"Ошибка HTTP {response.status_code}")
+            logging.error(f"Тело ответа: {response.text[:2000]}")  # Ограничение по символам для перестраховочки
+            return None
+
+        # Проверяем, не HTML ли это (на всякий случай)
+        if response.text.strip().startswith('<'):
+            logging.error("Получен HTML вместо JSON. Возможно, неверный метод авторизации или функция.")
+            logging.warning(f"Начало ответа: {response.text[:500]}")
+            return None
+
+        # Парсим JSON
         try:
-            response_text = auth_response.text.strip()
-
-            # Проверка на не пустой ответ
-            if not response_text:
-                logging.error("Пустой ответ сервера при авторизации")
-                return None
-
-            # Проверка на первый символ
-            if response_text[0] == '<':
-                logging.error("Получен HTML вместо JSON")
-                logging.warning(f"Ответ сервера: {response_text}")
-                return None
-
-            # Парсинг; может завершиться exception'ом
-            auth_json = json.loads(response_text)
-
-            # Проверка на авторизацию
-            if auth_json['doc']['$func'] == 'logon':
-                logging.error("Авторизация не удалась, все еще на странице входа")
-                return None
-
-        # Исключение на парсинг json
+            data = response.json()
+            logging.info(f"JSON ответ получен. Ключи верхнего уровня: {list(data.keys())}")
+            # Логируем структуру ответа (но не весь, чтобы не засорять логи)
+            logging.debug(f"Полный ответ: {data}")
         except json.JSONDecodeError as e:
-            if "Expecting value" in str(e):  # Проверяем исключение по ключевым словам
-                if auth_response.text:
-                    first_char = auth_response.text.strip()[0]
-                else:
-                    first_char = 'EMPTY'
-                logging.error(f"Не JSON ответ. Первый символ: '{first_char}'")
-                logging.warning(f"Ответ сервера: {response_text}")
-            else:  # Другое исключение того же класса
-                logging.error(f"Ошибка JSON: {e}")
-                logging.warning(f"Ответ сервера: {response_text}")
+            logging.error(f"Ошибка парсинга JSON: {e}")
+            logging.error(f"Первые 500 символов ответа: {response.text[:500]}")
             return None
 
-        # Ловим остальные исключения
-        except Exception as e:
-            logging.error(f"Ошибка: {e}")
-            logging.warning(f"Ответ сервера: {response_text}")
+        # ====================== ИЗВЛЕЧЕНИЕ БАЛАНСА ======================
+        # Структура неизвестна поэтому добавляем защиту и логирование
+        balance = None
+
+        # Попробуем самые вероятные пути (дальше вайб решение по поиску поля с балансом)
+        # Что-то одно сработает - остальные вырежу
+        try:
+            # 1 старый путь (из desktop)
+            if 'doc' in data and 'user' in data['doc'] and '$balance' in data['doc']['user']:
+                balance = float(data['doc']['user']['$balance'])
+                logging.info(f"Баланс найден в doc.user.$balance: {balance}")
+
+            # 2 возможно, баланс в общих данных пользователя
+            elif 'user' in data and '$balance' in data['user']:
+                balance = float(data['user']['$balance'])
+                logging.info(f"Баланс найден в user.$balance: {balance}")
+
+            # 3 возможно, в первом элементе списка vds
+            elif 'doc' in data and 'elem' in data['doc'] and isinstance(data['doc']['elem'], list):
+                if len(data['doc']['elem']) > 0:
+                    first_vds = data['doc']['elem'][0]
+                    if 'balance' in first_vds:
+                        balance = float(first_vds['balance'])
+                        logging.info(f"Баланс найден в doc.elem[0].balance: {balance}")
+                    elif '$balance' in first_vds:
+                        balance = float(first_vds['$balance'])
+                        logging.info(f"Баланс найден в doc.elem[0].$balance: {balance}")
+
+            # 4 если data сама по себе список
+            elif isinstance(data, list) and len(data) > 0:
+                if 'balance' in data[0]:
+                    balance = float(data[0]['balance'])
+                    logging.info(f"Баланс найден в data[0].balance: {balance}")
+
+            else:
+                logging.error("Не удалось найти баланс в известных полях")
+                logging.info(f"Структура ответа для анализа: {str(data)[:1000]}")
+                return None
+
+        except (ValueError, TypeError, KeyError) as e:
+            logging.error(f"Ошибка при извлечении баланса: {e}")
             return None
-
-        balance_params = {'func': 'desktop', 'startform': 'vds', 'out': 'xjson'}
-
-        balance_response = session.get(url, params=balance_params, verify=False)
-        logging.info(f"Balance response status: {balance_response.status_code}")
-        balance_data = balance_response.json()
-        balance = float(balance_data.get('doc', {}).get('user', {}).get('$balance', str()))
 
         if balance is None:
             logging.error("Баланс не был получен")
-            raise ValueError
+            return None
 
+        logging.info(f"Успешно получен баланс: {balance} руб.")
         return balance
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Ошибка при выполнении запроса: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Ошибка: {e}")
+        return None
 
 
 with DAG(
