@@ -161,7 +161,12 @@ def post_union_members_to_backend(union_members_ids: list):
     }
     for union_member_id in union_members_ids:
         info = get_phone_number_by_user_ids(union_member_id)
-        dict = {"Специалитет (6 лет)": "Speciality (6 years)", "Магистратура (2 года)": "Magistracy (2 years)", "Аспирантура (3 года)": "Postgraduate study (3 years)", "Бакалавриат (4 года)": "Bachelor (4 years)", "Аспирантура (4 года)": "Postgraduate study (4 years)", "Ординатура (2 года)": "Residency (2 years)"}
+        dict_education = {
+            "Специалитет (6 лет), специалист": "Speciality (6 years)",
+            "Магистратура (2 года), магистр": "Magistracy (2 years)",
+            "Аспирантура (4 года), бакалавр": "Postgraduate study (4 years)",
+            "Аспирантура (4 года), магистр": "Postgraduate study (4 years)",
+        }
         data = {
             "items": [
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
@@ -173,7 +178,11 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
                 {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
-                {"category": "Учёба", "param": "Ступень обучения", "value": dict[str(info['education_level'])]},
+                {
+                    "category": "Учёба",
+                    "param": "Ступень обучения",
+                    "value": dict_education.get(str(info['education_level'])),
+                },
                 {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
             ],
             "source": "dwh",
