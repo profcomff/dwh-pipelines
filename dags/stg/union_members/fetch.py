@@ -94,8 +94,7 @@ def fetch_union_members():
             try:
                 resp_student_id_dict = resp_student_id.json()
                 logging.info(f"Available fields for user {user['id']}: {list(resp_student_id_dict.keys())}")
-                user["academic_level_eng"] = resp_student_id_dict["academic_level_eng"]
-                user["faculty_translated"] = resp_student_id_dict["faculty_translated"]
+                user["faculty_translated"] = resp_student_id_dict["faculty_title_eng"]
                 user["first_name_translated"] = resp_student_id_dict["first_name_translated"]
                 user["last_name_translated"] = resp_student_id_dict["last_name_translated"]
                 user["middle_name"] = resp_student_id_dict["middle_name"]
