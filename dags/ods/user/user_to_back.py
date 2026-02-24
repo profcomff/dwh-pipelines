@@ -136,17 +136,6 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took education_level for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select level from "ODS_USERDATA".education_level_eng as e
-            where e.user_id = {user_id} and e.is_deleted = FALSE
-            order by e.modified desc, e.created desc
-            limit 1;
-            """
-            )
-            level_eng_record = cursor.fetchone()
-            result["education_level_eng"] = str(level_eng_record[0] if level_eng_record else "")
-            logging.info(f"Took education_level_eng for {user_id} from dwh database")
-            cursor.execute(
-                f"""
             select url from "ODS_USERDATA".photo as p
             where p.user_id = {user_id} and p.is_deleted = FALSE
             order by p.modified desc, p.created desc
@@ -183,7 +172,6 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
                 {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
-                {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level_eng'])},
                 {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
             ],
             "source": "dwh",
