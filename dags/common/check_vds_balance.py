@@ -49,7 +49,7 @@ def get_balance():
     params = {
         'authinfo': f'{username}:{password}',  # Авторизация
         'out': 'json',  # Требуем JSON
-        'func': 'account',
+        'func': 'subaccount',
     }
 
     logging.info(f"Отправка запроса к {url} с func=account")
