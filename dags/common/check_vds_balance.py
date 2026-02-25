@@ -37,7 +37,7 @@ def get_balance():
     """
     Получение баланса из VDS.sh через API BILLmanager
 
-    Документация по авторизации: https://www.ispsystem.ru/docs/bc/razrabotchiku/rabota-s-api/vzaimodejstvie-cherez-api#id-%D0%92%D0%B7%D0%B0%D0%B8%D0%BC%D0%BE%D0%B4%D0%B5%D0%B9%D1%81%D1%82%D0%B2%D0%B8%D0%B5%D1%87%D0%B5%D1%80%D0%B5%D0%B7API-%D0%A1%D0%B5%D1%81%D1%81%D0%B8%D0%BE%D0%BD%D0%BD%D0%B0%D1%8F%D0%B0%D0%B2%D1%82%D0%BE%D1%80%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F
+    Документация по авторизации: https://www.ispsystem.ru/docs/bc/razrabotchiku/rabota-s-api/billmanager-api/klienty-account
     """
     urllib3.disable_warnings()
 
@@ -47,13 +47,12 @@ def get_balance():
 
     # Параметры запроса согласно документации BILLmanager API
     params = {
-        'authinfo': f'{username}:{password}',  # Авторизация в одну строку
-        'out': 'json',  # Требуем JSON (можно попробовать 'xjson')
-        'func': 'vds',  # Функция "Виртуальные серверы"
-        # 'out': 'xjson',                        # Перестраховка, если 'json' не сработает
+        'authinfo': f'{username}:{password}',  # Авторизация
+        'out': 'json',  # Требуем JSON
+        'func': 'account',
     }
 
-    logging.info(f"Отправка запроса к {url} с func=vds")
+    logging.info(f"Отправка запроса к {url} с func=account")
 
     try:
         # Выполняем GET-запрос с параметрами в URL
@@ -75,6 +74,7 @@ def get_balance():
         # Парсим JSON
         try:
             data = response.json()
+            logging.warning(f"ПОЛНЫЙ ОТВЕТ ОТ API: {data}")
             logging.info(f"JSON ответ получен. Ключи верхнего уровня: {list(data.keys())}")
             # Логируем структуру ответа (но не весь, чтобы не засорять логи)
             logging.debug(f"Полный ответ: {data}")
@@ -83,47 +83,19 @@ def get_balance():
             logging.error(f"Первые 500 символов ответа: {response.text[:500]}")
             return None
 
-        # ====================== ИЗВЛЕЧЕНИЕ БАЛАНСА ======================
-        # Структура неизвестна поэтому добавляем защиту и логирование
+        # Извлечение баланса
         balance = None
-
-        # Попробуем самые вероятные пути (дальше вайб решение по поиску поля с балансом)
-        # Что-то одно сработает - остальные вырежу
         try:
-            # 1 старый путь (из desktop)
-            if 'doc' in data and 'user' in data['doc'] and '$balance' in data['doc']['user']:
-                balance = float(data['doc']['user']['$balance'])
-                logging.info(f"Баланс найден в doc.user.$balance: {balance}")
-
-            # 2 возможно, баланс в общих данных пользователя
-            elif 'user' in data and '$balance' in data['user']:
-                balance = float(data['user']['$balance'])
-                logging.info(f"Баланс найден в user.$balance: {balance}")
-
-            # 3 возможно, в первом элементе списка vds
-            elif 'doc' in data and 'elem' in data['doc'] and isinstance(data['doc']['elem'], list):
-                if len(data['doc']['elem']) > 0:
-                    first_vds = data['doc']['elem'][0]
-                    if 'balance' in first_vds:
-                        balance = float(first_vds['balance'])
-                        logging.info(f"Баланс найден в doc.elem[0].balance: {balance}")
-                    elif '$balance' in first_vds:
-                        balance = float(first_vds['$balance'])
-                        logging.info(f"Баланс найден в doc.elem[0].$balance: {balance}")
-
-            # 4 если data сама по себе список
-            elif isinstance(data, list) and len(data) > 0:
-                if 'balance' in data[0]:
-                    balance = float(data[0]['balance'])
-                    logging.info(f"Баланс найден в data[0].balance: {balance}")
-
-            else:
-                logging.error("Не удалось найти баланс в известных полях")
-                logging.info(f"Структура ответа для анализа: {str(data)[:1000]}")
-                return None
-
-        except (ValueError, TypeError, KeyError) as e:
-            logging.error(f"Ошибка при извлечении баланса: {e}")
+            balance = float(data['doc']['elem'][0]['balance'])
+            logging.info(f"Баланс найден: {balance}")
+        except KeyError as e:
+            logging.error(f"Отсутствует ожидаемый ключ: {e}")
+            return None
+        except (IndexError, TypeError):
+            logging.error("Нет элементов в списке клиентов или неверная структура")
+            return None
+        except ValueError:
+            logging.error("Баланс не является числом")
             return None
 
         if balance is None:
