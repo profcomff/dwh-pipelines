@@ -48,9 +48,8 @@ def get_balance():
     # Параметры запроса согласно документации BILLmanager API
     params = {
         'authinfo': f'{username}:{password}',  # Авторизация в одну строку
-        'out': 'json',  # Требуем JSON (можно попробовать 'xjson')
+        'out': 'json',  # Требуем JSON
         'func': 'vds',  # Функция "Виртуальные серверы"
-        # 'out': 'xjson',                        # Перестраховка, если 'json' не сработает
     }
 
     logging.info(f"Отправка запроса к {url} с func=vds")
@@ -75,6 +74,7 @@ def get_balance():
         # Парсим JSON
         try:
             data = response.json()
+            logging.warning(f"ПОЛНЫЙ ОТВЕТ ОТ API: {data}")
             logging.info(f"JSON ответ получен. Ключи верхнего уровня: {list(data.keys())}")
             # Логируем структуру ответа (но не весь, чтобы не засорять логи)
             logging.debug(f"Полный ответ: {data}")
@@ -87,38 +87,12 @@ def get_balance():
         # Структура неизвестна поэтому добавляем защиту и логирование
         balance = None
 
-        # Попробуем самые вероятные пути (дальше вайб решение по поиску поля с балансом)
-        # Что-то одно сработает - остальные вырежу
         try:
-            # 1 старый путь (из desktop)
             if 'doc' in data and 'user' in data['doc'] and '$balance' in data['doc']['user']:
                 balance = float(data['doc']['user']['$balance'])
                 logging.info(f"Баланс найден в doc.user.$balance: {balance}")
-
-            # 2 возможно, баланс в общих данных пользователя
-            elif 'user' in data and '$balance' in data['user']:
-                balance = float(data['user']['$balance'])
-                logging.info(f"Баланс найден в user.$balance: {balance}")
-
-            # 3 возможно, в первом элементе списка vds
-            elif 'doc' in data and 'elem' in data['doc'] and isinstance(data['doc']['elem'], list):
-                if len(data['doc']['elem']) > 0:
-                    first_vds = data['doc']['elem'][0]
-                    if 'balance' in first_vds:
-                        balance = float(first_vds['balance'])
-                        logging.info(f"Баланс найден в doc.elem[0].balance: {balance}")
-                    elif '$balance' in first_vds:
-                        balance = float(first_vds['$balance'])
-                        logging.info(f"Баланс найден в doc.elem[0].$balance: {balance}")
-
-            # 4 если data сама по себе список
-            elif isinstance(data, list) and len(data) > 0:
-                if 'balance' in data[0]:
-                    balance = float(data[0]['balance'])
-                    logging.info(f"Баланс найден в data[0].balance: {balance}")
-
             else:
-                logging.error("Не удалось найти баланс в известных полях")
+                logging.error("Не удало сь найти баланс в известных полях: data['doc']['user']")
                 logging.info(f"Структура ответа для анализа: {str(data)[:1000]}")
                 return None
 
