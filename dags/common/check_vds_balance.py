@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timedelta
 from functools import partial
@@ -52,7 +53,7 @@ def get_balance():
         'func': 'subaccount',
     }
 
-    logging.info(f"Отправка запроса к {url} с func=account")
+    logging.info(f"Отправка запроса к {url} с func=subaccount")
 
     try:
         # Выполняем GET-запрос с параметрами в URL
@@ -65,16 +66,9 @@ def get_balance():
             logging.error(f"Тело ответа: {response.text[:2000]}")  # Ограничение по символам для перестраховочки
             return None
 
-        # Проверяем, не HTML ли это (на всякий случай)
-        if response.text.strip().startswith('<'):
-            logging.error("Получен HTML вместо JSON. Возможно, неверный метод авторизации или функция.")
-            logging.warning(f"Начало ответа: {response.text[:500]}")
-            return None
-
         # Парсим JSON
         try:
             data = response.json()
-            logging.warning(f"ПОЛНЫЙ ОТВЕТ ОТ API: {data}")
             logging.info(f"JSON ответ получен. Ключи верхнего уровня: {list(data.keys())}")
             # Логируем структуру ответа (но не весь, чтобы не засорять логи)
             logging.debug(f"Полный ответ: {data}")
@@ -86,7 +80,8 @@ def get_balance():
         # Извлечение баланса
         balance = None
         try:
-            balance = float(data['doc']['elem'][0]['balance'])
+            # Баланс лежит в поле '$' у объекта balance
+            balance = float(data['doc']['elem'][0]['balance']['$'].split()[0])
             logging.info(f"Баланс найден: {balance}")
         except KeyError as e:
             logging.error(f"Отсутствует ожидаемый ключ: {e}")
@@ -94,20 +89,9 @@ def get_balance():
         except (IndexError, TypeError):
             logging.error("Нет элементов в списке клиентов или неверная структура")
             return None
-        except ValueError:
-            logging.error("Баланс не является числом")
+        except ValueError as e:
+            logging.error(f"Баланс не является числом или ошибка парсинга: {e}")
             return None
-
-        if balance is None:
-            logging.error("Баланс не был получен")
-            return None
-
-        logging.info(f"Успешно получен баланс: {balance} руб.")
-        return balance
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Ошибка при выполнении запроса: {e}")
-        return None
     except Exception as e:
         logging.error(f"Ошибка: {e}")
         return None
