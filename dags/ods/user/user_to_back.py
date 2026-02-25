@@ -136,17 +136,6 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             logging.info(f"Took education_level for {user_id} from dwh database")
             cursor.execute(
                 f"""
-            select level from "ODS_USERDATA".education_level_eng as e
-            where e.user_id = {user_id} and e.is_deleted = FALSE
-            order by e.modified desc, e.created desc
-            limit 1;
-            """
-            )
-            level_eng_record = cursor.fetchone()
-            result["education_level_eng"] = str(level_eng_record[0] if level_eng_record else "")
-            logging.info(f"Took education_level_eng for {user_id} from dwh database")
-            cursor.execute(
-                f"""
             select url from "ODS_USERDATA".photo as p
             where p.user_id = {user_id} and p.is_deleted = FALSE
             order by p.modified desc, p.created desc
@@ -172,6 +161,12 @@ def post_union_members_to_backend(union_members_ids: list):
     }
     for union_member_id in union_members_ids:
         info = get_phone_number_by_user_ids(union_member_id)
+        dict_education = {
+            "Специалитет (6 лет), специалист": "Speciality (6 years)",
+            "Магистратура (2 года), магистр": "Magistracy (2 years)",
+            "Аспирантура (4 года), бакалавр": "Postgraduate study (4 years)",
+            "Аспирантура (4 года), магистр": "Postgraduate study (4 years)",
+        }
         data = {
             "items": [
                 {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
@@ -183,7 +178,11 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
                 {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
-                {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level_eng'])},
+                {
+                    "category": "Учёба",
+                    "param": "Ступень обучения",
+                    "value": dict_education.get(str(info['education_level'])),
+                },
                 {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
             ],
             "source": "dwh",
