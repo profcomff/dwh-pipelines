@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timedelta
 from functools import partial
@@ -91,6 +92,9 @@ def get_balance():
         except ValueError as e:
             logging.error(f"Баланс не является числом или ошибка парсинга: {e}")
             return None
+    except Exception as e:
+        logging.error(f"Ошибка: {e}")
+        return None
 
 
 with DAG(
