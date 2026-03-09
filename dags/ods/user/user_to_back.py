@@ -55,8 +55,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             phone_record = cursor.fetchone()
-            phone_record = phone_record.split(",")[0]
-            result["phone_number"] = str(phone_record[0] if phone_record else "")
+            result["phone_number"] = (str(phone_record[0] if phone_record else "")).split(",")[0]
             logging.info(f"Took phone_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -67,8 +66,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             card_record = cursor.fetchone()
-            card_record = card_record.split(",")[0]
-            result["card_number"] = str(card_record[0] if card_record else "")
+            result["card_number"] = (str(card_record[0] if card_record else "")).split(",")[0]
             logging.info(f"Took card_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -79,8 +77,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             fullname_record = cursor.fetchone()
-            fullname_record = fullname_record.split(",")[0]
-            result["full_name"] = str(fullname_record[0] if fullname_record else "")
+            result["full_name"] = (str(fullname_record[0] if fullname_record else "")).split(",")[0]
             logging.info(f"Took full_name for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -91,8 +88,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             fullname_eng_record = cursor.fetchone()
-            fullname_eng_record = fullname_eng_record.split(",")[0]
-            result["full_name_eng"] = str(fullname_eng_record[0] if fullname_eng_record else "")
+            result["full_name_eng"] = (str(fullname_eng_record[0] if fullname_eng_record else "")).split(",")[0]
             logging.info(f"Took full_name_eng for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -103,8 +99,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             birthday_record = cursor.fetchone()
-            birthday_record = birthday_record.split(",")[0]
-            result["birthday"] = str(birthday_record[0] if birthday_record else "")
+            result["birthday"] = (str(birthday_record[0] if birthday_record else "")).split(",")[0]
             logging.info(f"Took birthday for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -115,8 +110,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             faculty_record = cursor.fetchone()
-            faculty_record = faculty_record.split(",")[0]
-            result["faculty"] = str(faculty_record[0] if faculty_record else "")
+            result["faculty"] = (str(faculty_record[0] if faculty_record else "")).split(",")[0]
             logging.info(f"Took faculty for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -127,8 +121,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             faculty_eng_record = cursor.fetchone()
-            faculty_eng_record = faculty_eng_record.split(",")[0]
-            result["faculty_eng"] = str(faculty_eng_record[0] if faculty_eng_record else "")
+            result["faculty_eng"] = (str(faculty_eng_record[0] if faculty_eng_record else "")).split(",")[0]
             logging.info(f"Took faculty_eng for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -139,8 +132,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             level_record = cursor.fetchone()
-            level_record = level_record.split(",")[0]
-            result["education_level"] = str(level_record[0] if level_record else "")
+            result["education_level"] = (str(level_record[0] if level_record else "")).split(",")[0]
             logging.info(f"Took education_level for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -151,14 +143,13 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             photo_record = cursor.fetchone()
-            photo_record = photo_record.split(",")[0]
-            result["photo"] = str(photo_record[0] if photo_record else "")
+            result["photo"] = (str(photo_record[0] if photo_record else "")).split(",")[0]
             logging.info(f"Took photo for {user_id} from dwh database")
             return result
 
         except Exception as e:
             logging.error(
-                f"Error ocured while collecting phone number and card_number for user {user_id} from dwh db: {str(e)}"
+                f"Error ocured while collecting union member data for user {user_id} from dwh db: {str(e)}"
             )
             return result
 
