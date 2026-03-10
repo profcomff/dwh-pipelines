@@ -55,7 +55,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             phone_record = cursor.fetchone()
-            result["phone_number"] = str(phone_record[0] if phone_record else "")
+            result["phone_number"] = (str(phone_record[0] if phone_record else "")).split(",")[0]
             logging.info(f"Took phone_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -66,7 +66,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             card_record = cursor.fetchone()
-            result["card_number"] = str(card_record[0] if card_record else "")
+            result["card_number"] = (str(card_record[0] if card_record else "")).split(",")[0]
             logging.info(f"Took card_number for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -77,7 +77,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             fullname_record = cursor.fetchone()
-            result["full_name"] = str(fullname_record[0] if fullname_record else "")
+            result["full_name"] = (str(fullname_record[0] if fullname_record else "")).split(",")[-1]
             logging.info(f"Took full_name for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -88,7 +88,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             fullname_eng_record = cursor.fetchone()
-            result["full_name_eng"] = str(fullname_eng_record[0] if fullname_eng_record else "")
+            result["full_name_eng"] = (str(fullname_eng_record[0] if fullname_eng_record else "")).split(",")[0]
             logging.info(f"Took full_name_eng for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -99,7 +99,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             birthday_record = cursor.fetchone()
-            result["birthday"] = str(birthday_record[0] if birthday_record else "")
+            result["birthday"] = (str(birthday_record[0] if birthday_record else "")).split(",")[0]
             logging.info(f"Took birthday for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -110,7 +110,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             faculty_record = cursor.fetchone()
-            result["faculty"] = str(faculty_record[0] if faculty_record else "")
+            result["faculty"] = (str(faculty_record[0] if faculty_record else "")).split(",")[0]
             logging.info(f"Took faculty for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -121,7 +121,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             faculty_eng_record = cursor.fetchone()
-            result["faculty_eng"] = str(faculty_eng_record[0] if faculty_eng_record else "")
+            result["faculty_eng"] = (str(faculty_eng_record[0] if faculty_eng_record else "")).split(",")[0]
             logging.info(f"Took faculty_eng for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -132,7 +132,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             level_record = cursor.fetchone()
-            result["education_level"] = str(level_record[0] if level_record else "")
+            result["education_level"] = (str(level_record[0] if level_record else "")).split(",")[0]
             logging.info(f"Took education_level for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -143,14 +143,12 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             photo_record = cursor.fetchone()
-            result["photo"] = str(photo_record[0] if photo_record else "")
+            result["photo"] = (str(photo_record[0] if photo_record else "")).split(",")[0]
             logging.info(f"Took photo for {user_id} from dwh database")
             return result
 
         except Exception as e:
-            logging.error(
-                f"Error ocured while collecting phone number and card_number for user {user_id} from dwh db: {str(e)}"
-            )
+            logging.error(f"Error ocured while collecting union member data for user {user_id} from dwh db: {str(e)}")
             return result
 
 
@@ -173,10 +171,10 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
                 {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value": str(info['card_number'])},
                 {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name'])},
-                {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name_eng'])},
+                {"category": "Личная информация", "param": "Full name", "value": str(info['full_name_eng'])},
                 {"category": "Личная информация", "param": "Дата рождения", "value": str(info['birthday'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
-                {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
+                {"category": "Учёба", "param": "Faculty", "value": str(info['faculty_eng'])},
                 {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
                 {
                     "category": "Учёба",
