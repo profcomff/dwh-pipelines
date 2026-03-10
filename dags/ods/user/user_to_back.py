@@ -148,9 +148,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             return result
 
         except Exception as e:
-            logging.error(
-                f"Error ocured while collecting union member data for user {user_id} from dwh db: {str(e)}"
-            )
+            logging.error(f"Error ocured while collecting union member data for user {user_id} from dwh db: {str(e)}")
             return result
 
 
