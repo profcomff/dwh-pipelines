@@ -811,18 +811,16 @@ insert into "ODS_USERDATA".full_name_eng(
 select
 	full_name_eng,
 	user_id,
-	full_name_source,
+	'union_member',
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
 from (
 	select distinct
 		full_name_eng,
-		user_id::integer as user_id,
-		full_name_source
+		user_id::integer as user_id
 	from temp_combined_data
-	where full_name_eng is not null and trim(full_name_eng) != '' and full_name_source is not null and trim(full_name_source) != ''
-	and student_id is not null and trim(student_id) != ''
+	where full_name_eng is not null and trim(full_name_eng) != '' and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, name) do update set
 	name = EXCLUDED.name,

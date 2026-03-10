@@ -174,7 +174,7 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Личная информация", "param": "Full name", "value": str(info['full_name_eng'])},
                 {"category": "Личная информация", "param": "Дата рождения", "value": str(info['birthday'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
-                {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},
+                {"category": "Учёба", "param": "Faculty", "value": str(info['faculty_eng'])},
                 {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
                 {
                     "category": "Учёба",
