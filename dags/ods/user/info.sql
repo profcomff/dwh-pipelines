@@ -147,12 +147,12 @@ select
 		COALESCE(
 			CASE
 				WHEN ud.birthday ~ '^\d{2}\.\d{2}\.\d{4}$' THEN
-					TO_TIMESTAMP(ud.birthday, 'DD.MM.YYYY')
+					ud.birthday
 				ELSE NULL
 			END,
 			CASE
 				WHEN um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN
-					um.birthday::TIMESTAMP
+					um.birthday
 				ELSE NULL
 			END
 		) AS birthday,
