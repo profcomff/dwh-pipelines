@@ -77,7 +77,7 @@ def get_phone_number_by_user_ids(user_id: int) -> dict:
             """
             )
             fullname_record = cursor.fetchone()
-            result["full_name"] = (str(fullname_record[0] if fullname_record else "")).split(",")[0]
+            result["full_name"] = (str(fullname_record[0] if fullname_record else "")).split(",")[-1]
             logging.info(f"Took full_name for {user_id} from dwh database")
             cursor.execute(
                 f"""
@@ -171,7 +171,7 @@ def post_union_members_to_backend(union_members_ids: list):
                 {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
                 {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value": str(info['card_number'])},
                 {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name'])},
-                {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name_eng'])},
+                {"category": "Личная информация", "param": "Full name", "value": str(info['full_name_eng'])},
                 {"category": "Личная информация", "param": "Дата рождения", "value": str(info['birthday'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
                 {"category": "Учёба", "param": "Факультет", "value": str(info['faculty_eng'])},

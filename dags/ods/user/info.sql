@@ -218,12 +218,10 @@ select
 	    	when um.full_name is not null and ud.full_names is not null and um.full_name != ANY(ud.full_names) then CONCAT(um.source, ', ', array_to_string(ud.full_name_sources, ', '))
 	    	when um.full_name is not null then um.source
 	    	when ud.full_names is not null then array_to_string(ud.full_name_sources, ', ')
-	    end  as full_name_source,
-		CASE
-	    	WHEN um.full_name_eng IS NOT NULL AND ud.full_names IS NOT NULL AND um.full_name_eng != ANY(ud.full_names) THEN array_to_string(array_append(ud.full_names, um.full_name_eng), ', ')
-	    	WHEN um.full_name_eng IS NOT NULL THEN um.full_name_eng
-	    	WHEN ud.full_names IS NOT NULL THEN array_to_string(ud.full_names, ', ')
-	    END as full_name_eng,
+	    end as full_name_source,
+		case
+			when um.full_name_eng is not null then um.full_name_eng
+		end as full_name_eng,
 	    ud.git_hub_username as git_hub_username,
 	    ud.git_hub_username_source as git_hub_username_source,
 	    ud.home_phone_number as home_phone_number,
