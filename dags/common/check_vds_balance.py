@@ -83,6 +83,7 @@ def get_balance():
             # Баланс лежит в поле '$' у объекта balance
             balance = float(data['doc']['elem'][0]['balance']['$'].split()[0])
             logging.info(f"Баланс найден: {balance}")
+            return balance
         except KeyError as e:
             logging.error(f"Отсутствует ожидаемый ключ: {e}")
             return None

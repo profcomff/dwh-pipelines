@@ -147,12 +147,12 @@ select
 		COALESCE(
 			CASE
 				WHEN ud.birthday ~ '^\d{2}\.\d{2}\.\d{4}$' THEN
-					TO_TIMESTAMP(ud.birthday, 'DD.MM.YYYY')
+					ud.birthday
 				ELSE NULL
 			END,
 			CASE
 				WHEN um.birthday ~ '^\d{4}-\d{2}-\d{2}' THEN
-					um.birthday::TIMESTAMP
+					um.birthday
 				ELSE NULL
 			END
 		) AS birthday,
@@ -218,12 +218,10 @@ select
 	    	when um.full_name is not null and ud.full_names is not null and um.full_name != ANY(ud.full_names) then CONCAT(um.source, ', ', array_to_string(ud.full_name_sources, ', '))
 	    	when um.full_name is not null then um.source
 	    	when ud.full_names is not null then array_to_string(ud.full_name_sources, ', ')
-	    end  as full_name_source,
-		CASE
-	    	WHEN um.full_name_eng IS NOT NULL AND ud.full_names IS NOT NULL AND um.full_name_eng != ANY(ud.full_names) THEN array_to_string(array_append(ud.full_names, um.full_name_eng), ', ')
-	    	WHEN um.full_name_eng IS NOT NULL THEN um.full_name_eng
-	    	WHEN ud.full_names IS NOT NULL THEN array_to_string(ud.full_names, ', ')
-	    END as full_name_eng,
+	    end as full_name_source,
+		case
+			when um.full_name_eng is not null then um.full_name_eng
+		end as full_name_eng,
 	    ud.git_hub_username as git_hub_username,
 	    ud.git_hub_username_source as git_hub_username_source,
 	    ud.home_phone_number as home_phone_number,
@@ -813,18 +811,16 @@ insert into "ODS_USERDATA".full_name_eng(
 select
 	full_name_eng,
 	user_id,
-	full_name_source,
+	'union_member',
 	CURRENT_TIMESTAMP,
  	CURRENT_TIMESTAMP,
 	False
 from (
 	select distinct
 		full_name_eng,
-		user_id::integer as user_id,
-		full_name_source
+		user_id::integer as user_id
 	from temp_combined_data
-	where full_name_eng is not null and trim(full_name_eng) != '' and full_name_source is not null and trim(full_name_source) != ''
-	and student_id is not null and trim(student_id) != ''
+	where full_name_eng is not null and trim(full_name_eng) != '' and student_id is not null and trim(student_id) != ''
 ) dedup
 on conflict(user_id, name) do update set
 	name = EXCLUDED.name,
