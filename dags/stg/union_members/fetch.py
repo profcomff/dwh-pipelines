@@ -231,7 +231,7 @@ def get_api_fields():
 
 with DAG(
     dag_id="union_member_dwh",
-    schedule="0 0 */1 * *",
+    schedule=timedelta(hours=1),
     start_date=datetime(2023, 1, 1, 2, 0, 0),
     catchup=False,
     tags=["stg", "union_member"],
