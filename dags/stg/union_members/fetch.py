@@ -97,6 +97,9 @@ def fetch_union_members():
                 # Если ключи одинаковые то значения будут перезаписаны по новому источнику
                 user.update(resp_student_id_dict)
                 user["faculty_translated"] = user.get("faculty_title_eng")
+                # Удаляем лишние поля полсе апдейта
+                user.pop("requests", None)
+                user.pop("event", None)
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
