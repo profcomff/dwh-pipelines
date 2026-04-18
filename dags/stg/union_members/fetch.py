@@ -94,12 +94,8 @@ def fetch_union_members():
             try:
                 resp_student_id_dict = resp_student_id.json()
                 logging.info(f"Available fields for user {user['id']}: {list(resp_student_id_dict.keys())}")
-                user["faculty_translated"] = resp_student_id_dict["faculty_title_eng"]
-                user["first_name_translated"] = resp_student_id_dict["first_name_translated"]
-                user["last_name_translated"] = resp_student_id_dict["last_name_translated"]
-                user["middle_name"] = resp_student_id_dict["middle_name"]
-                user["middle_name_translated"] = resp_student_id_dict["middle_name_translated"]
-                user["student_id"] = resp_student_id_dict["student_id"]
+                # Если ключи одинаковые то значения будут перезаписаны по новому источнику
+                user.update(resp_student_id_dict)
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
