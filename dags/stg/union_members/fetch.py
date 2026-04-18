@@ -96,6 +96,7 @@ def fetch_union_members():
                 logging.info(f"Available fields for user {user['id']}: {list(resp_student_id_dict.keys())}")
                 # Если ключи одинаковые то значения будут перезаписаны по новому источнику
                 user.update(resp_student_id_dict)
+                user["faculty_translated"] = user.get("faculty_title_eng")
             except Exception as e:
                 logging.error(f"Failed to fetch data from lk.msuprof.com for user {user['id']}: {str(e)}")
 
