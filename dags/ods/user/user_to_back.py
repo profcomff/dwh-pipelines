@@ -334,7 +334,7 @@ def remove_non_union_members_from_union_group(union_members_ids: list):
 
 with DAG(
     dag_id="union_member_to_backend",
-    schedule=[Dataset("ODS_USERDATA.student_id")],
+    schedule=[Dataset("ODS_USERDATA")],
     start_date=datetime.datetime(start_year, start_month, start_day),
     catchup=False,
     tags=["ods", "userdata", "union_member", "backend"],

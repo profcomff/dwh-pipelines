@@ -31,7 +31,7 @@ with DAG(
         # порядок датасетов здесь важен!
         # см. info.sql и https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html#variables
         inlets=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param"), Dataset("STG_UNION_MEMBER.union_member")],
-        outlets=[Dataset("ODS_USER_INFO.info")],
+        outlets=[Dataset("ODS_USERDATA")],
         params={"tablename": "info"},
     )
     # run_sql_encrypted = PostgresOperator(
