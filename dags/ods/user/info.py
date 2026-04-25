@@ -12,7 +12,7 @@ from plugins.features import get_sql_code
 
 
 with DAG(
-    dag_id="ODS_USER_INFO.info",
+    dag_id="ODS_USERDATA",
     start_date=datetime(2024, 10, 1),
     schedule=[Dataset("STG_USERDATA.info"), Dataset("STG_USERDATA.param"), Dataset("STG_UNION_MEMBER.union_member")],
     catchup=False,
@@ -46,6 +46,6 @@ with DAG(
     #         Dataset("STG_USERDATA.param"),
     #         Dataset("STG_UNION_MEMBER.union_member"),
     #     ],
-    #     outlets=[Dataset("ODS_USER_INFO.encrypted_info")],
+    #     outlets=[Dataset("ODS_USERDATA.encrypted_info")],
     #     params={"tablename": "encrypted_info"},
     # ) TODO сделать мерж юсердаты шифрованной
