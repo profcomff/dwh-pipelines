@@ -28,10 +28,8 @@ match env:
         API_BASE_GROUP_ID = 121
 
 
-def get_phone_number_by_user_ids(user_id: int) -> dict:
-    hook = PostgresHook(postgres_conn_id="postgres_dwh")
-    with hook.get_conn() as conn:
-        cursor = conn.cursor()
+def get_phone_number_by_user_ids(user_id: int, conn) -> dict:
+    with conn.cursor() as cursor:
         result = {
             "phone_number": "",
             "card_number": "",
@@ -157,55 +155,63 @@ def post_union_members_to_backend(union_members_ids: list):
         "succeed_ids": [],
         "failed_ids": [],
     }
-    for union_member_id in union_members_ids:
-        info = get_phone_number_by_user_ids(union_member_id)
-        dict_education = {
-            "Специалитет (6 лет), специалист": "Speciality (6 years)",
-            "Магистратура (2 года), магистр": "Magistracy (2 years)",
-            "Аспирантура (4 года), бакалавр": "Postgraduate study (4 years)",
-            "Аспирантура (4 года), магистр": "Postgraduate study (4 years)",
-        }
-        data = {
-            "items": [
-                {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
-                {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
-                {"category": "Учетные данные", "param": "Номер профсоюзного билета", "value": str(info['card_number'])},
-                {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name'])},
-                {"category": "Личная информация", "param": "Full name", "value": str(info['full_name_eng'])},
-                {"category": "Личная информация", "param": "Дата рождения", "value": str(info['birthday'])},
-                {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
-                {"category": "Учёба", "param": "Faculty", "value": str(info['faculty_eng'])},
-                {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
-                {
-                    "category": "Учёба",
-                    "param": "Ступень обучения",
-                    "value": dict_education.get(str(info['education_level'])),
-                },
-                {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
-            ],
-            "source": "dwh",
-        }
-        try:
-            response = r.post(
-                url=API_BASE_URL + f"user/{union_member_id}",
-                headers={
-                    "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
-                },
-                json=data,
-            )
-            if response.status_code == 200:
-                succes_rate["succeed_ids"].append(union_member_id)
-            else:
-                succes_rate["failed_ids"].append(union_member_id)
-                logging.error(
-                    f"Union member with id {union_member_id} copy to backend failed with code: {response.status_code}\n Response text: {response.text}"
-                )
-        except Exception as e:
-            logging.error(f"Error sending data to backend: {str(e)}")
+    dict_education = {
+        "Специалитет (6 лет), специалист": "Speciality (6 years)",
+        "Магистратура (2 года), магистр": "Magistracy (2 years)",
+        "Аспирантура (4 года), бакалавр": "Postgraduate study (4 years)",
+        "Аспирантура (4 года), магистр": "Postgraduate study (4 years)",
+    }
 
-    logging.info(
-        f"{len(succes_rate['succeed_ids'])} union members sent to backend, f{len(succes_rate['failed_ids'])} failed. Failed id`s:{succes_rate['failed_ids']}"
-    )
+    # Хук и соединение с БД - формируем один раз для всех циклов
+    hook = PostgresHook(postgres_conn_id="postgres_dwh")
+    with hook.get_conn() as conn:
+        for union_member_id in union_members_ids:
+            info = get_phone_number_by_user_ids(union_member_id, conn)
+            data = {
+                "items": [
+                    {"category": "Учетные данные", "param": "Членство в профсоюзе", "value": "true"},
+                    {"category": "Контакты", "param": "Номер телефона", "value": str(info['phone_number'])},
+                    {
+                        "category": "Учетные данные",
+                        "param": "Номер профсоюзного билета",
+                        "value": str(info['card_number']),
+                    },
+                    {"category": "Личная информация", "param": "Полное имя", "value": str(info['full_name'])},
+                    {"category": "Личная информация", "param": "Full name", "value": str(info['full_name_eng'])},
+                    {"category": "Личная информация", "param": "Дата рождения", "value": str(info['birthday'])},
+                    {"category": "Учёба", "param": "Факультет", "value": str(info['faculty'])},
+                    {"category": "Учёба", "param": "Faculty", "value": str(info['faculty_eng'])},
+                    {"category": "Учёба", "param": "Ступень обучения", "value": str(info['education_level'])},
+                    {
+                        "category": "Учёба",
+                        "param": "Education level",
+                        "value": dict_education.get(str(info['education_level'])),
+                    },
+                    {"category": "Личная информация", "param": "Фото", "value": str(info['photo'])},
+                ],
+                "source": "dwh",
+            }
+            try:
+                response = r.post(
+                    url=API_BASE_URL + f"user/{union_member_id}",
+                    headers={
+                        "Authorization": f"{Variable.get('TOKEN_ROBOT_USERDATA')}",
+                    },
+                    json=data,
+                )
+                if response.status_code == 200:
+                    succes_rate["succeed_ids"].append(union_member_id)
+                else:
+                    succes_rate["failed_ids"].append(union_member_id)
+                    logging.error(
+                        f"Union member with id {union_member_id} copy to backend failed with code: {response.status_code}\n Response text: {response.text}"
+                    )
+            except Exception as e:
+                logging.error(f"Error sending data to backend: {str(e)}")
+
+        logging.info(
+            f"{len(succes_rate['succeed_ids'])} union members sent to backend, {len(succes_rate['failed_ids'])} failed. Failed id`s:{succes_rate['failed_ids']}"
+        )
 
 
 def get_union_members_ids_from_dwh() -> list:
