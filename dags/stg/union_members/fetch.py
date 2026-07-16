@@ -80,6 +80,10 @@ def fetch_union_members():
                 all_keys.update(user.keys())
 
             logging.info(f"All fields from API: {sorted(all_keys)}")
+
+        # Переманная для однократного логгирования внутри цикла
+        log_is_required = True
+
         for user in users_dict:
             resp_student_id = s.get(
                 f"https://api-lk.msuprof.com/api/auth/users/{user['id']}",
@@ -93,7 +97,12 @@ def fetch_union_members():
                 raise Exception(f"Failed to authenticate: HTTP {resp.status_code}")
             try:
                 resp_student_id_dict = resp_student_id.json()
-                logging.info(f"Available fields for user {user['id']}: {list(resp_student_id_dict.keys())}")
+                # Поля внутри апи каждого юзера шире чем в общем апи
+                # Можно узнать актуальный список полей через отладочное логгирование ниже
+                if log_is_required:
+                    logging.info(f"Available fields for user ({user['id']}): {list(resp_student_id_dict.keys())}")
+                log_is_required = False
+
                 user["faculty_translated"] = resp_student_id_dict["faculty_title_eng"]
                 user["first_name_translated"] = resp_student_id_dict["first_name_translated"]
                 user["last_name_translated"] = resp_student_id_dict["last_name_translated"]
