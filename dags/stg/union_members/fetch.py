@@ -80,7 +80,7 @@ def fetch_union_members():
                 all_keys.update(user.keys())
 
             logging.info(f"All fields from API: {sorted(all_keys)}")
-        
+
         # Переманная для однократного логгирования внутри цикла
         log_is_required = True
 
