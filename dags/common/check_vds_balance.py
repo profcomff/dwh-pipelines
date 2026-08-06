@@ -64,7 +64,7 @@ def get_balance():
         if response.status_code != 200:
             logging.error(f"Ошибка HTTP {response.status_code}")
             logging.error(f"Тело ответа: {response.text[:2000]}")  # Ограничение по символам для перестраховочки
-            return None
+            raise
 
         # Парсим JSON
         try:
@@ -75,7 +75,7 @@ def get_balance():
         except json.JSONDecodeError as e:
             logging.error(f"Ошибка парсинга JSON: {e}")
             logging.error(f"Первые 500 символов ответа: {response.text[:500]}")
-            return None
+            raise
 
         # Извлечение баланса
         balance = None
@@ -86,16 +86,20 @@ def get_balance():
             return balance
         except KeyError as e:
             logging.error(f"Отсутствует ожидаемый ключ: {e}")
-            return None
+            logging.error("Ответ API:\n%s", json.dumps(data, ensure_ascii=False, indent=2))
+            raise
         except (IndexError, TypeError):
             logging.error("Нет элементов в списке клиентов или неверная структура")
-            return None
+            logging.error("Ответ API:\n%s", json.dumps(data, ensure_ascii=False, indent=2))
+            raise
         except ValueError as e:
             logging.error(f"Баланс не является числом или ошибка парсинга: {e}")
-            return None
+            logging.error("Ответ API:\n%s", json.dumps(data, ensure_ascii=False, indent=2))
+            raise
     except Exception as e:
         logging.error(f"Ошибка: {e}")
-        return None
+        logging.error("Ответ API:\n%s", json.dumps(data, ensure_ascii=False, indent=2))
+        raise
 
 
 with DAG(
