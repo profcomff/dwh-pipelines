@@ -204,7 +204,11 @@ def post_union_members_to_backend(union_members_ids: list):
                 else:
                     succes_rate["failed_ids"].append(union_member_id)
                     logging.error(
-                        f"Union member with id {union_member_id} copy to backend failed with code: {response.status_code}\n Response text: {response.text}"
+                        f"[{union_member_id}] copy to backend failed | "
+                        f"status={response.status_code} | "
+                        f"auth_header={str(response.request.headers.get('Authorization'))[:25]}... | "
+                        f"resp_headers={dict(response.headers)} | "
+                        f"resp_body={response.text}"
                     )
             except Exception as e:
                 logging.error(f"Error sending data to backend: {str(e)}")
